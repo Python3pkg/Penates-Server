@@ -1,0 +1,108 @@
+[ ca ]
+default_ca = CA_default
+unique_subject = no
+
+[ CA_default ]
+dir = "{{ dirname }}"
+serial = $dir/serial.txt
+database = $dir/index.txt
+new_certs_dir = $dir/new_certs
+unique_subject = no
+certificate = $dir/cacert.pem
+private_key = $dir/private/cakey.pem
+RANDFILE       = $dir/private/.rand    # random number file
+database       = $dir/index.txt        # index file.
+default_days = 3650
+default_crl_days= 30                   # how long before next CRL
+default_md = sha1
+preserve = no
+email_in_dn = yes
+nameopt = default_ca
+certopt = default_ca
+policy = policy_match
+{% if crlPoint %}crlDistributionPoints = {{ crlPoint }}
+{% endif %}
+
+[ policy_match ]
+commonName = supplied
+emailAddress = optional
+organizationName = optional
+organizationalUnitName = optional
+localityName = optional
+stateOrProvinceName = optional
+countryName = optional
+
+[ req ]
+default_bits = 1024 # Size of keys
+default_keyfile = key.pem # name of generated keys
+default_md = sha1 # message digest algorithm
+string_mask = nombstr # permitted characters
+distinguished_name = req_distinguished_name
+subjectAltName=@alt_section
+req_extensions = v3_req
+
+[ req_distinguished_name ]
+0.organizationName_value = {{ organizationName }}
+organizationalUnitName_value = {{ organizationalUnitName }}
+emailAddress_value = {{ emailAddress }}
+localityName_value = {{ localityName }}
+stateOrProvinceName_value = {{ stateOrProvinceName }}
+countryName_value = {{ countryName }}
+commonName_value = {{ commonName }}
+0.organizationName = Organization Name (company)
+organizationalUnitName = Organizational Unit Name (department, division)
+emailAddress = Email Address
+localityName = Locality Name (city, district)
+stateOrProvinceName = State or Province Name (full name)
+countryName = Country Name (2 letter code)
+commonName = Common Name (hostname, IP, or your name)
+
+[ v3_ca ]
+basicConstraints = CA:TRUE
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:optional,issuer:optional
+
+[ v3_req ]
+basicConstraints = CA:FALSE
+subjectKeyIdentifier = hash
+#authorityKeyIdentifier = keyid,issuer:always
+
+[ role_req ]
+issuerAltName=issuer:copy
+{% for policy_detail in policy_details %}{% if policy_detail.1 %}{{ policy_detail.0 }} = {{ policy_detail.1 }}
+{% endif %}{% endfor %}{% if crlPoint %}crlDistributionPoints = URI:{{ crlPoint }}
+{% endif %}{% if ocspPoint or caPoint %}authorityInfoAccess=@aia_section
+{% endif %}{% if altSection %}{{ altSection }}
+
+[ alt_section ]
+{{ altNamesString }}{% endif %}
+
+{% if ocspPoint or caPoint %}
+[ aia_section ]
+{% if ocspPoint %}OCSP;URI={{ ocspPoint }}
+{% endif %}{% if caPoint %}caIssuers;URI={{ caPoint }}
+{% endif %}{% endif %}
+
+
+{% if krbRealm %}[kdc_princ_name]
+realm = EXP:0, GeneralString:{{ krbRealm }}
+principal_name = EXP:1, SEQUENCE:kdc_principal_seq
+
+[kdc_principal_seq]
+name_type = EXP:0, INTEGER:1
+name_string = EXP:1, SEQUENCE:kdc_principals
+
+[kdc_principals]
+princ1 = GeneralString:krbtgt
+princ2 = GeneralString:{{ krbRealm }}
+
+[princ_name]
+realm = EXP:0, GeneralString:{{ krbRealm }}
+principal_name = EXP:1, SEQUENCE:principal_seq
+
+[principal_seq]
+name_type = EXP:0, INTEGER:1
+name_string = EXP:1, SEQUENCE:principals
+[principals]
+princ1 = GeneralString:{{ krbClientName }}
+{% endif %}
