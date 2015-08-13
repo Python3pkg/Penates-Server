@@ -76,7 +76,7 @@ class CertificateEntry(object):
 
     @property
     def ca_filename(self):
-        return os.path.join(self.dirname, 'ca.pem')
+        return os.path.join(self.dirname, 'cacert.pem')
 
     def __repr__(self):
         return self.commonName
@@ -413,7 +413,7 @@ class PKI(object):
         stdout = stdout.decode('utf-8')
         end_date = t61_to_time(stdout.partition('=')[2].strip())
         after_now = datetime.datetime.now(tz=utc) + datetime.timedelta(30)
-        if end_date < after_now:
+        if end_date is None or end_date < after_now:
             # logging.warning(_('Certificate %(path)s for %(cn)s is about to expire') % {'cn': common_name, 'path': path})
             return False
         return True

@@ -6,10 +6,21 @@ import re
 
 from django.utils.timezone import utc
 
-T61_RE = re.compile(r'^([A-Z][a-z]{2}) (\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2}) (\d{4}).*$')
+T61_RE = re.compile(r'^([A-Z][a-z]{2}) {1,2}(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2}) (\d{4}).*$')
 
 
 def t61_to_time(d):
+    """
+    >>> t61_to_time('Jul  8 14:01:58 2037 GMT') is not None
+    True
+    >>> t61_to_time('Jul  8 14:01:58 2037 GMT').year
+    2037
+
+    :param d:
+    :type d:
+    :return:
+    :rtype:
+    """
     matcher = T61_RE.match(d)
     if matcher:
         groups = matcher.groups()
