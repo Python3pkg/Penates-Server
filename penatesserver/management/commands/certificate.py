@@ -27,7 +27,7 @@ class Command(BaseCommand):
         parser.add_argument('--ssh', default=None, help='Destination file for private SSH key')
         parser.add_argument('--pubssh', default=None, help='Destination file for public SSH key')
         parser.add_argument('--ca', default=None, help='Destination file for CA certificate')
-        parser.add_argument('--initialize', default=False, action='store_true')
+        parser.add_argument('--initialize', default=False, action='store_true', help='Create a root CA')
 
     def handle(self, *args, **options):
         role = options['role']

@@ -53,6 +53,12 @@ PKI_PATH = '{LOCAL_PATH}/pki'
 
 LDAP_BASE_DN = 'dc=test,dc=example,dc=org'
 PENATES_DOMAIN = 'test.example.org'
+PENATES_COUNTRY = 'FR'
+PENATES_ORGANIZATION = 'example.org'
+PENATES_STATE = 'Île-de-France'
+PENATES_LOCALITY = 'Paris'
+PENATES_EMAIL_ADDRESS = 'admin@test.example.org'
+
 DATABASES = {
     'default': {
         'ENGINE': '{DATABASE_ENGINE}',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
