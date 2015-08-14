@@ -52,13 +52,17 @@ OPENSSL_PATH = 'openssl'
 PKI_PATH = '{LOCAL_PATH}/pki'
 
 LDAP_BASE_DN = 'dc=test,dc=example,dc=org'
-PENATES_DOMAIN = 'test.example.org'
+
 PENATES_COUNTRY = 'FR'
 PENATES_ORGANIZATION = 'example.org'
+PENATES_DOMAIN = 'test.example.org'
 PENATES_STATE = 'Île-de-France'
 PENATES_LOCALITY = 'Paris'
-PENATES_EMAIL_ADDRESS = 'admin@test.example.org'
+PENATES_EMAIL_ADDRESS = 'admin@{PENATES_DOMAIN}'
 
+LDAP_NAME = 'ldap://192.168.56.101/'
+LDAP_USER = 'cn=admin,dc=test,dc=example,dc=org'
+LDAP_PASSWORD = 'toto'
 DATABASES = {
     'default': {
         'ENGINE': '{DATABASE_ENGINE}',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
@@ -71,9 +75,9 @@ DATABASES = {
     },
     'ldap': {
         'ENGINE': 'ldapdb.backends.ldap',
-        'NAME': 'ldap://192.168.56.101/',
-        'USER': 'cn=admin,dc=test,dc=example,dc=org',
-        'PASSWORD': 'toto',
+        'NAME': '{LDAP_NAME}',
+        'USER': '{LDAP_USER}',
+        'PASSWORD': '{LDAP_PASSWORD}',
     }
 }
 DATABASE_ROUTERS = ['ldapdb.router.Router']
