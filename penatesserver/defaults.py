@@ -30,7 +30,7 @@ SESSION_REDIS_DB = 10
 FLOOR_INSTALLED_APPS = ['penatesserver', 'rest_framework', ]
 FLOOR_INDEX = 'penatesserver.views.index'
 FLOOR_URL_CONF = 'penatesserver.root_urls.urls'
-FLOOR_PROJECT_NAME = 'PenatesServer'
+FLOOR_PROJECT_NAME = 'Penates Server'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'cLc7rCD75uO6uFVr6ojn6AYTm2DGT2t7hb7OH5Capk29kcdy7H'
@@ -51,8 +51,8 @@ REST_FRAMEWORK = {
 OPENSSL_PATH = 'openssl'
 PKI_PATH = '{LOCAL_PATH}/pki'
 
-SAMBA4_COMPUTERS_UNIT = 'Computers'
-
+LDAP_BASE_DN = 'dc=test,dc=example,dc=org'
+PENATES_DOMAIN = 'test.example.org'
 DATABASES = {
     'default': {
         'ENGINE': '{DATABASE_ENGINE}',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
