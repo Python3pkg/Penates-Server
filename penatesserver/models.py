@@ -68,8 +68,8 @@ class Service(BaseLdapModel):
 
 
 class Principal(BaseLdapModel):
-    base_dn = 'cn=%s,cn=krbContainer,%s' % (settings.PENATES_REALM, settings.LDAP_BASE_DN)
-    object_classes = force_bytestrings(['krbPrincipal', 'krbPrincipalAux'])
+    base_dn = 'cn=krbContainer,' + settings.LDAP_BASE_DN
+    object_classes = force_bytestrings(['krbPrincipal', 'krbPrincipalAux', 'krbTicketPolicyAux'])
     name = CharField(db_column=force_bytestring('krbPrincipalName'), primary_key=True)
     # principal = ListField(db_column=force_bytestring('krbPrincipalName'))
 

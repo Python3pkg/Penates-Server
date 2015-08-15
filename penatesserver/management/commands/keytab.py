@@ -17,7 +17,7 @@ class Command(BaseCommand):
         parser.add_argument('--keytab', help='Keytab destination file')
 
     def handle(self, *args, **options):
-        name = options['principal']
+        name = '%s@%s' % (options['principal'], settings.PENATES_REALM)
         if not list(Principal.objects.filter(name=name)[0:1]):
             Principal(name=name).save()
         keytab_filename = options['keytab']
@@ -29,4 +29,4 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR('Unable to write file: %s' % keytab_filename))
                 return
             p = subprocess.Popen(['kadmin', '-p', '-k', '-t', settings.PENATES_KEYTAB], stdin=subprocess.PIPE)
-            p.communicate(('ktadd -k %s %s@%s' % (keytab_filename, name, settings.PENATES_REALM)).encode('utf-8'))
+            p.communicate(('ktadd -k %s %s' % (keytab_filename, name)).encode('utf-8'))
