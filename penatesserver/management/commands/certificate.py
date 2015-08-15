@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 import argparse
 import os
+from django.conf import settings
 from django.core.management import BaseCommand
 from penatesserver.pki.constants import ROLES, ALT_TYPES
 from penatesserver.pki.service import CertificateEntry, PKI
@@ -14,12 +15,12 @@ class Command(BaseCommand):
         assert isinstance(parser, argparse.ArgumentParser)
         parser.add_argument('commonName')
         parser.add_argument('role')
-        parser.add_argument('--organizationName', default='')
-        parser.add_argument('--organizationalUnitName', default='')
-        parser.add_argument('--emailAddress', default='')
-        parser.add_argument('--localityName', default='')
-        parser.add_argument('--countryName', default='FR')
-        parser.add_argument('--stateOrProvinceName', default='')
+        parser.add_argument('--organizationName', default=settings.PENATES_ORGANIZATION)
+        parser.add_argument('--organizationalUnitName', default='Certificates')
+        parser.add_argument('--emailAddress', default=settings.PENATES_EMAIL_ADDRESS)
+        parser.add_argument('--localityName', default=settings.PENATES_LOCALITY)
+        parser.add_argument('--countryName', default=settings.PENATES_COUNTRY)
+        parser.add_argument('--stateOrProvinceName', default=settings.PENATES_STATE)
         parser.add_argument('--altNames', default=[], action='append')
         parser.add_argument('--cert', default=None, help='Destination file for certificate')
         parser.add_argument('--key', default=None, help='Destination file for private key')
