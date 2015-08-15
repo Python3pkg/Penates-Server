@@ -26,6 +26,7 @@ INI_MAPPING = [
     OptionParser('PENATES_EMAIL_ADDRESS', 'penates.email_address'),
 
     OptionParser('SERVER_NAME', 'global.server_name'),
+    OptionParser('PENATES_KEYTAB', 'global.keytab'),
     OptionParser('PROTOCOL', 'global.protocol'),
     OptionParser('BIND_ADDRESS', 'global.bind_address'),
     OptionParser('LOCAL_PATH', 'global.data_path'),
