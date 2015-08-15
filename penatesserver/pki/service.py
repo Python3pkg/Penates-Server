@@ -160,13 +160,13 @@ class PKI(object):
                 context['policy_details'].append((k, role[k]))
             for k in ('keyUsage', 'extendedKeyUsage', 'nsCertType', ):
                 context['policy_details'].append((k, ', '.join(role[k])))
-            if '1.3.6.1.5.2.3.4' in role['extendedKeyUsage'] and settings.SAMBA4_REALM:
+            if '1.3.6.1.5.2.3.4' in role['extendedKeyUsage'] and settings.PENATES_REALM:
                 alt_names.append(('otherName', '1.3.6.1.5.2.2;SEQUENCE:princ_name'))
-                context['krbRealm'] = settings.SAMBA4_REALM
+                context['krbRealm'] = settings.PENATES_REALM
                 context['krbClientName'] = entry.commonName
-            if '1.3.6.1.5.2.3.5' in role['extendedKeyUsage'] and settings.SAMBA4_REALM:
+            if '1.3.6.1.5.2.3.5' in role['extendedKeyUsage'] and settings.PENATES_REALM:
                 alt_names.append(('otherName', '1.3.6.1.5.2.2;SEQUENCE:kdc_princ_name'))
-                context['krbRealm'] = settings.SAMBA4_REALM
+                context['krbRealm'] = settings.PENATES_REALM
             if alt_names:
                 alt_list = ['{0}.{1} = {2}'.format(alt[0], i, alt[1]) for (i, alt) in enumerate(alt_names)]
                 context['altNamesString'] = "\n".join(alt_list)

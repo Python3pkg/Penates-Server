@@ -19,6 +19,7 @@ INI_MAPPING = [
 
     OptionParser('PENATES_DOMAIN', 'penates.domain'),
     OptionParser('PENATES_COUNTRY', 'penates.country'),
+    OptionParser('PENATES_REALM', 'penates.realm'),
     OptionParser('PENATES_ORGANIZATION', 'penates.organization'),
     OptionParser('PENATES_STATE', 'penates.state'),
     OptionParser('PENATES_LOCALITY', 'penates.locality'),

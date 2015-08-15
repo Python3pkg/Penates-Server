@@ -59,6 +59,7 @@ PENATES_DOMAIN = 'test.example.org'
 PENATES_STATE = 'Île-de-France'
 PENATES_LOCALITY = 'Paris'
 PENATES_EMAIL_ADDRESS = 'admin@{PENATES_DOMAIN}'
+PENATES_REALM = 'EXAMPLE.ORG'
 
 LDAP_NAME = 'ldap://192.168.56.101/'
 LDAP_USER = 'cn=admin,dc=test,dc=example,dc=org'
