@@ -64,14 +64,6 @@ class Group(BaseLdapModel):
         super(Group, self).save(using=using)
 
 
-class Service(BaseLdapModel):
-    base_dn = 'ou=Services,' + settings.LDAP_BASE_DN
-    object_classes = force_bytestrings(['ipService', ])
-    name = CharField(db_column=force_bytestring('cn'), primary_key=True)
-    port = IntegerField(db_column=force_bytestring('ipServicePort'), default=443)
-    protocol = CharField(db_column=force_bytestring('ipServiceProtocol'), default='https')
-
-
 class Principal(BaseLdapModel):
     base_dn = 'cn=krbContainer,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['krbPrincipal', 'krbPrincipalAux', 'krbTicketPolicyAux'])
@@ -149,3 +141,12 @@ class DjangoUser(AbstractBaseUser, PermissionsMixin):
         Sends an email to this User.
         """
         send_mail(subject, message, from_email, [self.email], **kwargs)
+
+
+class Service(models.Model):
+    fqdn = models.CharField(_('Host fqdn'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    protocol = models.CharField(_('Protocol'), db_index=True, blank=False, default='https', max_length=40)
+    hostname = models.CharField(_('Hostname'), db_index=True, blank=False, default=settings.SERVER_NAME, max_length=255)
+    port = models.IntegerField(_('Port'), db_index=True, blank=False, default=443)
+    kerberos_service = models.CharField(_('Kerberos service'), blank=True, null=True, default=None, max_length=40)
+    description = models.TextField(_('description'), blank=True, default='')
