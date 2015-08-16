@@ -46,7 +46,7 @@ def get_host_keytab(request, hostname):
     with open(keytab_filename, 'rb') as fd:
         content = bytes(fd.read())
     os.remove(keytab_filename)
-    return HttpResponse(content, status=200, mimetype='application/octet-stream')
+    return HttpResponse(content, status=200, content_type='application/octet-stream')
 
 
 def get_host_certificate(request):
