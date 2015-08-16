@@ -17,7 +17,7 @@ import ldapdb.models
 
 def force_bytestrings(unicode_list):
     """
-     >>> force_bytestrings([u'test'])
+     >>> force_bytestrings(['test'])
      ['test']
     """
     return [x.encode('utf-8') for x in unicode_list]
