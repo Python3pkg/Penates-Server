@@ -28,6 +28,7 @@ class Command(BaseCommand):
         parser.add_argument('--pubssh', default=None, help='Destination file for public SSH key')
         parser.add_argument('--ca', default=None, help='Destination file for CA certificate')
         parser.add_argument('--keytab', default=None, help='Destination file for keytab (if --kerberos_service is set)')
+        parser.add_argument('--role', default='Service', help='Service type')
 
     def handle(self, *args, **options):
         if options['keytab'] and not options['kerberos_service']:
@@ -50,7 +51,7 @@ class Command(BaseCommand):
                                                          port=options['port'])
         Service.objects.filter(pk=service.pk).update(kerberos_service=options['kerberos_service'],
                                                      description=options['description'])
-        call_command('certificate', options['hostname'], 'Service', organizationName=settings.PENATES_ORGANIZATION,
+        call_command('certificate', options['hostname'], options['role'], organizationName=settings.PENATES_ORGANIZATION,
                      organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
                      localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                      stateOrProvinceName=settings.PENATES_STATE, altNames=[],
