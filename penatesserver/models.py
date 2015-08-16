@@ -150,3 +150,12 @@ class Service(models.Model):
     port = models.IntegerField(_('Port'), db_index=True, blank=False, default=443)
     kerberos_service = models.CharField(_('Kerberos service'), blank=True, null=True, default=None, max_length=40)
     description = models.TextField(_('description'), blank=True, default='')
+
+    def __str__(self):
+        return '%s://%s:%s/' % (self.protocol, self.hostname, self.port)
+
+    def __unicode__(self):
+        return '%s://%s:%s/' % (self.protocol, self.hostname, self.port)
+
+    def __repr__(self):
+        return 'Service("%s://%s:%s/")' % (self.protocol, self.hostname, self.port)
