@@ -59,4 +59,4 @@ class Command(BaseCommand):
                      pubssh=options['pubssh'], ca=options['ca'], initialize=False, )
         if options['kerberos_service']:
             principal = '%s/%s' % (options['kerberos_service'], options['fqdn'])
-            call_command('keytab', principal=principal, keytab=options['keytab'])
+            call_command('keytab', principal, keytab=options['keytab'])
