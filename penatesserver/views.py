@@ -66,6 +66,18 @@ def get_host_certificate(request):
     return HttpResponse(content, status=200)
 
 
+def get_ssh_pub(request):
+    username = request.user.username
+    entry = CertificateEntry(hostname_from_keytab(username), organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Computers'),
+                             emailAddress=settings.PENATES_EMAIL_ADDRESS, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                             stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
+    pki = PKI()
+    pki.ensure_certificate(entry)
+    with open(entry.ssh_filename, 'rb') as fd:
+        content = fd.read()
+    return HttpResponse(content, status=200)
+
+
 def register_service(request, protocol, alias, port, kerberos_service=None):
     raise NotImplementedError
 

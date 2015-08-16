@@ -20,6 +20,7 @@ class Command(BaseCommand):
         parser.add_argument('port', help='Service port (e.g. 443)')
         parser.add_argument('--fqdn', default=None, help='Host fqdn')
         parser.add_argument('--kerberos_service', default=None, help='Service name for Kerberos (e.g. HTTP, require --fqdn)')
+        parser.add_argument('--srv', default=None, help='SRV DNS field (e.g. tcp/sip:priority:weight, or tcp/sip)')
         parser.add_argument('--description', default='', help='Description')
         parser.add_argument('--cert', default=None, help='Destination file for certificate')
         parser.add_argument('--key', default=None, help='Destination file for private key')
@@ -42,7 +43,8 @@ class Command(BaseCommand):
                                                          hostname=options['hostname'],
                                                          port=options['port'])
         Service.objects.filter(pk=service.pk).update(kerberos_service=options['kerberos_service'],
-                                                     description=options['description'])
+                                                     description=options['description'],
+                                                     dns_srv=options['srv'])
         call_command('certificate', options['hostname'], options['role'], organizationName=settings.PENATES_ORGANIZATION,
                      organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
                      localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
