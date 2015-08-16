@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import argparse
+import os
 from django.conf import settings
 from django.core.management import BaseCommand
 import subprocess
@@ -23,8 +24,11 @@ class Command(BaseCommand):
         keytab_filename = options['keytab']
         if keytab_filename:
             try:
+                exists = os.path.exists(keytab_filename)
                 with open(keytab_filename, 'ab') as fd:
                     fd.write(b'')
+                if not exists:
+                    os.remove(keytab_filename)
             except OSError:
                 self.stdout.write(self.style.ERROR('Unable to write file: %s' % keytab_filename))
                 return

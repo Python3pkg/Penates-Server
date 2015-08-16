@@ -37,14 +37,6 @@ class Command(BaseCommand):
         if options['kerberos_service'] and not options['fqdn']:
             self.stdout.write(self.style.ERROR('--kerberos_service is set without --fqdn'))
             return
-        key = 'keytab'
-        if options[key]:
-            try:
-                with open(options[key], 'wb') as fd:
-                    fd.write(b'')
-            except OSError:
-                self.stdout.write(self.style.ERROR('Unable to write file: %s' % options[key]))
-                return
         service, created = Service.objects.get_or_create(fqdn=options['fqdn'],
                                                          protocol=options['protocol'],
                                                          hostname=options['hostname'],
