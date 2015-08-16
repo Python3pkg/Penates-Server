@@ -3,7 +3,8 @@ from __future__ import unicode_literals
 import argparse
 
 from django.conf import settings
-from django.core.management import BaseCommand
+from django.core.management import BaseCommand, call_command
+
 from django.utils.translation import ugettext as _
 
 from penatesserver.models import Service
@@ -51,14 +52,12 @@ class Command(BaseCommand):
                                                          port=options['port'])
         Service.objects.filter(pk=service.pk).update(kerberos_service=options['kerberos_service'],
                                                      description=options['description'])
-        cert_command = CertificateCommand()
-        cert_command.handle(commonName=options['hostname'], role='Service', organizationName=settings.PENATES_ORGANIZATION,
-                            organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
-                            localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
-                            stateOrProvinceName=settings.PENATES_STATE, altNames=[],
-                            cert=options['cert'], key=options['key'], pubkey=options['pubkey'], ssh=options['ssh'],
-                            pubssh=options['pubssh'], ca=options['ca'], initialize=False, )
-        keytab_command = KeytabCommand()
+        call_command('certificate', commonName=options['hostname'], role='Service', organizationName=settings.PENATES_ORGANIZATION,
+                     organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
+                     localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                     stateOrProvinceName=settings.PENATES_STATE, altNames=[],
+                     cert=options['cert'], key=options['key'], pubkey=options['pubkey'], ssh=options['ssh'],
+                     pubssh=options['pubssh'], ca=options['ca'], initialize=False, )
         if options['kerberos_service']:
             principal = '%s/%s' % (options['kerberos_service'], options['fqdn'])
-            keytab_command.handle(principal=principal, keytab=options['keytab'])
+            call_command('keytab', principal=principal, keytab=options['keytab'])
