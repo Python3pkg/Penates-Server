@@ -41,12 +41,12 @@ def get_host_keytab(request, hostname):
     Principal(name=name).save()
     with tempfile.NamedTemporaryFile() as fd:
         keytab_filename = fd.name
-    p = subprocess.Popen(['kadmin', '-p', '-k', '-t', settings.PENATES_KEYTAB], stdin=subprocess.PIPE)
+    p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB], stdout=subprocess.PIPE)
     p.communicate(('ktadd -k %s %s' % (keytab_filename, name)).encode('utf-8'))
     with open(keytab_filename, 'rb') as fd:
-        content = fd.read()
+        content = bytes(fd.read())
     os.remove(keytab_filename)
-    return HttpResponse(content, status=200)
+    return HttpResponse(content, status=200, mimetype='application/octet-stream')
 
 
 def get_host_certificate(request):

@@ -61,6 +61,7 @@ PENATES_LOCALITY = 'Paris'
 PENATES_EMAIL_ADDRESS = 'admin@{PENATES_DOMAIN}'
 PENATES_REALM = 'EXAMPLE.ORG'
 PENATES_KEYTAB = '{LOCAL_PATH}/pki/private/kadmin.keytab'
+PENATES_PRINCIPAL = 'penatesserver/admin@{PENATES_REALM}'
 
 LDAP_NAME = 'ldap://192.168.56.101/'
 LDAP_USER = 'cn=admin,dc=test,dc=example,dc=org'
@@ -84,3 +85,5 @@ DATABASES = {
 }
 DATABASE_ROUTERS = ['ldapdb.router.Router']
 AUTH_USER_MODEL = 'penatesserver.DjangoUser'
+
+DEBUG = True
