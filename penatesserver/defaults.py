@@ -83,4 +83,4 @@ DATABASES = {
     }
 }
 DATABASE_ROUTERS = ['ldapdb.router.Router']
-AUTH_USER_MODEL = 'penatesserver.models.DjangoUser'
+AUTH_USER_MODEL = 'penatesserver.DjangoUser'
