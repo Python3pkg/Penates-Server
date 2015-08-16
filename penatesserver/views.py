@@ -25,6 +25,15 @@ def index(request):
     return render_to_response('penatesserver/index.html', template_values, RequestContext(request))
 
 
+def get_info(request):
+    content = ''
+    content += 'METHOD:%s\n' % request.method
+    content += 'REMOTE_USER:%s\n' % ('' if request.user.is_anonymous() else request.user.username)
+    content += 'REMOTE_ADDR:%s\n' % request.META.get('REMOTE_ADDR', '')
+    content += 'REMOTE_HOST:%s\n' % request.META.get('REMOTE_HOST', '')
+    return HttpResponse(content, status=200)
+
+
 def get_host_keytab(request, hostname):
     name = 'HOST/%s@%s' % (hostname, settings.PENATES_REALM)
     if list(Principal.objects.filter(name=name)[0:1]):
