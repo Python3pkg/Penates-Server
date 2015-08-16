@@ -28,5 +28,5 @@ class Command(BaseCommand):
             except OSError:
                 self.stdout.write(self.style.ERROR('Unable to write file: %s' % keytab_filename))
                 return
-            p = subprocess.Popen(['kadmin', '-p', '-k', '-t', settings.PENATES_KEYTAB], stdin=subprocess.PIPE)
-            p.communicate(('ktadd -k %s %s' % (keytab_filename, name)).encode('utf-8'))
+            p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB, '-q', 'ktadd -k %s %s' % (keytab_filename, name)])
+            p.communicate()

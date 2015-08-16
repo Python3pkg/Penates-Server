@@ -26,12 +26,18 @@ def index(request):
 
 
 def get_info(request):
+    print('1')
     content = ''
+    print('2')
     content += 'METHOD:%s\n' % request.method
+    print('3')
     content += 'REMOTE_USER:%s\n' % ('' if request.user.is_anonymous() else request.user.username)
+    print('4')
     content += 'REMOTE_ADDR:%s\n' % request.META.get('REMOTE_ADDR', '')
+    print('5')
     content += 'REMOTE_HOST:%s\n' % request.META.get('REMOTE_HOST', '')
-    return HttpResponse(content, status=200)
+    print('6')
+    return HttpResponse(content, status=200, content_type='text/plain')
 
 
 def get_host_keytab(request, hostname):
