@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from django.conf import settings
+from django.contrib.auth.models import PermissionsMixin, UserManager
+from django.contrib.auth.models import AbstractBaseUser
+from django.core import validators
+from django.core.mail import send_mail
+from django.utils import timezone
 from django.utils.translation import ugettext as _
 from django.db import models
 
@@ -76,17 +81,15 @@ class Principal(BaseLdapModel):
 
 class Computer(BaseLdapModel):
     base_dn = 'ou=Computers,' + settings.LDAP_BASE_DN
-    object_classes = force_bytestrings(['posixAccount', 'device', 'krbPrincipalAux', 'krbTicketPolicyAux'])
+    object_classes = force_bytestrings(['posixAccount', 'device'])
     name = CharField(db_column=force_bytestring('uid'), primary_key=True)
     uid = IntegerField(db_column=force_bytestring('uidNumber'), unique=True)
     gid = IntegerField(db_column=force_bytestring('gidNumber'), unique=False, default=1000)
     home_directory = CharField(db_column=force_bytestring('homeDirectory'), default='/dev/null')
     login_shell = CharField(db_column=force_bytestring('loginShell'), default='/bin/false')
-    # display_name = CharField(db_column=force_bytestring('displayName'), unique=True)
     cn = CharField(db_column=force_bytestring('cn'), unique=True)
     serial_number = CharField(db_column=force_bytestring('serialNumber'))
     owner = CharField(db_column=force_bytestring('owner'))
-    # principal = ListField(db_column=force_bytestring('krbPrincipalName'))
 
     def save(self, using=None):
         # self.display_name = self.name.upper()
@@ -102,3 +105,47 @@ class Netgroup(BaseLdapModel):
     triple = ListField(db_column=force_bytestring('nisNetgroupTriple'))
     member = ListField(db_column=force_bytestring('memberNisNetgroup'))
 
+
+class DjangoUser(AbstractBaseUser, PermissionsMixin):
+    username = models.CharField(_('username'), max_length=250, unique=True,
+                                help_text=_('Required. 30 characters or fewer. Letters, digits and @/./+/-/_ only.'),
+                                validators=[validators.RegexValidator(r'^[\w.@+-]+$',
+                                                                      _('Enter a valid username. '
+                                                                        'This value may contain only letters, numbers '
+                                                                        'and @/./+/-/_ characters.'), 'invalid'), ])
+    first_name = models.CharField(_('first name'), max_length=30, blank=True)
+    last_name = models.CharField(_('last name'), max_length=30, blank=True)
+    email = models.EmailField(_('email address'), blank=True)
+    is_staff = models.BooleanField(_('staff status'), default=False,
+                                   help_text=_('Designates whether the user can log into this admin '
+                                               'site.'))
+    is_active = models.BooleanField(_('active'), default=True,
+                                    help_text=_('Designates whether this user should be treated as '
+                                                'active. Unselect this instead of deleting accounts.'))
+    date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
+
+    objects = UserManager()
+
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email']
+
+    class Meta(object):
+        verbose_name = _('user')
+        verbose_name_plural = _('users')
+
+    def get_full_name(self):
+        """
+        Returns the first_name plus the last_name, with a space in between.
+        """
+        full_name = '%s %s' % (self.first_name, self.last_name)
+        return full_name.strip()
+
+    def get_short_name(self):
+        """Returns the short name for the user."""
+        return self.first_name
+
+    def email_user(self, subject, message, from_email=None, **kwargs):
+        """
+        Sends an email to this User.
+        """
+        send_mail(subject, message, from_email, [self.email], **kwargs)

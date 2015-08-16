@@ -35,3 +35,13 @@ def ensure_location(filename):
     dirname = os.path.dirname(filename)
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
+
+
+def hostname_from_keytab(keytab_username):
+    """
+    >>> hostname_from_keytab('HOST/test.example.org')
+    u'test.example.org'
+    """
+    if not keytab_username.startswith('HOST/'):
+        raise ValueError
+    return keytab_username[5:]
