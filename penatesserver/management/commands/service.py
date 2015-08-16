@@ -8,8 +8,6 @@ from django.core.management import BaseCommand, call_command
 from django.utils.translation import ugettext as _
 
 from penatesserver.models import Service
-from penatesserver.management.commands.certificate import Command as CertificateCommand
-from penatesserver.management.commands.keytab import Command as KeytabCommand
 
 __author__ = 'Matthieu Gallet'
 
@@ -52,7 +50,7 @@ class Command(BaseCommand):
                                                          port=options['port'])
         Service.objects.filter(pk=service.pk).update(kerberos_service=options['kerberos_service'],
                                                      description=options['description'])
-        call_command('certificate', commonName=options['hostname'], role='Service', organizationName=settings.PENATES_ORGANIZATION,
+        call_command('certificate', options['hostname'], 'Service', organizationName=settings.PENATES_ORGANIZATION,
                      organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
                      localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                      stateOrProvinceName=settings.PENATES_STATE, altNames=[],
