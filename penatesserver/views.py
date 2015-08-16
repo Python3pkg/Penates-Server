@@ -41,8 +41,8 @@ def get_host_keytab(request, hostname):
     Principal(name=name).save()
     with tempfile.NamedTemporaryFile() as fd:
         keytab_filename = fd.name
-    p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB], stdout=subprocess.PIPE)
-    p.communicate(('ktadd -k %s %s' % (keytab_filename, name)).encode('utf-8'))
+    p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB, '-q', 'ktadd -k %s %s' % (keytab_filename, name)], stdout=subprocess.PIPE)
+    p.communicate()
     with open(keytab_filename, 'rb') as fd:
         content = bytes(fd.read())
     os.remove(keytab_filename)
