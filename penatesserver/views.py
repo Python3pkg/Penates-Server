@@ -29,8 +29,8 @@ def get_info(request):
     content = ''
     content += 'METHOD:%s\n' % request.method
     content += 'REMOTE_USER:%s\n' % ('' if request.user.is_anonymous() else request.user.username)
-    content += 'REMOTE_ADDR:%s\n' % request.META.get('REMOTE_ADDR', '')
-    content += 'REMOTE_HOST:%s\n' % request.META.get('REMOTE_HOST', '')
+    content += 'REMOTE_ADDR:%s\n' % request.META.get('HTTP_X_FORWARDED_FOR', '')
+    content += 'HTTPS?:%s\n' % request.is_secure()
     return HttpResponse(content, status=200, content_type='text/plain')
 
 
