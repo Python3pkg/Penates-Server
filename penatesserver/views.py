@@ -44,8 +44,8 @@ def get_host_keytab(request, hostname):
         - create public SSH key
         - create x509 certificate
         - create PTR DNS record
-        - create SSHFP DNS record
         - create A or AAAA DNS record
+        - create SSHFP DNS record
         - return keytab
 
     :param request:

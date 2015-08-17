@@ -35,31 +35,40 @@ class Command(BaseCommand):
         parser.add_argument('--role', default='Service', help='Service type')
 
     def handle(self, *args, **options):
+        # read provided arguments
         kerberos_service = options['kerberos_service']
         fqdn = options['fqdn']
         hostname = options['hostname']
         keytab = options['keytab']
+        protocol = options['protocol']
+        port = int(options['port'])
+        srv_field = options['srv']
         if keytab and not kerberos_service:
             self.stdout.write(self.style.ERROR('--keytab is set without --kerberos_service'))
             return
         if kerberos_service and not fqdn:
             self.stdout.write(self.style.ERROR('--kerberos_service is set without --fqdn'))
             return
-        protocol = options['protocol']
-        port = int(options['port'])
+
+        # create service object
         service, created = Service.objects.get_or_create(fqdn=fqdn, protocol=protocol, hostname=hostname, port=port)
-        srv_field = options['srv']
         Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=options['description'], dns_srv=srv_field)
+
+        # certificate part
         call_command('certificate', hostname, options['role'], organizationName=settings.PENATES_ORGANIZATION,
                      organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
                      localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                      stateOrProvinceName=settings.PENATES_STATE, altNames=[],
                      cert=options['cert'], key=options['key'], pubkey=options['pubkey'], ssh=options['ssh'],
                      pubssh=options['pubssh'], ca=options['ca'], initialize=False, )
-        domain = self.ensure_record(fqdn, hostname)
+
+        # kerberos part
         if kerberos_service:
             principal = '%s/%s' % (kerberos_service, fqdn)
             call_command('keytab', principal, keytab=keytab)
+
+        # DNS part
+        domain = self.ensure_record(fqdn, hostname)
         if protocol == 'dns':
             Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, record_type='NS', name=domain.name, content=hostname)
             if Record.objects.filter(domain=domain, record_type='SOA').count() == 0:
