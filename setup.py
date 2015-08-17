@@ -24,7 +24,7 @@ entry_points = {'console_scripts': ['penatesserver-manage = djangofloor.scripts:
                                     'penatesserver-gunicorn = djangofloor.scripts:gunicorn']}
 
 install_requires = ['djangofloor', 'djangorestframework', 'markdown', 'django-filter', 'pygments',
-                    'django-ldapdb', 'django-powerdns-manager==0.2.1a1', ]
+                    'django-ldapdb', ]
 setup(
     name='penatesserver',
     version=version,
