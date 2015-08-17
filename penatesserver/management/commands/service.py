@@ -60,7 +60,7 @@ class Command(BaseCommand):
                      localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                      stateOrProvinceName=settings.PENATES_STATE, altNames=[],
                      cert=options['cert'], key=options['key'], pubkey=options['pubkey'], ssh=options['ssh'],
-                     pubssh=options['pubssh'], ca=options['ca'], initialize=False, )
+                     pubssh=options['pubssh'], ca=options['ca'], initialize=False)
 
         # kerberos part
         if kerberos_service:

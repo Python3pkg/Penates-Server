@@ -65,6 +65,9 @@ class Record(models.Model):
     ordername = models.CharField(max_length=255, blank=True, null=True)
     auth = models.NullBooleanField()
 
+    def __repr__(self):
+        return '%s.%s [%s] -> %s' % (self.name, self.domain, self.type, self.content)
+
     class Meta(object):
         managed = False
         db_table = 'records'
