@@ -30,7 +30,7 @@ class Command(BaseCommand):
                 if not exists:
                     os.remove(keytab_filename)
                 else:
-                    p = subprocess.Popen(['ktutil'], stdin=subprocess.PIPE)
+                    p = subprocess.Popen(['ktutil'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
                     stdout, stderr = p.communicate('rkt %s\nlist' % keytab_filename)
                     if stderr:
                         self.stdout.write(self.style.ERROR('Invalid keytab file %s' % keytab_filename))
