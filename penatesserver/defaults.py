@@ -28,7 +28,7 @@ SESSION_REDIS_DB = 10
 # celery
 ########################################################################################################################
 
-FLOOR_INSTALLED_APPS = ['penatesserver', 'rest_framework', 'powerdns_manager', ]
+FLOOR_INSTALLED_APPS = ['penatesserver', 'rest_framework', 'penatesserver.powerdns', ]
 FLOOR_INDEX = 'penatesserver.views.index'
 FLOOR_URL_CONF = 'penatesserver.root_urls.urls'
 FLOOR_PROJECT_NAME = 'Penates Server'
@@ -99,7 +99,7 @@ DATABASES = {
     },
 
 }
-DATABASE_ROUTERS = ['ldapdb.router.Router', 'powerdns_manager.routers.PowerdnsManagerDbRouter', ]
+DATABASE_ROUTERS = ['ldapdb.router.Router', 'penatesserver.routers.PowerdnsManagerDbRouter', ]
 AUTH_USER_MODEL = 'penatesserver.DjangoUser'
 
 DEBUG = True
