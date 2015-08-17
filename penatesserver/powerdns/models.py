@@ -66,7 +66,9 @@ class Record(models.Model):
     auth = models.NullBooleanField()
 
     def __repr__(self):
-        return '%s.%s [%s] -> %s' % (self.name, self.domain, self.type, self.content)
+        if self.type in ('NS', 'SOA', 'MX'):
+            return 'Record(%s [%s] -> %s)' % (self.name, self.type, self.content)
+        return 'Record(%s.%s [%s] -> %s)' % (self.name, self.domain.name, self.type, self.content)
 
     class Meta(object):
         managed = False

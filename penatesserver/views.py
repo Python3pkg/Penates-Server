@@ -66,7 +66,7 @@ def get_host_keytab(request, hostname):
     Principal(name=principal).save()
 
     # create private key, public key, public certificate, public SSH key
-    entry = entry_from_hostname(hostname_from_principal(request.user.username))
+    entry = entry_from_hostname(long_hostname)
     pki = PKI()
     pki.ensure_certificate(entry)
     ssh_fingerprint = file_sha1(entry.ssh_filename)

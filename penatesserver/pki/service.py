@@ -128,6 +128,7 @@ class PKI(object):
         if not self.__check_key(entry, entry.key_filename):
             self.__gen_key(entry)
             self.__gen_pub(entry)
+            self.__gen_ssh(entry)
             self.__gen_request(entry)
             self.__gen_certificate(entry)
         elif not self.__check_req(entry, entry.req_filename):
