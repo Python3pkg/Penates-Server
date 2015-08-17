@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 __author__ = 'flanker'
 
 ########################################################################################################################
@@ -35,7 +36,6 @@ FLOOR_PROJECT_NAME = 'Penates Server'
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'cLc7rCD75uO6uFVr6ojn6AYTm2DGT2t7hb7OH5Capk29kcdy7H'
 
-
 REST_FRAMEWORK = {
     # Use hyperlinked styles by default.
     # Only used if the `serializer_class` attribute is not set on a view.
@@ -66,24 +66,69 @@ PENATES_PRINCIPAL = 'penatesserver/admin@{PENATES_REALM}'
 LDAP_NAME = 'ldap://192.168.56.101/'
 LDAP_USER = 'cn=admin,dc=test,dc=example,dc=org'
 LDAP_PASSWORD = 'toto'
+
+PDNS_ENGINE = 'django.db.backends.postgresql_psycopg2'
+PDNS_NAME = 'powerdns'
+PDNS_USER = 'powerdns'
+PDNS_PASSWORD = 'toto'
+PDNS_HOST = 'localhost'
+PDNS_PORT = '5432'
+
 DATABASES = {
     'default': {
-        'ENGINE': '{DATABASE_ENGINE}',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '{DATABASE_NAME}',  # Or path to database file if using sqlite3.
-        # The following settings are not used with sqlite3:
+        'ENGINE': '{DATABASE_ENGINE}',
+        'NAME': '{DATABASE_NAME}',
         'USER': '{DATABASE_USER}',
         'PASSWORD': '{DATABASE_PASSWORD}',
-        'HOST': '{DATABASE_HOST}',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        'PORT': '{DATABASE_PORT}',  # Set to empty string for default.
+        'HOST': '{DATABASE_HOST}',
+        'PORT': '{DATABASE_PORT}',
     },
     'ldap': {
         'ENGINE': 'ldapdb.backends.ldap',
         'NAME': '{LDAP_NAME}',
         'USER': '{LDAP_USER}',
         'PASSWORD': '{LDAP_PASSWORD}',
-    }
+    },
+    'powerdns': {
+        'ENGINE': '{PDNS_ENGINE}',
+        'NAME': '{PDNS_NAME}',
+        'USER': '{PDNS_USER}',
+        'PASSWORD': '{PDNS_PASSWORD}',
+        'HOST': '{PDNS_HOST}',
+        'PORT': '{PDNS_PORT}',
+    },
+
 }
-DATABASE_ROUTERS = ['ldapdb.router.Router']
+DATABASE_ROUTERS = ['ldapdb.router.Router', 'powerdns_manager.routers.PowerdnsManagerDbRouter', ]
 AUTH_USER_MODEL = 'penatesserver.DjangoUser'
 
 DEBUG = True
+
+PDNS_DEFAULT_ZONE_TYPE = 'NATIVE'
+
+PDNS_DEFAULT_RR_TTL = 86400
+
+PDNS_ENABLED_RR_TYPES = [
+    'SOA',
+    'NS',
+    'MX',
+    'A',
+    'AAAA',
+    'CNAME',
+    'PTR',
+    'TXT',
+    'SPF',
+    'SRV',
+    # 'CERT',
+    # 'DNSKEY',
+    # 'DS',
+    # 'KEY',
+    # 'NSEC',
+    # 'RRSIG',
+    # 'HINFO',
+    # 'LOC',
+    # 'NAPTR',
+    # 'RP',
+    # 'AFSDB',
+    # 'SSHFP',
+]
