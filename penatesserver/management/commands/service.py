@@ -69,27 +69,32 @@ class Command(BaseCommand):
 
         # DNS part
         domain = self.ensure_record(fqdn, hostname)
-        if domain:
-            if protocol == 'dns':
-                Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, type='NS', name=domain.name, content=hostname)
-                if Record.objects.filter(domain=domain, type='SOA').count() == 0:
-                    content = '%s %s 1 10800 3600 604800 3600' % (hostname, settings.PENATES_EMAIL_ADDRESS)
-                    Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, type='SOA', name=domain.name, content=content)
-            if protocol == 'smtp':
-                content = '10 %s' % hostname
-                Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, type='MX', name=domain.name, content=content)
-            if srv_field:
-                matcher = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
-                if matcher:
-                    name = '_%s._%s' % (matcher.group(2), matcher.group(1))
-                    content = '%s %s %s' % (matcher.group(4), port, fqdn)
-                    prio = int(matcher.group(3))
-                    Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': prio, }, domain=domain, type='SRV', name=name, content=content)
-                matcher = re.match(r'^(\w+)/(\w+)$', srv_field)
-                if matcher:
-                    name = '_%s._%s' % (matcher.group(2), matcher.group(1))
-                    content = '100 %s %s' % (port, fqdn)
-                    Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0, }, domain=domain, type='SRV', name=name, content=content)
+        self.set_extra_records(domain, protocol, hostname, port, fqdn, srv_field)
+
+    @staticmethod
+    def set_extra_records(domain, protocol, hostname, port, fqdn, srv_field):
+        if not domain:
+            return
+        if protocol == 'dns':
+            Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, type='NS', name=domain.name, content=hostname)
+            if Record.objects.filter(domain=domain, type='SOA').count() == 0:
+                content = '%s %s 1 10800 3600 604800 3600' % (hostname, settings.PENATES_EMAIL_ADDRESS)
+                Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, type='SOA', name=domain.name, content=content)
+        elif protocol == 'smtp':
+            content = '10 %s' % hostname
+            Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, type='MX', name=domain.name, content=content)
+        if srv_field:
+            matcher = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
+            if matcher:
+                name = '_%s._%s' % (matcher.group(2), matcher.group(1))
+                content = '%s %s %s' % (matcher.group(4), port, fqdn)
+                prio = int(matcher.group(3))
+                Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': prio, }, domain=domain, type='SRV', name=name, content=content)
+            matcher = re.match(r'^(\w+)/(\w+)$', srv_field)
+            if matcher:
+                name = '_%s._%s' % (matcher.group(2), matcher.group(1))
+                content = '100 %s %s' % (port, fqdn)
+                Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0, }, domain=domain, type='SRV', name=name, content=content)
 
     @staticmethod
     def ensure_record(source, target):
