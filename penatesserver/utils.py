@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import datetime
+import hashlib
 import os
 import re
 
@@ -37,11 +38,28 @@ def ensure_location(filename):
         os.makedirs(dirname)
 
 
-def hostname_from_keytab(keytab_username):
+def hostname_from_principal(principal):
     """
-    >>> hostname_from_keytab('HOST/test.example.org')
+    >>> hostname_from_principal('HOST/test.example.org')
+    u'test.example.org'
+    >>> hostname_from_principal('HOST/test.example.org@TEST.EXAMPLE.ORG')
     u'test.example.org'
     """
-    if not keytab_username.startswith('HOST/'):
+    if not principal.startswith('HOST/'):
         raise ValueError
-    return keytab_username[5:]
+    return principal[5:].partition('@')[0]
+
+
+def principal_from_hostname(hostname, realm):
+    """
+    >>> principal_from_hostname('test.example.org', 'TEST.EXAMPLE.ORG')
+    u'HOST/test.example.org@TEST.EXAMPLE.ORG'
+    """
+    return 'HOST/%s@%s' % (hostname, realm)
+
+
+def file_sha1(filename):
+    sha1 = hashlib.sha1()
+    with open(filename, 'rb') as fd:
+        sha1.update(fd.read())
+    return sha1.hexdigest()

@@ -11,11 +11,13 @@ from django.shortcuts import render_to_response
 
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
+import netaddr
 
 from penatesserver.models import Principal
 from penatesserver.pki.constants import COMPUTER
 from penatesserver.pki.service import CertificateEntry, PKI
-from penatesserver.utils import hostname_from_keytab
+from penatesserver.powerdns.models import Domain, Record
+from penatesserver.utils import hostname_from_principal, principal_from_hostname, file_sha1
 
 __author__ = 'flanker'
 
@@ -35,25 +37,68 @@ def get_info(request):
 
 
 def get_host_keytab(request, hostname):
-    name = 'HOST/%s@%s' % (hostname, settings.PENATES_REALM)
-    if list(Principal.objects.filter(name=name)[0:1]):
+    """Register a computer:
+
+        - create Kerberos principal
+        - create private key
+        - create public SSH key
+        - create x509 certificate
+        - create PTR DNS record
+        - create SSHFP DNS record
+        - create A or AAAA DNS record
+        - return keytab
+
+    :param request:
+    :type request:
+    :param hostname:
+    :type hostname:
+    :return:
+    :rtype:
+    """
+    short_hostname, sep, domain_name = hostname.partition('.')
+    domain_name = settings.PENATES_DOMAIN
+    long_hostname = '%s.%s' % (short_hostname, domain_name)
+    # valid FQDN
+    # create Kerberos principal
+    principal = principal_from_hostname(long_hostname, settings.PENATES_REALM)
+    if list(Principal.objects.filter(name=principal)[0:1]):
         return HttpResponse('', status=401)
-    Principal(name=name).save()
+    Principal(name=principal).save()
+
+    # create private key, public key, public certificate, public SSH key
+    entry = entry_from_hostname(hostname_from_principal(request.user.username))
+    pki = PKI()
+    pki.ensure_certificate(entry)
+    ssh_fingerprint = file_sha1(entry.ssh_filename)
+    # create DNS records
+    domain, __ = Domain.objects.get_or_create(name=domain_name)
+    remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    if remote_addr:
+        record_type = 'A' if netaddr.IPAddress(remote_addr).version == 4 else 'AAAA'
+        Record(domain=domain, name=short_hostname, type=record_type, content=remote_addr, ttl=3600).save()
+        Record(domain=domain, name=remote_addr, type='PTR', content=long_hostname, ttl=3600).save()
+        Record(domain=domain, name=short_hostname, type='SSHFP', content='2 1 %s' % ssh_fingerprint, ttl=3600).save()
+
+    # create keytab
     with tempfile.NamedTemporaryFile() as fd:
         keytab_filename = fd.name
-    p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB, '-q', 'ktadd -k %s %s' % (keytab_filename, name)], stdout=subprocess.PIPE)
+    p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB, '-q', 'ktadd -k %s %s' % (keytab_filename, principal)], stdout=subprocess.PIPE)
     p.communicate()
     with open(keytab_filename, 'rb') as fd:
-        content = bytes(fd.read())
+        keytab_content = bytes(fd.read())
     os.remove(keytab_filename)
-    return HttpResponse(content, status=200, content_type='application/octet-stream')
+
+    return HttpResponse(keytab_content, status=200, content_type='application/octet-stream')
+
+
+def entry_from_hostname(hostname):
+    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Computers'),
+                            emailAddress=settings.PENATES_EMAIL_ADDRESS, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                            stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
 
 
 def get_host_certificate(request):
-    username = request.user.username
-    entry = CertificateEntry(hostname_from_keytab(username), organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Computers'),
-                             emailAddress=settings.PENATES_EMAIL_ADDRESS, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
-                             stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
+    entry = entry_from_hostname(hostname_from_principal(request.user.username))
     pki = PKI()
     pki.ensure_certificate(entry)
     content = b''
@@ -67,10 +112,7 @@ def get_host_certificate(request):
 
 
 def get_ssh_pub(request):
-    username = request.user.username
-    entry = CertificateEntry(hostname_from_keytab(username), organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Computers'),
-                             emailAddress=settings.PENATES_EMAIL_ADDRESS, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
-                             stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
+    entry = entry_from_hostname(hostname_from_principal(request.user.username))
     pki = PKI()
     pki.ensure_certificate(entry)
     with open(entry.ssh_filename, 'rb') as fd:

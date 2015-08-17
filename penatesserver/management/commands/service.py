@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import argparse
+import re
 
 from django.conf import settings
 from django.core.management import BaseCommand, call_command
 
 from django.utils.translation import ugettext as _
+import netaddr
 
 from penatesserver.models import Service
+from penatesserver.powerdns.models import Record, Domain
 
 __author__ = 'Matthieu Gallet'
 
@@ -32,25 +35,72 @@ class Command(BaseCommand):
         parser.add_argument('--role', default='Service', help='Service type')
 
     def handle(self, *args, **options):
-        if options['keytab'] and not options['kerberos_service']:
+        kerberos_service = options['kerberos_service']
+        fqdn = options['fqdn']
+        hostname = options['hostname']
+        keytab = options['keytab']
+        if keytab and not kerberos_service:
             self.stdout.write(self.style.ERROR('--keytab is set without --kerberos_service'))
             return
-        if options['kerberos_service'] and not options['fqdn']:
+        if kerberos_service and not fqdn:
             self.stdout.write(self.style.ERROR('--kerberos_service is set without --fqdn'))
             return
-        service, created = Service.objects.get_or_create(fqdn=options['fqdn'],
-                                                         protocol=options['protocol'],
-                                                         hostname=options['hostname'],
-                                                         port=options['port'])
-        Service.objects.filter(pk=service.pk).update(kerberos_service=options['kerberos_service'],
-                                                     description=options['description'],
-                                                     dns_srv=options['srv'])
-        call_command('certificate', options['hostname'], options['role'], organizationName=settings.PENATES_ORGANIZATION,
+        protocol = options['protocol']
+        port = int(options['port'])
+        service, created = Service.objects.get_or_create(fqdn=fqdn, protocol=protocol, hostname=hostname, port=port)
+        srv_field = options['srv']
+        Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=options['description'], dns_srv=srv_field)
+        call_command('certificate', hostname, options['role'], organizationName=settings.PENATES_ORGANIZATION,
                      organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
                      localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                      stateOrProvinceName=settings.PENATES_STATE, altNames=[],
                      cert=options['cert'], key=options['key'], pubkey=options['pubkey'], ssh=options['ssh'],
                      pubssh=options['pubssh'], ca=options['ca'], initialize=False, )
-        if options['kerberos_service']:
-            principal = '%s/%s' % (options['kerberos_service'], options['fqdn'])
-            call_command('keytab', principal, keytab=options['keytab'])
+        domain = self.ensure_record(fqdn, hostname)
+        if kerberos_service:
+            principal = '%s/%s' % (kerberos_service, fqdn)
+            call_command('keytab', principal, keytab=keytab)
+        if protocol == 'dns':
+            Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, record_type='NS', name=domain.name, content=hostname)
+            if Record.objects.filter(domain=domain, record_type='SOA').count() == 0:
+                content = '%s %s 1 10800 3600 604800 3600' % (hostname, settings.PENATES_EMAIL_ADDRESS)
+                Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, record_type='SOA', name=domain.name, content=content)
+        if protocol == 'smtp':
+            content = '10 %s' % hostname
+            Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, record_type='MX', name=domain.name, content=content)
+        if srv_field:
+            matcher = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
+            if matcher:
+                name = '_%s._%s' % (matcher.group(2), matcher.group(1))
+                content = '%s %s %s' % (matcher.group(4), port, fqdn)
+                prio = int(matcher.group(3))
+                Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': prio, }, domain=domain, record_type='SRV', name=name, content=content)
+            matcher = re.match(r'^(\w+)/(\w+)$', srv_field)
+            if matcher:
+                name = '_%s._%s' % (matcher.group(2), matcher.group(1))
+                content = '100 %s %s' % (port, fqdn)
+                Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0, }, domain=domain, record_type='SRV', name=name, content=content)
+
+    @staticmethod
+    def ensure_record(source, target):
+        """
+        :param source: orignal name (fqdn of the machine, or IP address)
+        :param target: DNS alias to create
+        :rtype: :class:`penatesserver.powerdns.models.Domain`
+        """
+        if source == target:
+            return True
+        record_name, sep, domain_name = target.partition('.')
+        if sep != '.':
+            return False
+        domain, created = Domain.objects.get_or_create(name=domain_name)
+        if Record.objects.filter(domain=domain, name=record_name, type__in=['A', 'AAAA', 'CNAME']).count() > 0:
+            return True
+        try:
+            add = netaddr.IPAddress(source)
+            record_type = 'A' if add.version == 4 else 'AAAA'
+        except netaddr.core.AddrFormatError:
+            record_type = 'CNAME'
+        record = Record(domain=domain, name=record_name, type=record_type, content=source, ttl=3600, prio=0)
+        record.save()
+        return domain

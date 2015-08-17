@@ -50,7 +50,7 @@ REST_FRAMEWORK = {
 
 OPENSSL_PATH = 'openssl'
 PKI_PATH = '{LOCAL_PATH}/pki'
-
+SSH_KEYGEN_PATH = 'ssh-keygen'
 LDAP_BASE_DN = 'dc=test,dc=example,dc=org'
 
 PENATES_COUNTRY = 'FR'
@@ -103,32 +103,3 @@ DATABASE_ROUTERS = ['ldapdb.router.Router', 'penatesserver.routers.PowerdnsManag
 AUTH_USER_MODEL = 'penatesserver.DjangoUser'
 
 DEBUG = True
-
-PDNS_DEFAULT_ZONE_TYPE = 'NATIVE'
-
-PDNS_DEFAULT_RR_TTL = 86400
-
-PDNS_ENABLED_RR_TYPES = [
-    'SOA',
-    'NS',
-    'MX',
-    'A',
-    'AAAA',
-    'CNAME',
-    'PTR',
-    'TXT',
-    'SPF',
-    'SRV',
-    # 'CERT',
-    # 'DNSKEY',
-    # 'DS',
-    # 'KEY',
-    # 'NSEC',
-    # 'RRSIG',
-    # 'HINFO',
-    # 'LOC',
-    # 'NAPTR',
-    # 'RP',
-    # 'AFSDB',
-    # 'SSHFP',
-]
