@@ -143,7 +143,7 @@ class DjangoUser(AbstractBaseUser, PermissionsMixin):
 class Service(models.Model):
     fqdn = models.CharField(_('Host fqdn'), db_index=True, blank=True, default=None, null=True, max_length=255)
     protocol = models.CharField(_('Protocol'), db_index=True, blank=False, default='https', max_length=40)
-    hostname = models.CharField(_('Hostname'), db_index=True, blank=False, default=settings.SERVER_NAME, max_length=255)
+    hostname = models.CharField(_('Hostname'), db_index=True, blank=False, default='localhost', max_length=255)
     port = models.IntegerField(_('Port'), db_index=True, blank=False, default=443)
     kerberos_service = models.CharField(_('Kerberos service'), blank=True, null=True, default=None, max_length=40)
     description = models.TextField(_('description'), blank=True, default='')

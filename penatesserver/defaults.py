@@ -28,7 +28,7 @@ SESSION_REDIS_DB = 10
 # celery
 ########################################################################################################################
 
-FLOOR_INSTALLED_APPS = ['penatesserver', 'rest_framework', ]
+FLOOR_INSTALLED_APPS = ['penatesserver', 'rest_framework', 'powerdns_manager', ]
 FLOOR_INDEX = 'penatesserver.views.index'
 FLOOR_URL_CONF = 'penatesserver.root_urls.urls'
 FLOOR_PROJECT_NAME = 'Penates Server'
