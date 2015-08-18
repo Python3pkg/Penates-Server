@@ -15,7 +15,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         name = options['domain']
-        if Domain.objects.filter(name=name).count() > 0:
-            return
-        domain = Domain(name=name)
-        domain.save()
+        Domain.objects.get_or_create(defaults=Domain.default_domain_values(type='NATIVE'), name=name)

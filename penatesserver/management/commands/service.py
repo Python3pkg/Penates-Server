@@ -16,9 +16,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         assert isinstance(parser, argparse.ArgumentParser)
         parser.add_argument('protocol', help='Service protocol (e.g. http)')
-        parser.add_argument('hostname', help='Service hostname')
+        parser.add_argument('hostname', help='Service hostname (e.g. my_service.test.example.org')
         parser.add_argument('port', help='Service port (e.g. 443)')
-        parser.add_argument('--fqdn', default=None, help='Host fqdn')
+        parser.add_argument('--fqdn', default=None, help='Host fqdn (e.g. vm01.test.example.org)')
         parser.add_argument('--kerberos_service', default=None, help='Service name for Kerberos (e.g. HTTP, require --fqdn)')
         parser.add_argument('--srv', default=None, help='SRV DNS field (e.g. tcp/sip:priority:weight, or tcp/sip)')
         parser.add_argument('--description', default='', help='Description')
@@ -67,7 +67,7 @@ class Command(BaseCommand):
         # DNS part
         record_name, sep, domain_name = hostname.partition('.')
         if sep == '.':
-            domain, created = Domain.objects.get_or_create(name=domain_name)
+            domain, created = Domain.objects.get_or_create(defaults=Domain.default_domain_values(), name=domain_name)
             domain.ensure_record(fqdn, hostname)
             domain.set_extra_records(protocol, hostname, port, fqdn, srv_field)
             domain.update_soa()

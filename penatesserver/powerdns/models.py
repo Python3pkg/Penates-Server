@@ -62,6 +62,11 @@ class Domain(models.Model):
     def default_record_values(ttl=86400, prio=0, disabled=False, auth=True, change_date=None):
         return {'ttl': ttl, 'prio': prio, 'disabled': disabled, 'auth': auth, 'change_date': change_date or time.time()}
 
+    # noinspection PyShadowingBuiltins
+    @staticmethod
+    def default_domain_values(type='NATIVE'):
+        return {'type': type, }
+
     def set_extra_records(self, protocol, hostname, port, fqdn, srv_field):
         if protocol == 'dns':
             Record.objects.get_or_create(defaults=self.default_record_values(), domain=self, type='NS', name=self.name, content=hostname)
@@ -119,12 +124,17 @@ class Domain(models.Model):
             try:
                 add = netaddr.IPAddress(source)
                 record_type = 'A' if add.version == 4 else 'AAAA'
+                if add.version == 4:
+                    # Error: There is no matching reverse-zone for: 142.56.168.192.in-addr.arpa.
+                    reverse_record_name, sep, reverse_domain_name = add.reverse_dns.partition('.')
+                    reverse_domain_name = '24/%s' % reverse_domain_name
+                    reverse_target = '%s.%s' % (reverse_record_name, reverse_domain_name)
+                    reverse_domain = Domain.objects.get_or_create(defaults=self.default_domain_values(), name=reverse_domain_name)
+                    if Record.objects.filter(domain=reverse_domain, name=reverse_target, type='PTR').update(content=target) == 0:
+                        Record(domain=reverse_domain, name=reverse_target, type='PTR', content=target, **self.default_record_values()).save()
             except netaddr.core.AddrFormatError:
                 record_type = 'CNAME'
-            Record(domain=self, name=record_name, type=record_type, content=source, **self.default_record_values()).save()
-            if record_type == 'A':
-                # Error: There is no matching reverse-zone for: 142.56.168.192.in-addr.arpa.
-                pass
+            Record(domain=self, name=target, type=record_type, content=source, **self.default_record_values(ttl=3600)).save()
         if ssh_sha1_fingerprint is not None and Record.objects.filter(domain=self, name=target, type='SSHFP').update(content='2 1 %s' % ssh_sha1_fingerprint) == 0:
             Record(domain=self, name=target, type='SSHFP', content='2 1 %s' % ssh_sha1_fingerprint, **self.default_record_values(ttl=3600)).save()
         return True

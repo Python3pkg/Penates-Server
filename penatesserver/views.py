@@ -8,15 +8,13 @@ import subprocess
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
-
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
-import netaddr
 
 from penatesserver.models import Principal
 from penatesserver.pki.constants import COMPUTER
 from penatesserver.pki.service import CertificateEntry, PKI
-from penatesserver.powerdns.models import Domain, Record
+from penatesserver.powerdns.models import Domain
 from penatesserver.utils import hostname_from_principal, principal_from_hostname, file_sha1
 
 __author__ = 'flanker'
@@ -73,7 +71,7 @@ def get_host_keytab(request, hostname):
     pki.ensure_certificate(entry)
     ssh_fingerprint = file_sha1(entry.ssh_filename)
     # create DNS records
-    domain, created = Domain.objects.get_or_create(name=domain_name)
+    domain, created = Domain.objects.get_or_create(defaults=Domain.default_domain_values(), name=domain_name)
     remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
     if remote_addr:
         domain.ensure_record(remote_addr, long_hostname, ssh_sha1_fingerprint=ssh_fingerprint)
