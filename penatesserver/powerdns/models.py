@@ -87,13 +87,17 @@ class Domain(models.Model):
         return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
     def update_soa(self):
-        record = Record.objects.get(domain=self, type='SOA')
+        records = list(Record.objects.filter(domain=self, type='SOA')[0:1])
+        if not records:
+            return False
+        record = records[0]
         values = record.content.split()
         if len(values) != 7:
-            return
+            return False
         hostname, email, serial, refresh, retry, expire, default_ttl = values
         serial = self.get_soa_serial()
         Record.objects.filter(pk=record.pk).update(content=' '.join((hostname, email, serial, refresh, retry, expire, default_ttl)))
+        return True
 
     def ensure_srv_record(self, protocol, service, port, prio, weight, fqdn):
         name = '_%s._%s' % (service, protocol)

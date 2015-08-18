@@ -62,8 +62,10 @@ def get_host_keytab(request, hostname):
     # create Kerberos principal
     principal = principal_from_hostname(long_hostname, settings.PENATES_REALM)
     if list(Principal.objects.filter(name=principal)[0:1]):
-        return HttpResponse('', status=401)
-    Principal(name=principal).save()
+        # return HttpResponse('', status=401)
+        pass
+    else:
+        Principal(name=principal).save()
 
     # create private key, public key, public certificate, public SSH key
     entry = entry_from_hostname(long_hostname)
