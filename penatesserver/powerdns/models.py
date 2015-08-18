@@ -118,7 +118,7 @@ class Domain(models.Model):
         record_name, sep, domain_name = target.partition('.')
         if sep != '.' or domain_name != self.name:
             return False
-        if Record.objects.filter(domain=self, name=target, type__in=['A', 'AAAA', 'CNAME']).update(**self.default_record_values()) > 0:
+        if Record.objects.filter(domain=self, name=target, type__in=['A', 'AAAA', 'CNAME']).update(**self.default_record_values(ttl=3600)) > 0:
             pass
         elif source != target:
             try:
@@ -127,11 +127,11 @@ class Domain(models.Model):
                 if add.version == 4:
                     # Error: There is no matching reverse-zone for: 142.56.168.192.in-addr.arpa.
                     reverse_record_name, sep, reverse_domain_name = add.reverse_dns.partition('.')
-                    reverse_domain_name = '24/%s' % reverse_domain_name
+                    reverse_domain_name = '24/%s' % reverse_domain_name[:-1]
                     reverse_target = '%s.%s' % (reverse_record_name, reverse_domain_name)
-                    reverse_domain = Domain.objects.get_or_create(defaults=self.default_domain_values(), name=reverse_domain_name)
+                    reverse_domain, created = Domain.objects.get_or_create(defaults=self.default_domain_values(), name=reverse_domain_name)
                     if Record.objects.filter(domain=reverse_domain, name=reverse_target, type='PTR').update(content=target) == 0:
-                        Record(domain=reverse_domain, name=reverse_target, type='PTR', content=target, **self.default_record_values()).save()
+                        Record(domain=reverse_domain, name=reverse_target, type='PTR', content=target, **self.default_record_values(ttl=3600)).save()
             except netaddr.core.AddrFormatError:
                 record_type = 'CNAME'
             Record(domain=self, name=target, type=record_type, content=source, **self.default_record_values(ttl=3600)).save()
