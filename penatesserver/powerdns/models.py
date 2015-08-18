@@ -179,7 +179,7 @@ class Record(models.Model):
         excluded = set()
         while to_check:
             new_to_check = []
-            for record_data in Record.objects.filter(name__in=to_check, type__in=searched_types).values_list(('type', 'content')):
+            for record_data in Record.objects.filter(name__in=to_check, type__in=searched_types).values_list('type', 'content'):
                 if record_data[0] == 'A' or record_data[0] == 'AAAA':
                     return record_data[1]
                 elif record_data[1] not in excluded:
