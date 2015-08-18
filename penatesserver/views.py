@@ -71,13 +71,16 @@ def get_host_keytab(request, hostname):
     pki.ensure_certificate(entry)
     ssh_fingerprint = file_sha1(entry.ssh_filename)
     # create DNS records
-    domain, __ = Domain.objects.get_or_create(name=domain_name)
+    domain, created = Domain.objects.get_or_create(name=domain_name)
     remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
     if remote_addr:
         record_type = 'A' if netaddr.IPAddress(remote_addr).version == 4 else 'AAAA'
-        Record(domain=domain, name=short_hostname, type=record_type, content=remote_addr, ttl=3600).save()
-        Record(domain=domain, name=remote_addr, type='PTR', content=long_hostname, ttl=3600).save()
-        Record(domain=domain, name=short_hostname, type='SSHFP', content='2 1 %s' % ssh_fingerprint, ttl=3600).save()
+        if record_type == 'A':
+            pass
+        Record(domain=domain, name=short_hostname, type=record_type, content=remote_addr, **domain.default_record_values(ttl=3600)).save()
+        Record(domain=domain, name=remote_addr, type='PTR', content=long_hostname, **domain.default_record_values(ttl=3600)).save()
+        Record(domain=domain, name=short_hostname, type='SSHFP', content='2 1 %s' % ssh_fingerprint, **domain.default_record_values(ttl=3600)).save()
+        domain.update_soa()
 
     # create keytab
     with tempfile.NamedTemporaryFile() as fd:

@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import argparse
-import re
 
 from django.conf import settings
 from django.core.management import BaseCommand, call_command
-
 from django.utils.translation import ugettext as _
-import netaddr
 
 from penatesserver.models import Service
-from penatesserver.powerdns.models import Record, Domain
+from penatesserver.powerdns.models import Domain
 
 __author__ = 'Matthieu Gallet'
 
@@ -68,55 +65,9 @@ class Command(BaseCommand):
             call_command('keytab', principal, keytab=keytab)
 
         # DNS part
-        domain = self.ensure_record(fqdn, hostname)
-        self.set_extra_records(domain, protocol, hostname, port, fqdn, srv_field)
-
-    @staticmethod
-    def set_extra_records(domain, protocol, hostname, port, fqdn, srv_field):
-        if not domain:
-            return
-        if protocol == 'dns':
-            Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, type='NS', name=domain.name, content=hostname)
-            if Record.objects.filter(domain=domain, type='SOA').count() == 0:
-                content = '%s %s 1 10800 3600 604800 3600' % (hostname, settings.PENATES_EMAIL_ADDRESS)
-                Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, type='SOA', name=domain.name, content=content)
-        elif protocol == 'smtp':
-            content = '10 %s' % hostname
-            Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0}, domain=domain, type='MX', name=domain.name, content=content)
-        if srv_field:
-            matcher = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
-            if matcher:
-                name = '_%s._%s' % (matcher.group(2), matcher.group(1))
-                content = '%s %s %s' % (matcher.group(4), port, fqdn)
-                prio = int(matcher.group(3))
-                Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': prio, }, domain=domain, type='SRV', name=name, content=content)
-            matcher = re.match(r'^(\w+)/(\w+)$', srv_field)
-            if matcher:
-                name = '_%s._%s' % (matcher.group(2), matcher.group(1))
-                content = '100 %s %s' % (port, fqdn)
-                Record.objects.get_or_create(defaults={'ttl': 86400, 'prio': 0, }, domain=domain, type='SRV', name=name, content=content)
-
-    @staticmethod
-    def ensure_record(source, target):
-        """
-        :param source: orignal name (fqdn of the machine, or IP address)
-        :param target: DNS alias to create
-        :rtype: :class:`penatesserver.powerdns.models.Domain`
-        """
-        record_name, sep, domain_name = target.partition('.')
-        if sep != '.':
-            return None
-        domain, created = Domain.objects.get_or_create(name=domain_name)
-        existing_records = list(Record.objects.filter(domain=domain, name=record_name, type__in=['A', 'AAAA', 'CNAME']))
-        if existing_records:
-            return domain
-        elif source == target:
-            return domain
-        try:
-            add = netaddr.IPAddress(source)
-            record_type = 'A' if add.version == 4 else 'AAAA'
-        except netaddr.core.AddrFormatError:
-            record_type = 'CNAME'
-        record = Record(domain=domain, name=record_name, type=record_type, content=source, ttl=3600, prio=0)
-        record.save()
-        return domain
+        record_name, sep, domain_name = hostname.partition('.')
+        if sep == '.':
+            domain, created = Domain.objects.get_or_create(name=domain_name)
+            domain.ensure_record(fqdn, hostname)
+            domain.set_extra_records(protocol, hostname, port, fqdn, srv_field)
+            domain.update_soa()
