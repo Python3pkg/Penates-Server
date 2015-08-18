@@ -161,6 +161,33 @@ class Record(models.Model):
         managed = False
         db_table = 'records'
 
+    @staticmethod
+    def local_resolve(name, searched_types=None):
+        """ Try to locally resolve a name to A or AAAA record
+        :param name:
+        :type name:
+        :rtype: basestring
+        """
+        if searched_types is None:
+            searched_types = ['A', 'AAAA', 'CNAME']
+        try:
+            netaddr.IPAddress(name)
+            return name
+        except netaddr.core.AddrFormatError:
+            pass
+        to_check = [name]
+        excluded = set()
+        while to_check:
+            new_to_check = []
+            for record_data in Record.objects.filter(name__in=to_check, type__in=searched_types).values_list(('type', 'content')):
+                if record_data[0] == 'A' or record_data[0] == 'AAAA':
+                    return record_data[1]
+                elif record_data[1] not in excluded:
+                    new_to_check.append(record_data[1])
+                excluded.add(record_data[1])
+            searched_types = ['A', 'AAAA', 'CNAME']
+        return None
+
 
 class Supermaster(models.Model):
     ip = models.GenericIPAddressField()

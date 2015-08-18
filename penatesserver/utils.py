@@ -1,13 +1,25 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from collections import OrderedDict
 import datetime
 import hashlib
 import os
 import re
-
 from django.utils.timezone import utc
 
 T61_RE = re.compile(r'^([A-Z][a-z]{2}) {1,2}(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2}) (\d{4}).*$')
+
+
+def force_bytestrings(unicode_list):
+    """
+     >>> force_bytestrings(['test'])
+     ['test']
+    """
+    return [x.encode('utf-8') for x in unicode_list]
+
+
+def force_bytestring(x):
+    return x.encode('utf-8')
 
 
 def t61_to_time(d):
@@ -63,3 +75,51 @@ def file_sha1(filename):
     with open(filename, 'rb') as fd:
         sha1.update(fd.read())
     return sha1.hexdigest()
+
+
+def ensure_list(value):
+    """
+    >>> ensure_list(1)
+    [1]
+    >>> ensure_list([1, 2])
+    [1, 2]
+    >>> ensure_list((1, 2))
+    [1, 2]
+    >>> ensure_list({1, 2})
+    [1, 2]
+
+    """
+    if isinstance(value, list):
+        return value
+    elif isinstance(value, set) or isinstance(value, tuple):
+        return [x for x in value]
+    return [value]
+
+
+def dhcp_list_to_dict(value_list):
+    """Convert a list of DHCP values to a dict
+    >>> dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23'])
+    OrderedDict([(u'key1', [u'value11', u'value12']), (u'key2', [u'value21', u'value22', u'value23'])])
+
+    :rtype: :class:`collections.OrderedDict`
+    """
+    result = OrderedDict()
+    for value in value_list:
+        splitted_values = value.split()
+        if len(splitted_values) > 1:
+            result[splitted_values[0]] = splitted_values[1:]
+    return result
+
+
+def dhcp_dict_to_list(value_dict):
+    """ Convert a dict to a list of DHCP values
+
+    >>> dhcp_dict_to_list(dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23']))
+    [u'key1 value11 value12', u'key2 value21 value22 value23']
+
+    >>> dhcp_dict_to_list(dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23']))
+    [u'key1 value11 value12', u'key2 value21 value22 value23']
+
+    :rtype: :class:`list`
+    """
+    return ['%s %s' % (key, ' '.join(ensure_list(value))) for (key, value) in value_dict.items()]

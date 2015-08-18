@@ -11,13 +11,19 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 
-from penatesserver.models import Principal
+from penatesserver.models import Principal, DhcpRecord
 from penatesserver.pki.constants import COMPUTER
 from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain
 from penatesserver.utils import hostname_from_principal, principal_from_hostname, file_sha1
 
 __author__ = 'flanker'
+
+
+def entry_from_hostname(hostname):
+    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Computers'),
+                            emailAddress=settings.PENATES_EMAIL_ADDRESS, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                            stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
 
 
 def index(request):
@@ -60,8 +66,7 @@ def get_host_keytab(request, hostname):
     # create Kerberos principal
     principal = principal_from_hostname(long_hostname, settings.PENATES_REALM)
     if list(Principal.objects.filter(name=principal)[0:1]):
-        # return HttpResponse('', status=401)
-        pass
+        return HttpResponse('', status=401)
     else:
         Principal(name=principal).save()
 
@@ -89,10 +94,13 @@ def get_host_keytab(request, hostname):
     return HttpResponse(keytab_content, status=200, content_type='application/octet-stream')
 
 
-def entry_from_hostname(hostname):
-    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Computers'),
-                            emailAddress=settings.PENATES_EMAIL_ADDRESS, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
-                            stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
+def set_dhcp(request, mac_address, ip_address):
+    hostname = hostname_from_principal(request.user.username)
+    name = mac_address.replace(':', '_')
+    if DhcpRecord.objects.filter(name=name).count() > 0:
+        return HttpResponse('%s is already registered' % mac_address, status=401)
+    DhcpRecord(name=name, hw_address='ethernet %s', options=['fixed-address %s' % ip_address, 'host-name %s' % hostname, ]).save()
+    return HttpResponse(status=201)
 
 
 def get_host_certificate(request):

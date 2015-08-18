@@ -6,25 +6,17 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.core import validators
 from django.core.mail import send_mail
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.translation import ugettext as _
 from django.db import models
+import netaddr
+from penatesserver.powerdns.models import Record
+from penatesserver.utils import dhcp_list_to_dict, dhcp_dict_to_list, force_bytestrings, force_bytestring, ensure_list
 
 __author__ = 'flanker'
 
 from ldapdb.models.fields import CharField, IntegerField, ListField
 import ldapdb.models
-
-
-def force_bytestrings(unicode_list):
-    """
-     >>> force_bytestrings(['test'])
-     ['test']
-    """
-    return [x.encode('utf-8') for x in unicode_list]
-
-
-def force_bytestring(x):
-    return x.encode('utf-8')
 
 
 class BaseLdapModel(ldapdb.models.Model):
@@ -68,7 +60,95 @@ class Principal(BaseLdapModel):
     base_dn = 'cn=krbContainer,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['krbPrincipal', 'krbPrincipalAux', 'krbTicketPolicyAux'])
     name = CharField(db_column=force_bytestring('krbPrincipalName'), primary_key=True)
-    # principal = ListField(db_column=force_bytestring('krbPrincipalName'))
+
+
+class DhcpRecord(BaseLdapModel):
+    base_dn = 'cn=config,ou=dhcp,ou=Services,' + settings.LDAP_BASE_DN
+    object_classes = force_bytestrings(['dhcpHost', ])
+    name = CharField(db_column=force_bytestring('cn'), primary_key=True)
+    hw_address = CharField(db_column=force_bytestring('dhcpHWAddress'))  # ethernet 08:00:27:9B:3A:4D
+    statements = ListField(db_column=force_bytestring('dhcpStatements'), default=[])
+    options = ListField(db_column=force_bytestring('dhcpOption'))
+#         'host-name',  # text
+#         'fixed-address'
+
+
+class DhcpSubnet(BaseLdapModel):
+    base_dn = 'cn=config,ou=dhcp,ou=Services,' + settings.LDAP_BASE_DN
+    object_classes = force_bytestrings(['dhcpSubnet', 'dhcpOptions', ])
+    name = CharField(db_column=force_bytestring('cn'), primary_key=True)
+    net_mask = IntegerField(db_column=force_bytestring('dhcpNetMask'))
+    range = CharField(db_column=force_bytestring('dhcpRange'))
+    statements = ListField(db_column=force_bytestring('dhcpStatements'), default=['default-lease-time 600', 'max-lease-time 7200', ])
+    options = ListField(db_column=force_bytestring('dhcpOption'))
+
+    def set_option(self, option_name, option_value, replace=True):
+        if (self.is_v4 and option_name not in self.VALID_IP4_OPTIONS) or (self.is_v6 and option_name not in self.VALID_IP6_OPTIONS):
+            return
+        options = dhcp_list_to_dict(self.options)
+        if replace:
+            options[option_name] = ensure_list(option_value)
+        else:
+            options[option_name] = ensure_list(options.get(option_name, [])) + ensure_list(option_value)
+        self.options = dhcp_dict_to_list(options)
+
+    @cached_property
+    def is_v4(self):
+        start, end = self.range.split()
+        return netaddr.IPAddress(start).version == 4
+
+    @cached_property
+    def is_v6(self):
+        return not self.is_v4
+
+    def set_extra_records(self, protocol, hostname, port, fqdn, srv_field):
+        ip_address = Record.local_resolve(hostname)
+        if protocol == 'dns' and ip_address:
+            self.set_option('domain-name-servers', ip_address)
+        elif protocol == 'irc' and ip_address:
+            self.set_option('irc-server', ip_address)
+        elif protocol == 'ntp' and ip_address:
+            self.set_option('time-servers', ip_address)
+            self.set_option('ntp-servers', ip_address)
+        elif protocol == 'pop3' and ip_address:
+            self.set_option('pop-servers', ip_address)
+        elif protocol == 'sip':
+            self.set_option('dhcp6.sip-servers-names', hostname)
+            if ip_address:
+                self.set_option('dhcp6.sip-servers-addresses', ip_address)
+        elif protocol == 'smtp' and ip_address:
+            self.set_option('smtp-server', ip_address)
+        elif protocol == 'tftp':
+            self.set_option('tftp-server-name', hostname, replace=True)
+
+    VALID_IP4_OPTIONS = {
+        'broadcast-address',  # 'ip-address'
+        'dhcp-lease-time',  # uint32
+        'domain-name',  # text
+        'domain-name-servers',  # 'ip-address [, ip-address... ]'
+        'domain-search',  # "example.com", "sales.example.com", "eng.example.com"
+        'host-name',  # text
+        'irc-server',  # 'ip-address [, ip-address... ]'
+        'lpr-servers',  # 'ip-address [, ip-address... ]'
+        'netbios-name-servers',  # 'ip-address [, ip-address...];'
+        'nis-domain',  # text
+        'nis-servers',  # 'ip-address [, ip-address... ]'
+        'ntp-servers',  # 'ip-address [, ip-address... ]'
+        'pop-servers',  # 'ip-address [, ip-address... ]'
+        'routers',  # 'ip-address [, ip-address... ]'
+        'smtp-server',  # 'ip-address [, ip-address... ]'
+        'subnet-mask',  # 'ip-address'
+        'tftp-server-name',  # text
+        'time-servers',  # 'ip-address [, ip-address... ]'
+    }
+    VALID_IP6_OPTIONS = {
+        'dhcp6.sip-servers-names',  # domain-list
+        'dhcp6.sip-servers-addresses',  # ip6-address [, ip6-address ... ]
+        'dhcp6.name-servers',  # ip6-address [, ip6-address ... ] ',
+        'dhcp6.domain-search',  # domain-list;'
+        'dhcp6.nis-domain-name',  # text
+        'dhcp6.fqdn',  # string'
+    }
 
 
 class Computer(BaseLdapModel):
