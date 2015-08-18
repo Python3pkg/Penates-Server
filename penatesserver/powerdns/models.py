@@ -104,7 +104,7 @@ class Domain(models.Model):
         content = '%s %s %s' % (weight, port, fqdn)
         Record.objects.get_or_create(defaults=self.default_record_values(prio=prio), domain=self, type='SRV', name=name, content=content)
 
-    def ensure_record(self, source, target):
+    def ensure_record(self, source, target, ssh_sha1_fingerprint=None):
         """
         :param source: orignal name (fqdn of the machine, or IP address)
         :param target: DNS alias to create
@@ -113,18 +113,20 @@ class Domain(models.Model):
         record_name, sep, domain_name = target.partition('.')
         if sep != '.' or domain_name != self.name:
             return False
-        existing_records = list(Record.objects.filter(domain=self, name=record_name, type__in=['A', 'AAAA', 'CNAME']))
-        if existing_records:
-            Record.objects.filter(domain=self, name=record_name, type__in=['A', 'AAAA', 'CNAME']).update(**self.default_record_values())
-            return True
-        elif source == target:
-            return True
-        try:
-            add = netaddr.IPAddress(source)
-            record_type = 'A' if add.version == 4 else 'AAAA'
-        except netaddr.core.AddrFormatError:
-            record_type = 'CNAME'
-        Record(domain=self, name=record_name, type=record_type, content=source, **self.default_record_values()).save()
+        if Record.objects.filter(domain=self, name=target, type__in=['A', 'AAAA', 'CNAME']).update(**self.default_record_values()) > 0:
+            pass
+        elif source != target:
+            try:
+                add = netaddr.IPAddress(source)
+                record_type = 'A' if add.version == 4 else 'AAAA'
+            except netaddr.core.AddrFormatError:
+                record_type = 'CNAME'
+            Record(domain=self, name=record_name, type=record_type, content=source, **self.default_record_values()).save()
+            if record_type == 'A':
+                # Error: There is no matching reverse-zone for: 142.56.168.192.in-addr.arpa.
+                pass
+        if ssh_sha1_fingerprint is not None and Record.objects.filter(domain=self, name=target, type='SSHFP').update(content='2 1 %s' % ssh_sha1_fingerprint) == 0:
+            Record(domain=self, name=target, type='SSHFP', content='2 1 %s' % ssh_sha1_fingerprint, **self.default_record_values(ttl=3600)).save()
         return True
 
 

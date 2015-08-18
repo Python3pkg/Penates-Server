@@ -76,12 +76,7 @@ def get_host_keytab(request, hostname):
     domain, created = Domain.objects.get_or_create(name=domain_name)
     remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
     if remote_addr:
-        record_type = 'A' if netaddr.IPAddress(remote_addr).version == 4 else 'AAAA'
-        if record_type == 'A':
-            pass
-        Record(domain=domain, name=short_hostname, type=record_type, content=remote_addr, **domain.default_record_values(ttl=3600)).save()
-        Record(domain=domain, name=remote_addr, type='PTR', content=long_hostname, **domain.default_record_values(ttl=3600)).save()
-        Record(domain=domain, name=short_hostname, type='SSHFP', content='2 1 %s' % ssh_fingerprint, **domain.default_record_values(ttl=3600)).save()
+        domain.ensure_record(remote_addr, long_hostname, ssh_sha1_fingerprint=ssh_fingerprint)
         domain.update_soa()
 
     # create keytab
