@@ -186,6 +186,7 @@ class Record(models.Model):
                     new_to_check.append(record_data[1])
                 excluded.add(record_data[1])
             searched_types = ['A', 'AAAA', 'CNAME']
+            to_check = new_to_check
         return None
 
 
