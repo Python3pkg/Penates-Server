@@ -62,20 +62,15 @@ class Domain(models.Model):
     def default_record_values(ttl=86400, prio=0, disabled=False, auth=True, change_date=None):
         return {'ttl': ttl, 'prio': prio, 'disabled': disabled, 'auth': auth, 'change_date': change_date or time.time()}
 
-    # noinspection PyShadowingBuiltins
-    @staticmethod
-    def default_domain_values(type='NATIVE'):
-        return {'type': type, }
-
     def set_extra_records(self, protocol, hostname, port, fqdn, srv_field):
         if protocol == 'dns':
-            Record.objects.get_or_create(defaults=self.default_record_values(), domain=self, type='NS', name=self.name, content=hostname)
+            Record.objects.get_or_create(domain=self, type='NS', name=self.name, content=hostname)
             if Record.objects.filter(domain=self, type='SOA').count() == 0:
                 content = '%s %s %s 10800 3600 604800 3600' % (hostname, settings.PENATES_EMAIL_ADDRESS, self.get_soa_serial())
-                Record.objects.get_or_create(defaults=self.default_record_values(), domain=self, type='SOA', name=self.name, content=content)
+                Record.objects.get_or_create(domain=self, type='SOA', name=self.name, content=content)
         elif protocol == 'smtp':
             content = '10 %s' % hostname
-            Record.objects.get_or_create(defaults=self.default_record_values(), domain=self, type='MX', name=self.name, content=content)
+            Record.objects.get_or_create(domain=self, type='MX', name=self.name, content=content)
         if srv_field:
             matcher_full = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
             matcher_protocol = re.match(r'^(\w+)/(\w+)$', srv_field)
@@ -89,7 +84,7 @@ class Domain(models.Model):
 
     @staticmethod
     def get_soa_serial():
-        return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        return datetime.datetime.now().strftime('%Y%m%d%H')
 
     def update_soa(self):
         records = list(Record.objects.filter(domain=self, type='SOA')[0:1])
@@ -107,9 +102,9 @@ class Domain(models.Model):
     def ensure_srv_record(self, protocol, service, port, prio, weight, fqdn):
         name = '_%s._%s' % (service, protocol)
         content = '%s %s %s' % (weight, port, fqdn)
-        Record.objects.get_or_create(defaults=self.default_record_values(prio=prio), domain=self, type='SRV', name=name, content=content)
+        Record.objects.get_or_create(defaults={'prio': prio}, domain=self, type='SRV', name=name, content=content)
 
-    def ensure_record(self, source, target, ssh_sha1_fingerprint=None):
+    def ensure_record(self, source, target, ssh_sha1_fingerprint=None, ssh_sha256_fingerprint=None):
         """
         :param source: orignal name (fqdn of the machine, or IP address)
         :param target: DNS alias to create
@@ -129,14 +124,16 @@ class Domain(models.Model):
                     reverse_record_name, sep, reverse_domain_name = add.reverse_dns.partition('.')
                     reverse_domain_name = '24/%s' % reverse_domain_name[:-1]
                     reverse_target = '%s.%s' % (reverse_record_name, reverse_domain_name)
-                    reverse_domain, created = Domain.objects.get_or_create(defaults=self.default_domain_values(), name=reverse_domain_name)
+                    reverse_domain, created = Domain.objects.get_or_create(name=reverse_domain_name)
                     if Record.objects.filter(domain=reverse_domain, name=reverse_target, type='PTR').update(content=target) == 0:
-                        Record(domain=reverse_domain, name=reverse_target, type='PTR', content=target, **self.default_record_values(ttl=3600)).save()
+                        Record(domain=reverse_domain, name=reverse_target, type='PTR', content=target, ttl=3600).save()
             except netaddr.core.AddrFormatError:
                 record_type = 'CNAME'
-            Record(domain=self, name=target, type=record_type, content=source, **self.default_record_values(ttl=3600)).save()
-        if ssh_sha1_fingerprint is not None and Record.objects.filter(domain=self, name=target, type='SSHFP').update(content='2 1 %s' % ssh_sha1_fingerprint) == 0:
-            Record(domain=self, name=target, type='SSHFP', content='2 1 %s' % ssh_sha1_fingerprint, **self.default_record_values(ttl=3600)).save()
+            Record(domain=self, name=target, type=record_type, content=source, ttl=3600).save()
+        if ssh_sha1_fingerprint is not None and Record.objects.filter(domain=self, name=target, type='SSHFP').update(content=ssh_sha1_fingerprint) == 0:
+            Record(domain=self, name=target, type='SSHFP', content=ssh_sha1_fingerprint, ttl=3600).save()
+        if ssh_sha256_fingerprint is not None and Record.objects.filter(domain=self, name=target, type='SSHFP').update(content=ssh_sha256_fingerprint) == 0:
+            Record(domain=self, name=target, type='SSHFP', content=ssh_sha256_fingerprint, ttl=3600).save()
         return True
 
 
@@ -145,12 +142,12 @@ class Record(models.Model):
     name = models.CharField(max_length=255, blank=True, null=True)
     type = models.CharField(max_length=10, blank=True, null=True)
     content = models.CharField(max_length=65535, blank=True, null=True)
-    ttl = models.IntegerField(blank=True, null=True)
-    prio = models.IntegerField(blank=True, null=True)
-    change_date = models.IntegerField(blank=True, null=True)
-    disabled = models.NullBooleanField()
+    ttl = models.IntegerField(blank=True, null=True, default=86400)
+    prio = models.IntegerField(blank=True, null=True, default=0)
+    change_date = models.IntegerField(blank=True, null=True, default=time.time)
+    disabled = models.NullBooleanField(default=False)
     ordername = models.CharField(max_length=255, blank=True, null=True)
-    auth = models.NullBooleanField()
+    auth = models.NullBooleanField(default=True)
 
     def __repr__(self):
         if self.type in ('NS', 'SOA', 'MX'):

@@ -70,13 +70,6 @@ def principal_from_hostname(hostname, realm):
     return 'HOST/%s@%s' % (hostname, realm)
 
 
-def file_sha1(filename):
-    sha1 = hashlib.sha1()
-    with open(filename, 'rb') as fd:
-        sha1.update(fd.read())
-    return sha1.hexdigest()
-
-
 def ensure_list(value):
     """
     >>> ensure_list(1)

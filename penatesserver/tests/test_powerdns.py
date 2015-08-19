@@ -11,23 +11,23 @@ class TestLocalResolve(TestCase):
     @classmethod
     def setUpClass(cls):
         TestCase.setUpClass()
-        cls.domain = Domain.objects.get_or_create(defaults=Domain.default_domain_values(), name=cls.domain_name)[0]
+        cls.domain = Domain.objects.get_or_create(name=cls.domain_name)[0]
         d = cls.domain.name
 
         # ok
-        Record(domain=cls.domain, type='A', content=cls.ip, name='a.%s' % d, **Domain.default_record_values()).save()
-        Record(domain=cls.domain, type='CNAME', content='a.%s' % d, name='b.%s' % d, **Domain.default_record_values()).save()
-        Record(domain=cls.domain, type='CNAME', content='b.%s' % d, name='c.%s' % d, **Domain.default_record_values()).save()
-        Record(domain=cls.domain, type='CNAME', content='c.%s' % d, name='d.%s' % d, **Domain.default_record_values()).save()
-        Record(domain=cls.domain, type='CNAME', content='d.%s' % d, name='e.%s' % d, **Domain.default_record_values()).save()
+        Record(domain=cls.domain, type='A', content=cls.ip, name='a.%s' % d).save()
+        Record(domain=cls.domain, type='CNAME', content='a.%s' % d, name='b.%s' % d).save()
+        Record(domain=cls.domain, type='CNAME', content='b.%s' % d, name='c.%s' % d).save()
+        Record(domain=cls.domain, type='CNAME', content='c.%s' % d, name='d.%s' % d).save()
+        Record(domain=cls.domain, type='CNAME', content='d.%s' % d, name='e.%s' % d).save()
 
         # loop
-        Record(domain=cls.domain, type='CNAME', content='g.%s' % d, name='f.%s' % d, **Domain.default_record_values()).save()
-        Record(domain=cls.domain, type='CNAME', content='h.%s' % d, name='g.%s' % d, **Domain.default_record_values()).save()
-        Record(domain=cls.domain, type='CNAME', content='f.%s' % d, name='h.%s' % d, **Domain.default_record_values()).save()
+        Record(domain=cls.domain, type='CNAME', content='g.%s' % d, name='f.%s' % d).save()
+        Record(domain=cls.domain, type='CNAME', content='h.%s' % d, name='g.%s' % d).save()
+        Record(domain=cls.domain, type='CNAME', content='f.%s' % d, name='h.%s' % d).save()
 
         # no answer
-        Record(domain=cls.domain, type='CNAME', content='j.%s' % d, name='i.%s' % d, **Domain.default_record_values()).save()
+        Record(domain=cls.domain, type='CNAME', content='j.%s' % d, name='i.%s' % d).save()
 
     def test_ip(self):
         self.assertEqual(self.ip, Record.local_resolve(self.ip))

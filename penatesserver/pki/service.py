@@ -5,7 +5,9 @@ my_ca.initialize()
 my_ca.gen_ca(CertificateEntry("ca.19pouces.net", role=CA))
 """
 from __future__ import unicode_literals, with_statement, print_function
+import base64
 import codecs
+import hashlib
 import os
 import datetime
 import shlex
@@ -65,6 +67,22 @@ class CertificateEntry(object):
     @property
     def ssh_filename(self):
         return os.path.join(self.dirname, 'pubsshkeys', self.filename + '.pub')
+
+    @property
+    def sshfp_sha1(self):
+        with codecs.open(self.ssh_filename, 'r', encoding='utf-8') as fd:
+            method, content = fd.read().split(' ')
+        value = hashlib.sha1(base64.b64decode(content)).hexdigest()
+        code = {'ssh-rsa': 1, 'ssh-dss': 2, 'ecdsa-sha2-nistp256': 3, 'ssh-ed25519': 4, }.get(method, 0)
+        return '%s 1 %s' % (code, value)
+
+    @property
+    def sshfp_sha256(self):
+        with codecs.open(self.ssh_filename, 'r', encoding='utf-8') as fd:
+            method, content = fd.read().split(' ')
+        value = hashlib.sha256(base64.b64decode(content)).hexdigest()
+        code = {'ssh-rsa': 1, 'ssh-dss': 2, 'ecdsa-sha2-nistp256': 3, 'ssh-ed25519': 4, }.get(method, 0)
+        return '%s 2 %s' % (code, value)
 
     @property
     def crt_filename(self):

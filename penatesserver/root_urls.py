@@ -16,6 +16,7 @@ urls = [
     url(r'^auth/set_dhcp/', 'penatesserver.views.set_dhcp'),
     url(r'^auth/get_host_certificate/', 'penatesserver.views.get_host_certificate'),
     url(r'^auth/get_ssh_pub/', 'penatesserver.views.get_ssh_pub'),
+    url(r'^auth/set_service/', 'penatesserver.views.set_service'),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
     
 ]

@@ -68,10 +68,11 @@ class Command(BaseCommand):
         # DNS part
         record_name, sep, domain_name = hostname.partition('.')
         if sep == '.':
-            domain, created = Domain.objects.get_or_create(defaults=Domain.default_domain_values(), name=domain_name)
+            domain, created = Domain.objects.get_or_create(name=domain_name)
             domain.ensure_record(fqdn, hostname)
             domain.set_extra_records(protocol, hostname, port, fqdn, srv_field)
             domain.update_soa()
-        for subnet in DhcpSubnet.objects.filter(name__in=options['subnet']):
-            subnet.set_extra_records(protocol, hostname, port, fqdn, srv_field)
-            subnet.save()
+        if options['subnet']:
+            for subnet in DhcpSubnet.objects.filter(name__in=options['subnet']):
+                subnet.set_extra_records(protocol, hostname, port, fqdn, srv_field)
+                subnet.save()

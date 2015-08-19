@@ -86,10 +86,12 @@ class DhcpSubnet(BaseLdapModel):
         if (self.is_v4 and option_name not in self.VALID_IP4_OPTIONS) or (self.is_v6 and option_name not in self.VALID_IP6_OPTIONS):
             return
         options = dhcp_list_to_dict(self.options)
+        new_value = ensure_list(option_value)
         if replace:
-            options[option_name] = ensure_list(option_value)
+            options[option_name] = new_value
         else:
-            options[option_name] = ensure_list(options.get(option_name, [])) + ensure_list(option_value)
+            current_list = ensure_list(options.get(option_name, []))
+            options[option_name] = current_list + [x for x in new_value if x not in current_list]
         self.options = dhcp_dict_to_list(options)
 
     @cached_property

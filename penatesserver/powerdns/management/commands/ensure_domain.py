@@ -17,11 +17,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         name = options['domain']
-        Domain.objects.get_or_create(defaults=Domain.default_domain_values(type='NATIVE'), name=name)
-        for subnet in DhcpSubnet.objects.filter(name__in=options['subnet']):
-            subnet.set_option('domain-name', name, replace=True)
-            subnet.set_option('nis-domain', name, replace=True)
-            subnet.set_option('domain-search', name, replace=True)
-            subnet.set_option('dhcp6.domain-search', name, replace=True)
-            subnet.set_option('dhcp6.nis-domain-name', name, replace=True)
-            subnet.save()
+        Domain.objects.get_or_create(name=name)
+        if options['subnet']:
+            for subnet in DhcpSubnet.objects.filter(name__in=options['subnet']):
+                subnet.set_option('domain-name', name, replace=True)
+                subnet.set_option('nis-domain', name, replace=True)
+                subnet.set_option('domain-search', name, replace=True)
+                subnet.set_option('dhcp6.domain-search', name, replace=True)
+                subnet.set_option('dhcp6.nis-domain-name', name, replace=True)
+                subnet.save()
