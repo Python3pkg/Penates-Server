@@ -122,11 +122,17 @@ class Domain(models.Model):
                 if add.version == 4:
                     # Error: There is no matching reverse-zone for: 142.56.168.192.in-addr.arpa.
                     reverse_record_name, sep, reverse_domain_name = add.reverse_dns.partition('.')
-                    reverse_domain_name = '24/%s' % reverse_domain_name[:-1]
-                    reverse_target = '%s.%s' % (reverse_record_name, reverse_domain_name)
+                    reverse_domain_name = reverse_domain_name[:-1]
+                    reverse_target = add.reverse_dns[:-1]
                     reverse_domain, created = Domain.objects.get_or_create(name=reverse_domain_name)
+                    if Record.objects.filter(domain=reverse_domain, type='SOA').count() == 0:
+                        soa_records = list(Record.objects.filter(domain=self, type='SOA')[0:1])
+                        if soa_records:
+                            Record.objects.get_or_create(domain=reverse_domain, type='SOA', name=reverse_domain.name, content=soa_records[0].content)
                     if Record.objects.filter(domain=reverse_domain, name=reverse_target, type='PTR').update(content=target) == 0:
                         Record(domain=reverse_domain, name=reverse_target, type='PTR', content=target, ttl=3600).save()
+                        assert isinstance(reverse_domain, Domain)
+                        reverse_domain.update_soa()
             except netaddr.core.AddrFormatError:
                 record_type = 'CNAME'
             Record(domain=self, name=target, type=record_type, content=source, ttl=3600).save()
