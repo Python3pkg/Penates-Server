@@ -62,13 +62,13 @@ class Domain(models.Model):
     def default_record_values(ttl=86400, prio=0, disabled=False, auth=True, change_date=None):
         return {'ttl': ttl, 'prio': prio, 'disabled': disabled, 'auth': auth, 'change_date': change_date or time.time()}
 
-    def set_extra_records(self, protocol, hostname, port, fqdn, srv_field):
-        if protocol == 'dns':
+    def set_extra_records(self, scheme, hostname, port, fqdn, srv_field):
+        if scheme == 'dns':
             Record.objects.get_or_create(domain=self, type='NS', name=self.name, content=hostname)
             if Record.objects.filter(domain=self, type='SOA').count() == 0:
                 content = '%s %s %s 10800 3600 604800 3600' % (hostname, settings.PENATES_EMAIL_ADDRESS, self.get_soa_serial())
                 Record.objects.get_or_create(domain=self, type='SOA', name=self.name, content=content)
-        elif protocol == 'smtp':
+        elif scheme == 'smtp':
             content = '10 %s' % hostname
             Record.objects.get_or_create(domain=self, type='MX', name=self.name, content=content)
         if srv_field:
@@ -99,8 +99,8 @@ class Domain(models.Model):
         Record.objects.filter(pk=record.pk).update(content=' '.join((hostname, email, serial, refresh, retry, expire, default_ttl)))
         return True
 
-    def ensure_srv_record(self, protocol, service, port, prio, weight, fqdn):
-        name = '_%s._%s' % (service, protocol)
+    def ensure_srv_record(self, scheme, service, port, prio, weight, fqdn):
+        name = '_%s._%s' % (service, scheme)
         content = '%s %s %s' % (weight, port, fqdn)
         Record.objects.get_or_create(defaults={'prio': prio}, domain=self, type='SRV', name=name, content=content)
 

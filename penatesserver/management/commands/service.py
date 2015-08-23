@@ -8,6 +8,7 @@ from django.utils.translation import ugettext as _
 
 from penatesserver.models import Service, DhcpSubnet
 from penatesserver.powerdns.models import Domain
+from penatesserver.utils import guess_use_ssl
 
 __author__ = 'Matthieu Gallet'
 
@@ -15,12 +16,13 @@ __author__ = 'Matthieu Gallet'
 class Command(BaseCommand):
     def add_arguments(self, parser):
         assert isinstance(parser, argparse.ArgumentParser)
-        parser.add_argument('protocol', help='Service protocol (e.g. http)')
+        parser.add_argument('scheme', help='Service scheme (e.g. http)')
         parser.add_argument('hostname', help='Service hostname (e.g. my_service.test.example.org')
         parser.add_argument('port', help='Service port (e.g. 443)')
         parser.add_argument('--fqdn', default=None, help='Host fqdn (e.g. vm01.test.example.org)')
         parser.add_argument('--kerberos_service', default=None, help='Service name for Kerberos (e.g. HTTP, require --fqdn)')
         parser.add_argument('--srv', default=None, help='SRV DNS field (e.g. tcp/sip:priority:weight, or tcp/sip)')
+        parser.add_argument('--protocol', default='tcp', help='Protocol (tcp, udp or socket')
         parser.add_argument('--description', default='', help='Description')
         parser.add_argument('--cert', default=None, help='Destination file for certificate')
         parser.add_argument('--key', default=None, help='Destination file for private key')
@@ -38,8 +40,9 @@ class Command(BaseCommand):
         fqdn = options['fqdn']
         hostname = options['hostname']
         keytab = options['keytab']
-        protocol = options['protocol']
+        scheme, use_ssl = guess_use_ssl(options['scheme'])
         port = int(options['port'])
+        protocol = options['protocol']
         srv_field = options['srv']
         if keytab and not kerberos_service:
             self.stdout.write(self.style.ERROR('--keytab is set without --kerberos_service'))
@@ -49,8 +52,8 @@ class Command(BaseCommand):
             return
 
         # create service object
-        service, created = Service.objects.get_or_create(fqdn=fqdn, protocol=protocol, hostname=hostname, port=port)
-        Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=options['description'], dns_srv=srv_field)
+        service, created = Service.objects.get_or_create(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)
+        Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=options['description'], dns_srv=srv_field, use_ssl=use_ssl)
 
         # certificate part
         call_command('certificate', hostname, options['role'], organizationName=settings.PENATES_ORGANIZATION,
@@ -70,9 +73,9 @@ class Command(BaseCommand):
         if sep == '.':
             domain, created = Domain.objects.get_or_create(name=domain_name)
             domain.ensure_record(fqdn, hostname)
-            domain.set_extra_records(protocol, hostname, port, fqdn, srv_field)
+            domain.set_extra_records(scheme, hostname, port, fqdn, srv_field)
             domain.update_soa()
         if options['subnet']:
             for subnet in DhcpSubnet.objects.filter(name__in=options['subnet']):
-                subnet.set_extra_records(protocol, hostname, port, fqdn, srv_field)
+                subnet.set_extra_records(scheme, hostname, port, fqdn, srv_field)
                 subnet.save()

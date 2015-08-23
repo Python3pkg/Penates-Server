@@ -62,6 +62,9 @@ PENATES_EMAIL_ADDRESS = 'admin@{PENATES_DOMAIN}'
 PENATES_REALM = 'EXAMPLE.ORG'
 PENATES_KEYTAB = '{LOCAL_PATH}/pki/private/kadmin.keytab'
 PENATES_PRINCIPAL = 'penatesserver/admin@{PENATES_REALM}'
+PENATES_ROUTER = '192.168.56.1'
+PENATES_SUBNET = '192.168.56.0/24'
+
 
 LDAP_NAME = 'ldap://192.168.56.101/'
 LDAP_USER = 'cn=admin,dc=test,dc=example,dc=org'

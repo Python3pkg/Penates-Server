@@ -13,11 +13,11 @@ from django.template import RequestContext
 
 from django.utils.translation import ugettext as _
 
-from penatesserver.models import Principal, DhcpRecord, Service, DhcpSubnet
+from penatesserver.models import Principal, DhcpRecord, Service, DhcpSubnet, Host
 from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER
 from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain
-from penatesserver.utils import hostname_from_principal, principal_from_hostname
+from penatesserver.utils import hostname_from_principal, principal_from_hostname, guess_use_ssl
 
 __author__ = 'flanker'
 
@@ -131,10 +131,14 @@ def get_ssh_pub(request):
     return HttpResponse(content, status=200)
 
 
-def set_service(request, protocol, hostname, port):
+def set_service(request, scheme, hostname, port):
+    scheme, use_ssl = guess_use_ssl(scheme)
     srv_field = request.GET.get('srv', None)
     kerberos_service = request.GET.get('keytab', None)
     role = request.GET.get('role', SERVICE)
+    protocol = request.GET.get('protocol', 'tcp')
+    if protocol not in ('tcp', 'udp', 'socket'):
+        return HttpResponse('Invalid protocol: %s' % protocol, status=403, content_type='text/plain')
     subnets = request.GET.getlist('subnet', [])
     description = request.body
     fqdn = hostname_from_principal(request.user.username)
@@ -146,8 +150,8 @@ def set_service(request, protocol, hostname, port):
     if kerberos_service not in ('HTTP', 'XMPP'):
         return HttpResponse(status=401, content='Kerberos service %s is not allowed' % role)
     # Penates service
-    service, created = Service.objects.get_or_create(fqdn=fqdn, protocol=protocol, hostname=hostname, port=port)
-    Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=description, dns_srv=srv_field)
+    service, created = Service.objects.get_or_create(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)
+    Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=description, dns_srv=srv_field, use_ssl=use_ssl)
     # certificates
     entry = CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
                              organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
@@ -164,17 +168,28 @@ def set_service(request, protocol, hostname, port):
     if sep == '.':
         domain, created = Domain.objects.get_or_create(name=domain_name)
         domain.ensure_record(fqdn, hostname)
-        domain.set_extra_records(protocol, hostname, port, fqdn, srv_field)
+        domain.set_extra_records(scheme, hostname, port, fqdn, srv_field)
         domain.update_soa()
     for subnet in DhcpSubnet.objects.filter(name__in=subnets):
-        subnet.set_extra_records(protocol, hostname, port, fqdn, srv_field)
+        subnet.set_extra_records(scheme, hostname, port, fqdn, srv_field)
         subnet.save()
-    return HttpResponse(status=201, content='%s://%s:%s/ created' % (protocol, hostname, port))
+    return HttpResponse(status=201, content='%s://%s:%s/ created' % (scheme, hostname, port))
 
 
-def get_service_keytab(request, protocol, alias, port, kerberos_service):
+def get_service_keytab(request, scheme, alias, port, kerberos_service):
     raise NotImplementedError
 
 
-def get_service_certificate(request, protocol, alias, port, kerberos_service=None):
+def get_service_certificate(request, scheme, alias, port, kerberos_service=None):
     raise NotImplementedError
+
+
+def get_dhcpd_conf(request):
+    def get_or_none(scheme):
+        pass
+    template_values = {'penates_router': settings.PENATES_ROUTER,
+                       'penates_subnet': settings.PENATES_SUBNET,
+                       'penates_domain': settings.PENATES_DOMAIN,
+                       'hosts': Host.objects.all(),
+                       }
+    return render_to_response('dhcpd/dhcpd.conf', template_values, status=200, content_type='text/plain')

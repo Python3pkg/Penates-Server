@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from django.conf import settings
 from django.contrib.auth.models import PermissionsMixin, UserManager
 from django.contrib.auth.models import AbstractBaseUser
@@ -10,6 +11,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import ugettext as _
 from django.db import models
 import netaddr
+
 from penatesserver.powerdns.models import Record
 from penatesserver.utils import dhcp_list_to_dict, dhcp_dict_to_list, force_bytestrings, force_bytestring, ensure_list
 
@@ -103,24 +105,24 @@ class DhcpSubnet(BaseLdapModel):
     def is_v6(self):
         return not self.is_v4
 
-    def set_extra_records(self, protocol, hostname, port, fqdn, srv_field):
+    def set_extra_records(self, scheme, hostname, port, fqdn, srv_field):
         ip_address = Record.local_resolve(hostname)
-        if protocol == 'dns' and ip_address:
+        if scheme == 'dns' and ip_address:
             self.set_option('domain-name-servers', ip_address)
-        elif protocol == 'irc' and ip_address:
+        elif scheme == 'irc' and ip_address:
             self.set_option('irc-server', ip_address)
-        elif protocol == 'ntp' and ip_address:
+        elif scheme == 'ntp' and ip_address:
             self.set_option('time-servers', ip_address)
             self.set_option('ntp-servers', ip_address)
-        elif protocol == 'pop3' and ip_address:
+        elif scheme == 'pop3' and ip_address:
             self.set_option('pop-servers', ip_address)
-        elif protocol == 'sip':
+        elif scheme == 'sip':
             self.set_option('dhcp6.sip-servers-names', hostname)
             if ip_address:
                 self.set_option('dhcp6.sip-servers-addresses', ip_address)
-        elif protocol == 'smtp' and ip_address:
+        elif scheme == 'smtp' and ip_address:
             self.set_option('smtp-server', ip_address)
-        elif protocol == 'tftp':
+        elif scheme == 'tftp':
             self.set_option('tftp-server-name', hostname, replace=True)
 
     VALID_IP4_OPTIONS = {
@@ -170,6 +172,28 @@ class Computer(BaseLdapModel):
         self.cn = self.name.upper()
         self.set_next_free_value('uid')
         super(Computer, self).save(using=using)
+
+
+class Host(models.Model):
+    fqdn = models.CharField(_('Host fqdn'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    owner = models.CharField(_('Owner username'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    main_ip_address = models.GenericIPAddressField(_('Main IP address'), db_index=True, blank=True, default=None, null=True)
+    main_mac_address = models.CharField(_('Main MAC address'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    serial = models.CharField(_('Serial number'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    model_name = models.CharField(_('Model name'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    location = models.CharField(_('Location'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    os_name = models.CharField(_('OS Name'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    proc_model = models.CharField(_('Proc model'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    proc_count = models.IntegerField(_('Proc count'), db_index=True, blank=True, default=None, null=True)
+    core_count = models.IntegerField(_('Core count'), db_index=True, blank=True, default=None, null=True)
+    memory_size = models.IntegerField(_('Memory size'), db_index=True, blank=True, default=None, null=True)
+    disk_size = models.IntegerField(_('Disk size'), db_index=True, blank=True, default=None, null=True)
+
+    def hostname(self):
+        return self.fqdn.partition('.')[0]
+
+    def bootp_filename(self):
+        return self.os_name
 
 
 class Netgroup(BaseLdapModel):
@@ -224,18 +248,22 @@ class DjangoUser(AbstractBaseUser, PermissionsMixin):
 
 class Service(models.Model):
     fqdn = models.CharField(_('Host fqdn'), db_index=True, blank=True, default=None, null=True, max_length=255)
-    protocol = models.CharField(_('Protocol'), db_index=True, blank=False, default='https', max_length=40)
-    hostname = models.CharField(_('Hostname'), db_index=True, blank=False, default='localhost', max_length=255)
+    scheme = models.CharField(_('Scheme'), db_index=True, blank=False, default='https', max_length=40)
+    hostname = models.CharField(_('Service hostname'), db_index=True, blank=False, default='localhost', max_length=255)
     port = models.IntegerField(_('Port'), db_index=True, blank=False, default=443)
+    protocol = models.CharField(_('tcp, udp or socket'), db_index=True, choices=(('tcp', 'tcp'), ('udp', 'udp'), ('socket', 'socket'), ), default='tcp', max_length=10)
+    use_ssl = models.BooleanField(_('use SSL?'), db_index=True, default=False, blank=True)
     kerberos_service = models.CharField(_('Kerberos service'), blank=True, null=True, default=None, max_length=40)
     description = models.TextField(_('description'), blank=True, default='')
     dns_srv = models.CharField(_('DNS SRV field'), blank=True, null=True, default=None, max_length=90)
+    status = models.IntegerField(_('Status'), default=None, null=True, blank=True, db_index=True)
+    status_last_update = models.DateTimeField(_('Status last update'), default=None, null=True, blank=True, db_index=True)
 
     def __str__(self):
-        return '%s://%s:%s/' % (self.protocol, self.hostname, self.port)
+        return '%s%s://%s:%s/' % (self.scheme, 's' if self.use_ssl else '', self.hostname, self.port)
 
     def __unicode__(self):
-        return '%s://%s:%s/' % (self.protocol, self.hostname, self.port)
+        return '%s%s://%s:%s/' % (self.scheme, 's' if self.use_ssl else '', self.hostname, self.port)
 
     def __repr__(self):
-        return 'Service("%s://%s:%s/")' % (self.protocol, self.hostname, self.port)
+        return 'Service("%s%s://%s:%s/")' % (self.scheme, 's' if self.use_ssl else '', self.hostname, self.port)

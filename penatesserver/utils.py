@@ -116,3 +116,10 @@ def dhcp_dict_to_list(value_dict):
     :rtype: :class:`list`
     """
     return ['%s %s' % (key, ' '.join(ensure_list(value))) for (key, value) in value_dict.items()]
+
+
+def guess_use_ssl(scheme):
+    use_ssl = False
+    if scheme.endswith('s'):
+        scheme, use_ssl = scheme[:-1], True
+    return scheme, use_ssl
