@@ -101,6 +101,7 @@ def get_host_keytab(request, hostname):
 
 def set_dhcp(request, mac_address):
     hostname = hostname_from_principal(request.user.username)
+    mac_address = mac_address.replace('-', ':')
     remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
     if remote_addr:
         Host.objects.filter(fqdn=hostname).update(main_ip_address=remote_addr, main_mac_address=mac_address)

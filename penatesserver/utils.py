@@ -120,6 +120,6 @@ def dhcp_dict_to_list(value_dict):
 
 def guess_use_ssl(scheme):
     use_ssl = False
-    if scheme.endswith('s'):
+    if scheme.endswith('s') and scheme != 'dns':
         scheme, use_ssl = scheme[:-1], True
     return scheme, use_ssl
