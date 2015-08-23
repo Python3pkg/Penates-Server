@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.management import BaseCommand, call_command
 from django.utils.translation import ugettext as _
 
-from penatesserver.models import Service, DhcpSubnet
+from penatesserver.models import Service
 from penatesserver.powerdns.models import Domain
 from penatesserver.utils import guess_use_ssl
 
@@ -32,7 +32,6 @@ class Command(BaseCommand):
         parser.add_argument('--ca', default=None, help='Destination file for CA certificate')
         parser.add_argument('--keytab', default=None, help='Destination file for keytab (if --kerberos_service is set)')
         parser.add_argument('--role', default='Service', help='Service type')
-        parser.add_argument('--subnet', default=[], action='append', help='Append information to DHCP subnet')
 
     def handle(self, *args, **options):
         # read provided arguments
@@ -75,7 +74,3 @@ class Command(BaseCommand):
             domain.ensure_record(fqdn, hostname)
             domain.set_extra_records(scheme, hostname, port, fqdn, srv_field)
             domain.update_soa()
-        if options['subnet']:
-            for subnet in DhcpSubnet.objects.filter(name__in=options['subnet']):
-                subnet.set_extra_records(scheme, hostname, port, fqdn, srv_field)
-                subnet.save()

@@ -8,12 +8,11 @@ import subprocess
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
-
 from django.template import RequestContext
 
 from django.utils.translation import ugettext as _
 
-from penatesserver.models import Principal, DhcpRecord, Service, DhcpSubnet, Host
+from penatesserver.models import Principal, Service, Host
 from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER
 from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain, Record
@@ -80,10 +79,10 @@ def get_host_keytab(request, hostname):
     # create Kerberos principal
     principal = principal_from_hostname(long_hostname, settings.PENATES_REALM)
     if list(Principal.objects.filter(name=principal)[0:1]):
-        return HttpResponse('', status=401)
+        return HttpResponse('', status=403)
     else:
         Principal(name=principal).save()
-
+    Host.objects.get_or_create(fqdn=long_hostname)
     # create private key, public key, public certificate, public SSH key
     entry = entry_from_hostname(long_hostname)
     pki = PKI()
@@ -94,17 +93,17 @@ def get_host_keytab(request, hostname):
     if remote_addr:
         domain.ensure_record(remote_addr, long_hostname, ssh_sha1_fingerprint=entry.sshfp_sha1, ssh_sha256_fingerprint=entry.sshfp_sha256)
         domain.update_soa()
+        Host.objects.filter(fqdn=long_hostname).update(main_ip_address=remote_addr)
     keytab_content = get_keytab(principal)
 
     return HttpResponse(keytab_content, status=200, content_type='application/octet-stream')
 
 
-def set_dhcp(request, mac_address, ip_address):
+def set_dhcp(request, mac_address):
     hostname = hostname_from_principal(request.user.username)
-    name = mac_address.replace(':', '_')
-    if DhcpRecord.objects.filter(name=name).count() > 0:
-        return HttpResponse('%s is already registered' % mac_address, status=401)
-    DhcpRecord(name=name, hw_address='ethernet %s', options=['fixed-address %s' % ip_address, 'host-name %s' % hostname, ]).save()
+    remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    if remote_addr:
+        Host.objects.filter(fqdn=hostname).update(main_ip_address=remote_addr, main_mac_address=mac_address)
     return HttpResponse(status=201)
 
 
@@ -170,9 +169,6 @@ def set_service(request, scheme, hostname, port):
         domain.ensure_record(fqdn, hostname)
         domain.set_extra_records(scheme, hostname, port, fqdn, srv_field)
         domain.update_soa()
-    for subnet in DhcpSubnet.objects.filter(name__in=subnets):
-        subnet.set_extra_records(scheme, hostname, port, fqdn, srv_field)
-        subnet.save()
     return HttpResponse(status=201, content='%s://%s:%s/ created' % (scheme, hostname, port))
 
 
