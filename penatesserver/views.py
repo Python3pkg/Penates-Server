@@ -16,7 +16,7 @@ from django.utils.translation import ugettext as _
 from penatesserver.models import Principal, DhcpRecord, Service, DhcpSubnet, Host
 from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER
 from penatesserver.pki.service import CertificateEntry, PKI
-from penatesserver.powerdns.models import Domain
+from penatesserver.powerdns.models import Domain, Record
 from penatesserver.utils import hostname_from_principal, principal_from_hostname, guess_use_ssl
 
 __author__ = 'flanker'
@@ -185,11 +185,23 @@ def get_service_certificate(request, scheme, alias, port, kerberos_service=None)
 
 
 def get_dhcpd_conf(request):
-    def get_or_none(scheme):
-        pass
+
+    def get_ip_or_none(scheme):
+        values = list(Service.objects.filter(scheme=scheme)[0:1])
+        if not values:
+            return None
+        return Record.local_resolve(values[0].fqdn) or values[0].hostname
+
+    def get_ip_list(scheme):
+        values = list(Service.objects.filter(scheme=scheme))
+        return [Record.local_resolve(x.fqdn) or x.hostname for x in values]
+
     template_values = {'penates_router': settings.PENATES_ROUTER,
                        'penates_subnet': settings.PENATES_SUBNET,
                        'penates_domain': settings.PENATES_DOMAIN,
                        'hosts': Host.objects.all(),
+                       'tftp': get_ip_or_none('tftp'),
+                       'dns_list': get_ip_list('dns'),
+                       'ntp': get_ip_or_none('ntp'),
                        }
     return render_to_response('dhcpd/dhcpd.conf', template_values, status=200, content_type='text/plain')

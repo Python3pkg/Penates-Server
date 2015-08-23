@@ -56,6 +56,33 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+            name='DhcpRecord',
+            fields=[
+                ('dn', models.CharField(max_length=200)),
+                ('name', ldapdb.models.fields.CharField(max_length=200, serialize=False, primary_key=True, db_column=b'cn')),
+                ('hw_address', ldapdb.models.fields.CharField(max_length=200, db_column=b'dhcpHWAddress')),
+                ('statements', ldapdb.models.fields.ListField(default=[], db_column=b'dhcpStatements')),
+                ('options', ldapdb.models.fields.ListField(db_column=b'dhcpOption')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DhcpSubnet',
+            fields=[
+                ('dn', models.CharField(max_length=200)),
+                ('name', ldapdb.models.fields.CharField(max_length=200, serialize=False, primary_key=True, db_column=b'cn')),
+                ('net_mask', ldapdb.models.fields.IntegerField(db_column=b'dhcpNetMask')),
+                ('range', ldapdb.models.fields.CharField(max_length=200, db_column=b'dhcpRange')),
+                ('statements', ldapdb.models.fields.ListField(default=['default-lease-time 600', 'max-lease-time 7200'], db_column=b'dhcpStatements')),
+                ('options', ldapdb.models.fields.ListField(db_column=b'dhcpOption')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
             name='Group',
             fields=[
                 ('dn', models.CharField(max_length=200)),
@@ -67,6 +94,25 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
+        ),
+        migrations.CreateModel(
+            name='Host',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('fqdn', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Host fqdn', db_index=True)),
+                ('owner', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Owner username', db_index=True)),
+                ('main_ip_address', models.GenericIPAddressField(default=None, blank=True, null=True, verbose_name='Main IP address', db_index=True)),
+                ('main_mac_address', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Main MAC address', db_index=True)),
+                ('serial', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Serial number', db_index=True)),
+                ('model_name', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Model name', db_index=True)),
+                ('location', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Emplacement', db_index=True)),
+                ('os_name', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='OS Name', db_index=True)),
+                ('proc_model', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Proc model', db_index=True)),
+                ('proc_count', models.IntegerField(default=None, null=True, verbose_name='Proc count', db_index=True, blank=True)),
+                ('core_count', models.IntegerField(default=None, null=True, verbose_name='Core count', db_index=True, blank=True)),
+                ('memory_size', models.IntegerField(default=None, null=True, verbose_name='Memory size', db_index=True, blank=True)),
+                ('disk_size', models.IntegerField(default=None, null=True, verbose_name='Disk size', db_index=True, blank=True)),
+            ],
         ),
         migrations.CreateModel(
             name='Netgroup',
@@ -95,12 +141,16 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('fqdn', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Host fqdn', db_index=True)),
-                ('protocol', models.CharField(default='https', max_length=40, verbose_name='Protocol', db_index=True)),
-                ('hostname', models.CharField(default='localhost', max_length=255, verbose_name='Hostname', db_index=True)),
+                ('scheme', models.CharField(default='https', max_length=40, verbose_name='Scheme', db_index=True)),
+                ('hostname', models.CharField(default='localhost', max_length=255, verbose_name='Service hostname', db_index=True)),
                 ('port', models.IntegerField(default=443, verbose_name='Port', db_index=True)),
+                ('protocol', models.CharField(default='tcp', max_length=10, verbose_name='tcp, udp or socket', db_index=True, choices=[('tcp', 'tcp'), ('udp', 'udp'), ('socket', 'socket')])),
+                ('use_ssl', models.BooleanField(default=False, db_index=True, verbose_name='use SSL?')),
                 ('kerberos_service', models.CharField(default=None, max_length=40, null=True, verbose_name='Kerberos service', blank=True)),
                 ('description', models.TextField(default='', verbose_name='description', blank=True)),
                 ('dns_srv', models.CharField(default=None, max_length=90, null=True, verbose_name='DNS SRV field', blank=True)),
+                ('status', models.IntegerField(default=None, null=True, verbose_name='Status', db_index=True, blank=True)),
+                ('status_last_update', models.DateTimeField(default=None, null=True, verbose_name='Status last update', db_index=True, blank=True)),
             ],
         ),
         migrations.AddField(
