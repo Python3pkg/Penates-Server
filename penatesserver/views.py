@@ -12,6 +12,7 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
+import netaddr
 
 from penatesserver.models import Principal, Service, Host
 from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER
@@ -148,6 +149,21 @@ def set_ssh_pub(request):
             Record(domain=domain, name=long_hostname, type='SSHFP', content=value, ttl=86400).save()
         else:
             Record.objects.filter(domain=domain, name=long_hostname, type='SSHFP', content__startswith=value[:4]).update(content=value)
+    return HttpResponse(status=201)
+
+
+def set_extra_service(request, hostname):
+    ip_address = request.GET.get('ip', '')
+    try:
+        addr = netaddr.IPAddress(ip_address)
+    except ValueError:
+        return HttpResponse(status=403, content='Invalid IP address ?ip=%s' % ip_address)
+    record_type = 'A' if addr.version == 4 else 'AAAA'
+    sqdn, sep, domain_name = hostname.partition('.')
+    if domain_name != settings.PENATES_DOMAIN:
+        return HttpResponse(status=403, content='Unknown domain %s' % domain_name)
+    domain = Domain.objects.get(name=domain_name)
+    Record.objects.get_or_create(domain=domain, name=hostname, type=record_type, content=ip_address)
     return HttpResponse(status=201)
 
 
