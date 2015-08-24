@@ -7,17 +7,15 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.core import validators
 from django.core.mail import send_mail
 from django.utils import timezone
-from django.utils.functional import cached_property
 from django.utils.translation import ugettext as _
 from django.db import models
-import netaddr
 
 from penatesserver.powerdns.models import Record
-from penatesserver.utils import dhcp_list_to_dict, dhcp_dict_to_list, force_bytestrings, force_bytestring, ensure_list
+from penatesserver.utils import force_bytestrings, force_bytestring
 
 __author__ = 'flanker'
 
-from ldapdb.models.fields import CharField, IntegerField, ListField
+from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField
 import ldapdb.models
 
 
@@ -56,6 +54,56 @@ class Group(BaseLdapModel):
     def save(self, using=None):
         self.set_next_free_value('gid')
         super(Group, self).save(using=using)
+
+
+class User(BaseLdapModel):
+    base_dn = 'ou=Users,' + settings.LDAP_BASE_DN
+    object_classes = force_bytestrings(['account', 'posixAccount', 'inetOrgPerson', 'person', 'sambaSamAccount', ])
+    name = CharField(db_column=force_bytestring('uid'), max_length=200, primary_key=True)
+    display_name = CharField(db_column=force_bytestring('displayName'), max_length=200)
+    uid_number = IntegerField(db_column=force_bytestring('uidNumber'), default=None)
+    gid_number = IntegerField(db_column=force_bytestring('gidNumber'), default=None)
+    login_shell = CharField(db_column=force_bytestring('loginShell'), default='/bin/bash')
+    description = CharField(db_column=force_bytestring('description'), default='Description')
+    jpeg_photo = ImageField(db_column=force_bytestring('jpegPhoto'))
+    phone = CharField(db_column=force_bytestring('telephoneNumber'), default=None)
+    samba_acct_flags = CharField(db_column=force_bytestring('sambaAcctFlags'), default='[UX         ]')
+    samba_sid = CharField(db_column=force_bytestring('sambaSID'), default=None)
+    user_smime_certificate = CharField(db_column=force_bytestring('userSMIMECertificate'), default=None)
+    user_certificate = CharField(db_column=force_bytestring('userCertificate'), default=None)
+    # forced values
+    home_directory = CharField(db_column=force_bytestring('homeDirectory'), default=None)
+    mail = CharField(db_column=force_bytestring('mail'), default=None)
+    samba_domain_name = CharField(db_column=force_bytestring('sambaDomainName'), default=None)
+    gecos = CharField(db_column=force_bytestring('gecos'), max_length=200, default=None)
+    cn = CharField(db_column=force_bytestring('cn'), max_length=200, default=None)
+    # password values
+    user_password = CharField(db_column=force_bytestring('userPassword'), default=None)
+    # samba_nt_password = CharField(db_column=force_bytestring('sambaNTPassword'), default=None)
+
+    def save(self, using=None):
+        self.set_gid_number()
+        self.cn = self.name
+        self.gecos = self.display_name
+        self.samba_domain_name = settings.PENATES_REALM
+        self.mail = '%s@%s' % (self.name, settings.PENATES_DOMAIN)
+        self.home_directory = '/home/%s' % self.name
+        self.set_next_free_value('uid_number')
+        super(User, self).save(using=using)
+
+    def set_gid_number(self):
+        if self.gid_number is not None:
+            return
+        groups = list(Group.objects.filter(name=self.name)[0:1])
+        if not groups:
+            group = Group(name=self.name)
+            group.save()
+        else:
+            group = groups[0]
+        self.gid_number = group.gid
+
+    def set_password(self, password):
+        pass
 
 
 class Principal(BaseLdapModel):

@@ -13,11 +13,15 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 import netaddr
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
-from penatesserver.models import Principal, Service, Host
+from penatesserver.models import Principal, Service, Host, User, Group
 from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER
 from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain, Record
+from penatesserver.serializers import UserSerializer, GroupSerializer
 from penatesserver.utils import hostname_from_principal, principal_from_hostname, guess_use_ssl
 
 __author__ = 'flanker'
@@ -266,3 +270,89 @@ def get_dhcpd_conf(request):
                        'ntp': get_ip_or_none('ntp'),
                        }
     return render_to_response('dhcpd/dhcpd.conf', template_values, status=200, content_type='text/plain')
+
+
+@api_view(['GET', 'POST'])
+def user_list(request):
+    """
+    List all users, or create a new snippet.
+    """
+    if request.method == 'GET':
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def user_detail(request, name):
+    """
+    Retrieve, update or delete a user instance.
+    """
+    try:
+        user = User.objects.get(name=name)
+    except User.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = UserSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET', 'POST'])
+def group_list(request):
+    """
+    List all snippets, or create a new snippet.
+    """
+    if request.method == 'GET':
+        snippets = Group.objects.all()
+        serializer = GroupSerializer(snippets, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = GroupSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def group_detail(request, name):
+    """
+    Retrieve, update or delete a group instance.
+    """
+    try:
+        group = Group.objects.get(name=name)
+    except Group.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = GroupSerializer(group)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = GroupSerializer(group, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        group.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
