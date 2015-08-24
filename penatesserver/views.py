@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
+import base64
+import hashlib
 import os
+import re
 import tempfile
 import subprocess
 
@@ -91,7 +94,7 @@ def get_host_keytab(request, hostname):
     domain, created = Domain.objects.get_or_create(name=domain_name)
     remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
     if remote_addr:
-        domain.ensure_record(remote_addr, long_hostname, ssh_sha1_fingerprint=entry.sshfp_sha1, ssh_sha256_fingerprint=entry.sshfp_sha256)
+        domain.ensure_record(remote_addr, long_hostname)
         domain.update_soa()
         Host.objects.filter(fqdn=long_hostname).update(main_ip_address=remote_addr)
     keytab_content = get_keytab(principal)
@@ -122,13 +125,32 @@ def get_host_certificate(request):
     return HttpResponse(content, status=200)
 
 
-def get_ssh_pub(request):
-    entry = entry_from_hostname(hostname_from_principal(request.user.username))
-    pki = PKI()
-    pki.ensure_certificate(entry)
-    with open(entry.ssh_filename, 'rb') as fd:
-        content = fd.read()
-    return HttpResponse(content, status=200)
+def set_ssh_pub(request):
+    hostname = hostname_from_principal(request.user.username)
+    short_hostname, sep, domain_name = hostname.partition('.')
+    domain_name = settings.PENATES_DOMAIN
+    long_hostname = '%s.%s' % (short_hostname, domain_name)
+    if Host.objects.filter(fqdn=hostname).count() == 0:
+        return HttpResponse(status=404)
+    pub_ssh_key = request.body
+    matcher = re.match(r'([\w\-]+) ([\w\+=/]{1,5000})(|\s.*)$', pub_ssh_key)
+    if not matcher:
+        return HttpResponse(status=406, content='Invalid public SSH key')
+    methods = {'ssh-rsa': 1, 'ssh-dss': 2, 'ecdsa-sha2-nistp256': 3, 'ssh-ed25519': 4, }
+    if matcher.group(1) not in methods:
+        return HttpResponse(status=406, content='Unknown SSH key type %s' % matcher.group(1))
+    sha1_hash = hashlib.sha1(base64.b64decode(matcher.group(2))).hexdigest()
+    sha256_hash = hashlib.sha256(base64.b64decode(matcher.group(2))).hexdigest()
+    algorithm_code = methods[matcher.group(1)]
+    domain, created = Domain.objects.get_or_create(name=domain_name)
+    sha1_value = '%s 1 %s' % (algorithm_code, sha1_hash)
+    sha256_value = '%s 2 %s' % (algorithm_code, sha256_hash)
+    for value in sha1_value, sha256_value:
+        if Record.objects.filter(domain=domain, name=long_hostname, type='SSHFP', content__startswith=value[:4]).count() == 0:
+            Record(domain=domain, name=long_hostname, type='SSHFP', content=value, ttl=86400).save()
+        else:
+            Record.objects.filter(domain=domain, name=long_hostname, type='SSHFP', content__startswith=value[:4]).update(content=value)
+    return HttpResponse(status=201)
 
 
 def set_service(request, scheme, hostname, port):
