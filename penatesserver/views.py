@@ -161,7 +161,6 @@ def set_service(request, scheme, hostname, port):
     protocol = request.GET.get('protocol', 'tcp')
     if protocol not in ('tcp', 'udp', 'socket'):
         return HttpResponse('Invalid protocol: %s' % protocol, status=403, content_type='text/plain')
-    subnets = request.GET.getlist('subnet', [])
     description = request.body
     fqdn = hostname_from_principal(request.user.username)
     # a few checks
@@ -195,12 +194,41 @@ def set_service(request, scheme, hostname, port):
     return HttpResponse(status=201, content='%s://%s:%s/ created' % (scheme, hostname, port))
 
 
-def get_service_keytab(request, scheme, alias, port, kerberos_service):
-    raise NotImplementedError
+def get_service_keytab(request, scheme, hostname, port):
+    fqdn = hostname_from_principal(request.user.username)
+    protocol = request.GET.get('protocol', 'tcp')
+    services = list(Service.objects.filter(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)[0:1])
+    if not services:
+        return HttpResponse(status=404, content='%s://%s:%s/ unknown' % (scheme, hostname, port))
+    service = services[0]
+    principal_name = '%s/%s@%s' % (service.kerberos_service, fqdn, settings.PENATES_REALM)
+    if not list(Principal.objects.filter(name=principal_name)[0:1]):
+        return HttpResponse(status=404, content='Principal for %s://%s:%s/ undefined' % (scheme, hostname, port))
+    keytab_content = get_keytab(principal_name)
+    return HttpResponse(keytab_content, status=200, content_type='application/octet-stream')
 
 
-def get_service_certificate(request, scheme, alias, port, kerberos_service=None):
-    raise NotImplementedError
+def get_service_certificate(request, scheme, hostname, port):
+    fqdn = hostname_from_principal(request.user.username)
+    role = request.GET.get('role', SERVICE)
+    protocol = request.GET.get('protocol', 'tcp')
+    services = list(Service.objects.filter(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)[0:1])
+    if not services:
+        return HttpResponse(status=404, content='%s://%s:%s/ unknown' % (scheme, hostname, port))
+    entry = CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
+                             organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
+                             localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                             stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=role)
+    pki = PKI()
+    pki.ensure_certificate(entry)
+    content = b''
+    with open(entry.key_filename, 'rb') as fd:
+        content += fd.read()
+    with open(entry.crt_filename, 'rb') as fd:
+        content += fd.read()
+    with open(entry.ca_filename, 'rb') as fd:
+        content += fd.read()
+    return HttpResponse(content, status=200)
 
 
 def get_dhcpd_conf(request):
