@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 from django.conf.urls import include, url
 from rest_framework import routers
+from penatesserver.models import name_pattern
 from penatesserver.views import user_detail, user_list, group_list, group_detail
 
 __author__ = 'flanker'
@@ -25,9 +26,9 @@ urls = [
     url(r'^auth/get_service_keytab/%s$' % service_pattern, 'penatesserver.views.get_service_keytab'),
     url(r'^auth/get_service_certificate/%s$' % service_pattern, 'penatesserver.views.get_service_certificate'),
     url(r'^auth/user/$', user_list),
-    url(r'^auth/user/(?P<name>\w[\w_]+)$', user_detail),
+    url(r'^auth/user/(?P<name>%s)$' % name_pattern, user_detail),
     url(r'^auth/group/$', group_list),
-    url(r'^auth/group/(?P<name>\w[\w_]+)$', group_detail),
+    url(r'^auth/group/(?P<name>%s)$' % name_pattern, group_detail),
 
     url(r'^auth/api/', include('rest_framework.urls', namespace='rest_framework'))
 ]

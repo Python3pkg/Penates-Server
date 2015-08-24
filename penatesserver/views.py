@@ -318,7 +318,7 @@ def user_detail(request, name):
 @api_view(['GET', 'POST'])
 def group_list(request):
     """
-    List all snippets, or create a new snippet.
+    List all groups, or create a new group.
     """
     if request.method == 'GET':
         snippets = Group.objects.all()

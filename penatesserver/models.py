@@ -6,7 +6,9 @@ from django.contrib.auth.models import PermissionsMixin, UserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.core import validators
 from django.core.mail import send_mail
+from django.core.validators import RegexValidator
 from django.utils import timezone
+from django.utils.lru_cache import lru_cache
 from django.utils.translation import ugettext as _
 from django.db import models
 
@@ -17,6 +19,8 @@ __author__ = 'flanker'
 
 from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField
 import ldapdb.models
+name_pattern = r'[a-zA-Z][\w_]{0,199}'
+name_validators = [RegexValidator('^%s$' % name_pattern)]
 
 
 class BaseLdapModel(ldapdb.models.Model):
@@ -42,65 +46,92 @@ class BaseLdapModel(ldapdb.models.Model):
             setattr(self, attr_name, getattr(values[0], attr_name) + 1)
 
 
+class SambaDomain(BaseLdapModel):
+    base_dn = settings.LDAP_BASE_DN
+    object_classes = force_bytestrings(['sambaDomain'])
+    rid_base = IntegerField(db_column=force_bytestring('sambaAlgorithmicRidBase'), default=1000)
+    sid = CharField(db_column=force_bytestring('sambaSID'))
+    name = CharField(db_column=force_bytestring('sambaDomainName'), primary_key=True)
+
+
+# noinspection PyCallingNonCallable
+@lru_cache()
+def get_samba_sid():
+    return SambaDomain.objects.all()[0].sid
+
+
 class Group(BaseLdapModel):
     base_dn = 'ou=Groups,' + settings.LDAP_BASE_DN
-    object_classes = force_bytestrings(['posixGroup', 'group'])
+    object_classes = force_bytestrings(['posixGroup', 'sambaGroupMapping'])
     # posixGroup attributes
+    name = CharField(db_column=force_bytestring('cn'), max_length=200, primary_key=True, validators=list(name_validators))
     gid = IntegerField(db_column=force_bytestring('gidNumber'), unique=True)
-    name = CharField(db_column=force_bytestring('cn'), max_length=200, primary_key=True)
     members = ListField(db_column=force_bytestring('memberUid'))
     description = CharField(db_column=force_bytestring('description'), max_length=500, blank=True, default='')
+    group_type = IntegerField(db_column=force_bytestring('sambaGroupType'), default=2)
+    samba_sid = CharField(db_column=force_bytestring('sambaSID'), unique=True)
 
     def save(self, using=None):
-        self.set_next_free_value('gid')
+        self.set_next_free_value('gid', default=10000)
+        self.samba_sid = '%s-%d' % (get_samba_sid(), self.gid)
         super(Group, self).save(using=using)
 
 
 class User(BaseLdapModel):
     base_dn = 'ou=Users,' + settings.LDAP_BASE_DN
-    object_classes = force_bytestrings(['account', 'posixAccount', 'inetOrgPerson', 'person', 'sambaSamAccount', ])
-    name = CharField(db_column=force_bytestring('uid'), max_length=200, primary_key=True)
+    object_classes = force_bytestrings(['posixAccount', 'inetOrgPerson', 'sambaSamAccount', ])
+    name = CharField(db_column=force_bytestring('uid'), max_length=200, primary_key=True, validators=list(name_validators))
     display_name = CharField(db_column=force_bytestring('displayName'), max_length=200)
-    uid_number = IntegerField(db_column=force_bytestring('uidNumber'), default=None)
+    uid_number = IntegerField(db_column=force_bytestring('uidNumber'), default=None, unique=True)
     gid_number = IntegerField(db_column=force_bytestring('gidNumber'), default=None)
     login_shell = CharField(db_column=force_bytestring('loginShell'), default='/bin/bash')
     description = CharField(db_column=force_bytestring('description'), default='Description')
     jpeg_photo = ImageField(db_column=force_bytestring('jpegPhoto'))
     phone = CharField(db_column=force_bytestring('telephoneNumber'), default=None)
     samba_acct_flags = CharField(db_column=force_bytestring('sambaAcctFlags'), default='[UX         ]')
-    samba_sid = CharField(db_column=force_bytestring('sambaSID'), default=None)
     user_smime_certificate = CharField(db_column=force_bytestring('userSMIMECertificate'), default=None)
     user_certificate = CharField(db_column=force_bytestring('userCertificate'), default=None)
     # forced values
+    samba_sid = CharField(db_column=force_bytestring('sambaSID'), default=None)
+    primary_group_samba_sid = CharField(db_column=force_bytestring('sambaPrimaryGroupSID'), default=None)
     home_directory = CharField(db_column=force_bytestring('homeDirectory'), default=None)
     mail = CharField(db_column=force_bytestring('mail'), default=None)
     samba_domain_name = CharField(db_column=force_bytestring('sambaDomainName'), default=None)
     gecos = CharField(db_column=force_bytestring('gecos'), max_length=200, default=None)
-    cn = CharField(db_column=force_bytestring('cn'), max_length=200, default=None)
+    cn = CharField(db_column=force_bytestring('cn'), max_length=200, default=None, validators=list(name_validators))
+    sn = CharField(db_column=force_bytestring('sn'), max_length=200, default=None, validators=list(name_validators))
     # password values
     user_password = CharField(db_column=force_bytestring('userPassword'), default=None)
     # samba_nt_password = CharField(db_column=force_bytestring('sambaNTPassword'), default=None)
 
     def save(self, using=None):
-        self.set_gid_number()
+        group = self.set_gid_number()
         self.cn = self.name
+        self.sn = self.name
         self.gecos = self.display_name
         self.samba_domain_name = settings.PENATES_REALM
         self.mail = '%s@%s' % (self.name, settings.PENATES_DOMAIN)
         self.home_directory = '/home/%s' % self.name
         self.set_next_free_value('uid_number')
+        self.samba_sid = '%s-%d' % (get_samba_sid(), self.uid_number)
+        self.primary_group_samba_sid = '%s-%d' % (get_samba_sid(), self.gid_number)
         super(User, self).save(using=using)
+        if group and self.name not in group.members:
+            group.members.append(self.name)
+            group.save()
 
     def set_gid_number(self):
         if self.gid_number is not None:
-            return
-        groups = list(Group.objects.filter(name=self.name)[0:1])
+            groups = list(Group.objects.filter(gid=self.gid_number)[0:1])
+        else:
+            groups = list(Group.objects.filter(name=self.name)[0:1])
         if not groups:
             group = Group(name=self.name)
             group.save()
         else:
             group = groups[0]
         self.gid_number = group.gid
+        return group
 
     def set_password(self, password):
         pass
