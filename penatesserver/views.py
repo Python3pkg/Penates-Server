@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from __future__ import unicode_literals
 import base64
 import hashlib
@@ -12,7 +11,6 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-
 from django.utils.translation import ugettext as _
 
 from penatesserver.models import Principal, Service, Host

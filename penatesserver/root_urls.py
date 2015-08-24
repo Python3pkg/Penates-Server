@@ -8,6 +8,8 @@ __author__ = 'flanker'
 
 router = routers.DefaultRouter()
 
+service_pattern = r'(?P<scheme>\w+)/(?P<hostname>[a-zA-Z0-9\.\-_]+)/(?P<port>\d+)/'
+
 urls = [
     ('^index$', 'penatesserver.views.index'),
     url(r'^', include(router.urls)),
@@ -17,9 +19,8 @@ urls = [
     url(r'^auth/conf/dhcpd.conf$', 'penatesserver.views.get_dhcpd_conf'),
     url(r'^auth/get_host_certificate/$', 'penatesserver.views.get_host_certificate'),
     url(r'^auth/set_ssh_pub/$', 'penatesserver.views.set_ssh_pub'),
-    url(r'^auth/set_service/$', 'penatesserver.views.set_service'),
-    url(r'^auth/get_service_keytab/$', 'penatesserver.views.get_service_keytab'),
-    url(r'^auth/get_service_certificate/$', 'penatesserver.views.get_service_certificate'),
+    url(r'^auth/set_service/%s$' % service_pattern, 'penatesserver.views.set_service'),
+    url(r'^auth/get_service_keytab/%s$' % service_pattern, 'penatesserver.views.get_service_keytab'),
+    url(r'^auth/get_service_certificate/%s$' % service_pattern, 'penatesserver.views.get_service_certificate'),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
-    
 ]

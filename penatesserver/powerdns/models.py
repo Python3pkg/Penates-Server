@@ -104,7 +104,7 @@ class Domain(models.Model):
         content = '%s %s %s' % (weight, port, fqdn)
         Record.objects.get_or_create(defaults={'prio': prio}, domain=self, type='SRV', name=name, content=content)
 
-    def ensure_record(self, source, target, ssh_sha1_fingerprint=None, ssh_sha256_fingerprint=None):
+    def ensure_record(self, source, target):
         """
         :param source: orignal name (fqdn of the machine, or IP address)
         :param target: DNS alias to create
@@ -119,8 +119,7 @@ class Domain(models.Model):
             try:
                 add = netaddr.IPAddress(source)
                 record_type = 'A' if add.version == 4 else 'AAAA'
-                if add.version == 4:
-                    # Error: There is no matching reverse-zone for: 142.56.168.192.in-addr.arpa.
+                if add in netaddr.IPNetwork(settings.PENATES_SUBNET):
                     reverse_record_name, sep, reverse_domain_name = add.reverse_dns.partition('.')
                     reverse_domain_name = reverse_domain_name[:-1]
                     reverse_target = add.reverse_dns[:-1]
@@ -136,10 +135,6 @@ class Domain(models.Model):
             except netaddr.core.AddrFormatError:
                 record_type = 'CNAME'
             Record(domain=self, name=target, type=record_type, content=source, ttl=3600).save()
-        if ssh_sha1_fingerprint is not None and Record.objects.filter(domain=self, name=target, type='SSHFP').update(content=ssh_sha1_fingerprint) == 0:
-            Record(domain=self, name=target, type='SSHFP', content=ssh_sha1_fingerprint, ttl=3600).save()
-        if ssh_sha256_fingerprint is not None and Record.objects.filter(domain=self, name=target, type='SSHFP').update(content=ssh_sha256_fingerprint) == 0:
-            Record(domain=self, name=target, type='SSHFP', content=ssh_sha256_fingerprint, ttl=3600).save()
         return True
 
 
