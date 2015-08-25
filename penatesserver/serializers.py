@@ -36,7 +36,7 @@ class UserSerializer(serializers.Serializer):
 class GroupSerializer(serializers.Serializer):
     name = serializers.CharField(validators=list(name_validators))
     gid = serializers.IntegerField(required=False, allow_null=True)
-    members = serializers.ListField(required=False)
+    members = serializers.ListField(required=False, read_only=True)
 
     def create(self, validated_data):
         if Group.objects.filter(name=validated_data['name']).count() > 0:

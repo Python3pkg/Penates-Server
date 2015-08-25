@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-
+from penatesserver import __version__
 __author__ = 'flanker'
 
 ########################################################################################################################
@@ -31,7 +31,7 @@ SESSION_REDIS_DB = 10
 FLOOR_INSTALLED_APPS = ['penatesserver', 'rest_framework', 'penatesserver.powerdns', ]
 FLOOR_INDEX = 'penatesserver.views.index'
 FLOOR_URL_CONF = 'penatesserver.root_urls.urls'
-FLOOR_PROJECT_NAME = 'Penates Server'
+FLOOR_PROJECT_NAME = 'Penates Server %s' % __version__
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'cLc7rCD75uO6uFVr6ojn6AYTm2DGT2t7hb7OH5Capk29kcdy7H'

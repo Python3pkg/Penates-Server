@@ -1,37 +1,37 @@
-{% extends 'base.html' %}
-{% load bootstrap3 %}
+{% extends 'penatesserver/base.html' %}
+{% load bootstrap3 i18n %}
 
 {% block content %}
-    <!-- Main jumbotron for a primary marketing message or call to action -->
-    <div class="jumbotron">
-      <div class="container">
-        <h1>Hello, world!</h1>
-        <p>This is a template for a simple marketing or informational website. It includes a large callout called a jumbotron and three supporting pieces of content. Use it as a starting point to create something more unique.</p>
-        <p><a class="btn btn-primary btn-lg" role="button">Learn more &raquo;</a></p>
-      </div>
+
+    <div>
+    <h1>{% trans 'Users and groups' %}</h1>
+    <ul>
+        <li><a href="{% url 'user_list' %}">{% trans 'Users' %}</a></li>
+        <li><a href="{% url 'user_list' %}">{% trans 'Change user password' %}</a></li>
+        <li><a href="{% url 'group_list' %}">{% trans 'Groups' %}</a></li>
+    </ul>
     </div>
 
-    <div class="container">
-      <!-- Example row of columns -->
-      <div class="row">
-        <div class="col-md-4">
-<h2>Heading</h2>
-<ul class="list-unstyled">{% for group in user.groups.all %}<li>{{ group.name }}</li>{% endfor %}</ul>
-          <p>Groups:
 
-              Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
-          <p><a class="btn btn-default" href="index.html#" role="button">View details &raquo;</a></p>
-        </div>
-        <div class="col-md-4">
-          <h2>Heading</h2>
-          <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
-          <p><a class="btn btn-default" href="index.html#" role="button">View details &raquo;</a></p>
-       </div>
-        <div class="col-md-4">
-          <h2>Heading</h2>
-          <p>Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
-          <p><a class="btn btn-default" href="index.html#" role="button">View details &raquo;</a></p>
-        </div>
-      </div>
+    <div>
+    <h1>{% trans 'Register a new computer' %}</h1>
+    <pre>sudo curl -o /etc/krb5.keytab {{ protocol }}://{{ server_name }}/no-auth/get_host_keytab/`hostname -f`
+sudo k5start -q -f /etc/krb5.keytab -U -- curl -o /etc/ssl/private/host.pem --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_host_certificate' %}
+sudo openssl x509 -in /etc/ssl/private/host.pem -out /etc/host.pem
+sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_dsa_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
+sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_ecdsa_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
+sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_ed25519_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
+sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_rsa_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
+IP_ADDRESS=`sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : <a href="{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_info' %}">{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_info' %}</a> | grep REMOTE_ADDR | cut -f 2 -d ':'`
+MAC_ADDRESS=`/sbin/ifconfig | grep -B 2 ${IP_ADDRESS} | grep HWaddr | cut -d 'H' -f 2 | cut -d ' ' -f 2` 
+sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : {{ protocol }}://{{ server_name }}/auth/set_dhcp/${MAC_ADDRESS}/
+sudo chmod 0400 /etc/krb5.keytab /etc/ssl/private/host.pem
+    </pre>
     </div>
+
+    <div>
+    <h1>{% trans 'Get DHCP configuration' %}</h1>
+    <pre>sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : <a href="{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_dhcpd_conf' %}">{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_dhcpd_conf' %}</a></pre>
+    </div>
+
 {% endblock %}
