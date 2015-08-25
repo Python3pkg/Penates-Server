@@ -14,20 +14,34 @@ from django.http.response import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 
 from django.template import RequestContext
-
 from django.utils.translation import ugettext as _
 import netaddr
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from penatesserver.forms import PasswordForm
 
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+
+from penatesserver.forms import PasswordForm
 from penatesserver.models import Principal, Service, Host, User, Group
 from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER
 from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain, Record
 from penatesserver.serializers import UserSerializer, GroupSerializer
-from penatesserver.utils import hostname_from_principal, principal_from_hostname, guess_use_ssl, CertificateEntryResponse
+from penatesserver.utils import hostname_from_principal, principal_from_hostname, guess_use_ssl
 
 __author__ = 'flanker'
+
+
+class CertificateEntryResponse(HttpResponse):
+    def __init__(self, entry, **kwargs):
+        pki = PKI()
+        pki.ensure_certificate(entry)
+        content = b''
+        with open(entry.key_filename, 'rb') as fd:
+            content += fd.read()
+        with open(entry.crt_filename, 'rb') as fd:
+            content += fd.read()
+        with open(entry.ca_filename, 'rb') as fd:
+            content += fd.read()
+        super(CertificateEntryResponse, self).__init__(content=content, content_type='text/plain', **kwargs)
 
 
 def entry_from_hostname(hostname):

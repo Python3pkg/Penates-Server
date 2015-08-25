@@ -8,9 +8,8 @@ import os
 import random
 import re
 import string
-from django.http import HttpResponse
+
 from django.utils.timezone import utc
-from penatesserver.pki.service import PKI
 
 T61_RE = re.compile(r'^([A-Z][a-z]{2}) {1,2}(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2}) (\d{4}).*$')
 
@@ -163,19 +162,6 @@ def check_password(hashed_password, plain_password):
     hr.update(salt)
     return digest == hr.digest()
 
-
-class CertificateEntryResponse(HttpResponse):
-    def __init__(self, entry, **kwargs):
-        pki = PKI()
-        pki.ensure_certificate(entry)
-        content = b''
-        with open(entry.key_filename, 'rb') as fd:
-            content += fd.read()
-        with open(entry.crt_filename, 'rb') as fd:
-            content += fd.read()
-        with open(entry.ca_filename, 'rb') as fd:
-            content += fd.read()
-        super(CertificateEntryResponse, self).__init__(content=content, **kwargs)
 
 if __name__ == '__main__':
     import doctest
