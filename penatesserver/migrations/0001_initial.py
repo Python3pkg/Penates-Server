@@ -39,57 +39,15 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='Computer',
-            fields=[
-                ('dn', models.CharField(max_length=200)),
-                ('name', ldapdb.models.fields.CharField(max_length=200, serialize=False, primary_key=True, db_column=b'uid')),
-                ('uid', ldapdb.models.fields.IntegerField(unique=True, db_column=b'uidNumber')),
-                ('gid', ldapdb.models.fields.IntegerField(default=1000, db_column=b'gidNumber')),
-                ('home_directory', ldapdb.models.fields.CharField(default='/dev/null', max_length=200, db_column=b'homeDirectory')),
-                ('login_shell', ldapdb.models.fields.CharField(default='/bin/false', max_length=200, db_column=b'loginShell')),
-                ('cn', ldapdb.models.fields.CharField(unique=True, max_length=200, db_column=b'cn')),
-                ('serial_number', ldapdb.models.fields.CharField(max_length=200, db_column=b'serialNumber')),
-                ('owner', ldapdb.models.fields.CharField(max_length=200, db_column=b'owner')),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
-            name='DhcpRecord',
-            fields=[
-                ('dn', models.CharField(max_length=200)),
-                ('name', ldapdb.models.fields.CharField(max_length=200, serialize=False, primary_key=True, db_column=b'cn')),
-                ('hw_address', ldapdb.models.fields.CharField(max_length=200, db_column=b'dhcpHWAddress')),
-                ('statements', ldapdb.models.fields.ListField(default=[], db_column=b'dhcpStatements')),
-                ('options', ldapdb.models.fields.ListField(db_column=b'dhcpOption')),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
-            name='DhcpSubnet',
-            fields=[
-                ('dn', models.CharField(max_length=200)),
-                ('name', ldapdb.models.fields.CharField(max_length=200, serialize=False, primary_key=True, db_column=b'cn')),
-                ('net_mask', ldapdb.models.fields.IntegerField(db_column=b'dhcpNetMask')),
-                ('range', ldapdb.models.fields.CharField(max_length=200, db_column=b'dhcpRange')),
-                ('statements', ldapdb.models.fields.ListField(default=['default-lease-time 600', 'max-lease-time 7200'], db_column=b'dhcpStatements')),
-                ('options', ldapdb.models.fields.ListField(db_column=b'dhcpOption')),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
             name='Group',
             fields=[
                 ('dn', models.CharField(max_length=200)),
+                ('name', ldapdb.models.fields.CharField(max_length=200, serialize=False, primary_key=True, db_column=b'cn', validators=[django.core.validators.RegexValidator('^[a-zA-Z][\\w_]{0,199}$')])),
                 ('gid', ldapdb.models.fields.IntegerField(unique=True, db_column=b'gidNumber')),
-                ('name', ldapdb.models.fields.CharField(max_length=200, serialize=False, primary_key=True, db_column=b'cn')),
                 ('members', ldapdb.models.fields.ListField(db_column=b'memberUid')),
                 ('description', ldapdb.models.fields.CharField(default='', max_length=500, db_column=b'description', blank=True)),
+                ('group_type', ldapdb.models.fields.IntegerField(default=None, db_column=b'sambaGroupType')),
+                ('samba_sid', ldapdb.models.fields.CharField(default='', unique=True, max_length=200, db_column=b'sambaSID')),
             ],
             options={
                 'abstract': False,
@@ -131,6 +89,19 @@ class Migration(migrations.Migration):
             fields=[
                 ('dn', models.CharField(max_length=200)),
                 ('name', ldapdb.models.fields.CharField(max_length=200, serialize=False, primary_key=True, db_column=b'krbPrincipalName')),
+                ('flags', ldapdb.models.fields.IntegerField(default=None, db_column=b'krbTicketFlags')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='SambaDomain',
+            fields=[
+                ('dn', models.CharField(max_length=200)),
+                ('rid_base', ldapdb.models.fields.IntegerField(default=1000, db_column=b'sambaAlgorithmicRidBase')),
+                ('sid', ldapdb.models.fields.CharField(max_length=200, db_column=b'sambaSID')),
+                ('name', ldapdb.models.fields.CharField(max_length=200, serialize=False, primary_key=True, db_column=b'sambaDomainName')),
             ],
             options={
                 'abstract': False,
@@ -152,6 +123,35 @@ class Migration(migrations.Migration):
                 ('status', models.IntegerField(default=None, null=True, verbose_name='Status', db_index=True, blank=True)),
                 ('status_last_update', models.DateTimeField(default=None, null=True, verbose_name='Status last update', db_index=True, blank=True)),
             ],
+        ),
+        migrations.CreateModel(
+            name='User',
+            fields=[
+                ('dn', models.CharField(max_length=200)),
+                ('name', ldapdb.models.fields.CharField(max_length=200, serialize=False, primary_key=True, db_column=b'uid', validators=[django.core.validators.RegexValidator('^[a-zA-Z][\\w_]{0,199}$')])),
+                ('display_name', ldapdb.models.fields.CharField(max_length=200, db_column=b'displayName')),
+                ('uid_number', ldapdb.models.fields.IntegerField(default=None, unique=True, db_column=b'uidNumber')),
+                ('gid_number', ldapdb.models.fields.IntegerField(default=None, db_column=b'gidNumber')),
+                ('login_shell', ldapdb.models.fields.CharField(default='/bin/bash', max_length=200, db_column=b'loginShell')),
+                ('description', ldapdb.models.fields.CharField(default='Description', max_length=200, db_column=b'description')),
+                ('jpeg_photo', ldapdb.models.fields.ImageField(db_column=b'jpegPhoto')),
+                ('phone', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'telephoneNumber')),
+                ('samba_acct_flags', ldapdb.models.fields.CharField(default='[UX         ]', max_length=200, db_column=b'sambaAcctFlags')),
+                ('user_smime_certificate', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'userSMIMECertificate')),
+                ('user_certificate', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'userCertificate')),
+                ('samba_sid', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'sambaSID')),
+                ('primary_group_samba_sid', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'sambaPrimaryGroupSID')),
+                ('home_directory', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'homeDirectory')),
+                ('mail', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'mail')),
+                ('samba_domain_name', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'sambaDomainName')),
+                ('gecos', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'gecos')),
+                ('cn', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'cn', validators=[django.core.validators.RegexValidator('^[a-zA-Z][\\w_]{0,199}$')])),
+                ('sn', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'sn', validators=[django.core.validators.RegexValidator('^[a-zA-Z][\\w_]{0,199}$')])),
+                ('user_password', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'userPassword')),
+            ],
+            options={
+                'abstract': False,
+            },
         ),
         migrations.AddField(
             model_name='djangouser',
