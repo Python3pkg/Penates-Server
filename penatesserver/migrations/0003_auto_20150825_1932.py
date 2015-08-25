@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='group',
             name='group_type',
-            field=ldapdb.models.fields.IntegerField(default=2, db_column=b'sambaGroupType'),
+            field=ldapdb.models.fields.IntegerField(default='', db_column=b'sambaGroupType'),
         ),
         migrations.AddField(
             model_name='group',
@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='principal',
             name='flags',
-            field=ldapdb.models.fields.IntegerField(default=128, db_column=b'krbTicketFlags'),
+            field=ldapdb.models.fields.IntegerField(default='', db_column=b'krbTicketFlags'),
         ),
         migrations.AddField(
             model_name='user',
