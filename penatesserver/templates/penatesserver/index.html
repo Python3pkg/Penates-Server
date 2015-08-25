@@ -7,7 +7,7 @@
         <h1>{% trans 'Users and groups' %}</h1>
         <ul>
             <li><a href="{% url 'user_list' %}">{% trans 'Users' %}</a></li>
-            <li><a href="{% url 'user_list' %}">{% trans 'Change user password' %}</a></li>
+            <li><a href="{% url 'penatesserver.views.change_own_password' %}">{% trans 'Change your password' %}</a></li>
             <li><a href="{% url 'group_list' %}">{% trans 'Groups' %}</a></li>
         </ul>
     </div>

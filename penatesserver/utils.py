@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from base64 import b64encode, b64decode
 from collections import OrderedDict
 import datetime
 import hashlib
 import os
+import random
 import re
+import string
 from django.utils.timezone import utc
 
 T61_RE = re.compile(r'^([A-Z][a-z]{2}) {1,2}(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2}) (\d{4}).*$')
@@ -12,8 +15,8 @@ T61_RE = re.compile(r'^([A-Z][a-z]{2}) {1,2}(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,
 
 def force_bytestrings(unicode_list):
     """
-     >>> force_bytestrings(['test'])
-     ['test']
+     >>> force_bytestrings(['test']) == [b'test']
+     True
     """
     return [x.encode('utf-8') for x in unicode_list]
 
@@ -52,10 +55,10 @@ def ensure_location(filename):
 
 def hostname_from_principal(principal):
     """
-    >>> hostname_from_principal('HOST/test.example.org')
-    u'test.example.org'
-    >>> hostname_from_principal('HOST/test.example.org@TEST.EXAMPLE.ORG')
-    u'test.example.org'
+    >>> hostname_from_principal('HOST/test.example.org') == 'test.example.org'
+    True
+    >>> hostname_from_principal('HOST/test.example.org@TEST.EXAMPLE.ORG') == 'test.example.org'
+    True
     """
     if not principal.startswith('HOST/'):
         raise ValueError
@@ -64,8 +67,8 @@ def hostname_from_principal(principal):
 
 def principal_from_hostname(hostname, realm):
     """
-    >>> principal_from_hostname('test.example.org', 'TEST.EXAMPLE.ORG')
-    u'HOST/test.example.org@TEST.EXAMPLE.ORG'
+    >>> principal_from_hostname('test.example.org', 'TEST.EXAMPLE.ORG') == 'HOST/test.example.org@TEST.EXAMPLE.ORG'
+    True
     """
     return 'HOST/%s@%s' % (hostname, realm)
 
@@ -91,8 +94,8 @@ def ensure_list(value):
 
 def dhcp_list_to_dict(value_list):
     """Convert a list of DHCP values to a dict
-    >>> dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23'])
-    OrderedDict([(u'key1', [u'value11', u'value12']), (u'key2', [u'value21', u'value22', u'value23'])])
+    >>> dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23']) == OrderedDict([('key1', ['value11', 'value12']), ('key2', ['value21', 'value22', 'value23'])])
+    True
 
     :rtype: :class:`collections.OrderedDict`
     """
@@ -107,11 +110,11 @@ def dhcp_list_to_dict(value_list):
 def dhcp_dict_to_list(value_dict):
     """ Convert a dict to a list of DHCP values
 
-    >>> dhcp_dict_to_list(dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23']))
-    [u'key1 value11 value12', u'key2 value21 value22 value23']
+    >>> dhcp_dict_to_list(dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23'])) == ['key1 value11 value12', 'key2 value21 value22 value23']
+    True
 
-    >>> dhcp_dict_to_list(dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23']))
-    [u'key1 value11 value12', u'key2 value21 value22 value23']
+    >>> dhcp_dict_to_list(dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23'])) == ['key1 value11 value12', 'key2 value21 value22 value23']
+    True
 
     :rtype: :class:`list`
     """
@@ -123,3 +126,41 @@ def guess_use_ssl(scheme):
     if scheme.endswith('s') and scheme != 'dns':
         scheme, use_ssl = scheme[:-1], True
     return scheme, use_ssl
+
+
+def get_salt(chars=string.ascii_letters + string.digits, length=16):
+    """Generate a random salt. Default length is 16.
+       Originated from mkpasswd in Luma
+    """
+    salt = ""
+    for i in range(int(length)):
+        salt += random.choice(chars)
+    return salt
+
+
+def password_hash(password):
+    salt = get_salt().encode('utf-8')
+    h = hashlib.sha1(password.encode('utf-8'))
+    h.update(salt)
+    return "{SSHA}" + b64encode(h.digest() + salt).decode('utf-8')
+
+
+def check_password(hashed_password, plain_password):
+    """
+     >>> hashed = password_hash('p4ssw0rD')
+     >>> check_password(hashed, 'p4ssw0rD')
+     True
+     >>> check_password(hashed, 'p4ssw0rd')
+     False
+
+    """
+    challenge_bytes = b64decode(hashed_password[6:].encode('utf-8'))
+    digest = challenge_bytes[:20]
+    salt = challenge_bytes[20:]
+    hr = hashlib.sha1(plain_password.encode('utf-8'))
+    hr.update(salt)
+    return digest == hr.digest()
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()

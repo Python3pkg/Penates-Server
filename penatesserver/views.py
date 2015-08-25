@@ -8,13 +8,17 @@ import tempfile
 import subprocess
 
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
+from django.http.response import HttpResponseRedirect
+from django.shortcuts import render_to_response, get_object_or_404
+
 from django.template import RequestContext
 
 from django.utils.translation import ugettext as _
 import netaddr
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from penatesserver.forms import PasswordForm
 
 from penatesserver.models import Principal, Service, Host, User, Group
 from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER
@@ -307,3 +311,16 @@ class GroupDetail(RetrieveUpdateDestroyAPIView):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     lookup_field = 'name'
+
+
+def change_own_password(request):
+    ldap_user = get_object_or_404(User, name=request.user.username)
+    if request.method == 'POST':
+        form = PasswordForm(request.POST)
+        if form.is_valid():
+            ldap_user.set_password(form.cleaned_data['password_1'])
+            return HttpResponseRedirect(reverse('penatesserver.views.index'))
+    else:
+        form = PasswordForm()
+    template_values = {'form': form, }
+    return render_to_response('penatesserver/change_password.html', template_values, RequestContext(request))

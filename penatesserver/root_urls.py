@@ -32,6 +32,6 @@ urls = [
     url(r'^auth/user/(?P<name>%s)$' % name_pattern, UserDetail.as_view(), name='user_detail'),
     url(r'^auth/group/$', GroupList.as_view(), name='group_list'),
     url(r'^auth/group/(?P<name>%s)$' % name_pattern, GroupDetail.as_view(), name='group_detail'),
-
+    url(r'^auth/change_password/$', 'penatesserver.views.change_own_password'),
     url(r'^auth/api/', include('rest_framework.urls', namespace='rest_framework'))
 ]

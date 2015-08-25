@@ -11,9 +11,10 @@ from django.utils import timezone
 from django.utils.lru_cache import lru_cache
 from django.utils.translation import ugettext as _
 from django.db import models
+import subprocess
 
 from penatesserver.powerdns.models import Record
-from penatesserver.utils import force_bytestrings, force_bytestring
+from penatesserver.utils import force_bytestrings, force_bytestring, password_hash
 
 __author__ = 'flanker'
 
@@ -119,6 +120,12 @@ class User(BaseLdapModel):
         if group and self.name not in group.members:
             group.members.append(self.name)
             group.save()
+        if Principal.objects.filter(name=self.principal_name).count() == 0:
+            Principal(name=self.principal_name).save()
+
+    @property
+    def principal_name(self):
+        return '%s@%s' % (self.name, settings.PENATES_REALM)
 
     def set_gid_number(self):
         if self.gid_number is not None:
@@ -126,7 +133,7 @@ class User(BaseLdapModel):
         else:
             groups = list(Group.objects.filter(name=self.name)[0:1])
         if not groups:
-            group = Group(name=self.name)
+            group = Group(name=self.name, gid=self.gid_number)
             group.save()
         else:
             group = groups[0]
@@ -134,7 +141,14 @@ class User(BaseLdapModel):
         return group
 
     def set_password(self, password):
-        pass
+        self.user_password = password_hash(password)
+        self.save()
+        p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB, '-q', 'change_password -pw %s %s' % (password, self.principal_name)])
+        p.communicate()
+
+    def delete(self, using=None):
+        super(User, self).delete(using=using)
+        Principal.objects.filter(name=self.principal_name).delete()
 
 
 class Principal(BaseLdapModel):

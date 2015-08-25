@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from rest_framework import serializers
 from rest_framework.utils import html
-
+from django.utils.translation import ugettext as _
 from penatesserver.models import User, Group, name_validators
 
 __author__ = 'Matthieu Gallet'
@@ -13,7 +13,7 @@ class UserSerializer(serializers.Serializer):
     name = serializers.CharField(validators=list(name_validators))
     display_name = serializers.CharField(required=False, allow_blank=True, max_length=200)
     uid_number = serializers.IntegerField(required=False, read_only=True, allow_null=True)
-    gid_number = serializers.IntegerField(required=False, allow_null=True)
+    gid_number = serializers.IntegerField(required=False, allow_null=True, label=_('GID number'))
     phone = serializers.CharField(required=False, allow_blank=True, max_length=200)
 
     def create(self, validated_data):
@@ -43,9 +43,9 @@ class JsonListField(serializers.ListField):
 
 
 class GroupSerializer(serializers.Serializer):
-    name = serializers.CharField(validators=list(name_validators))
-    gid = serializers.IntegerField(required=False, allow_null=True)
-    members = JsonListField(required=False, child=serializers.CharField(validators=list(name_validators)))
+    name = serializers.CharField(validators=list(name_validators), label=_('Name'))
+    gid = serializers.IntegerField(required=False, allow_null=True, label=_('GID'))
+    members = JsonListField(required=False, child=serializers.CharField(validators=list(name_validators)), label=_('Members'))
 
     def create(self, validated_data):
         if Group.objects.filter(name=validated_data['name']).count() > 0:
