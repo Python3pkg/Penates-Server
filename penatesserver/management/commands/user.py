@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from argparse import ArgumentParser
 from django.core.management import BaseCommand
-from penatesserver.models import User
+from penatesserver.models import User, Group
 
 __author__ = 'Matthieu Gallet'
 
@@ -17,6 +17,7 @@ class Command(BaseCommand):
         parser.add_argument('--display_name', default=None)
         parser.add_argument('--phone', default=None)
         parser.add_argument('--password', default=None)
+        parser.add_argument('--group', default=[], action='append')
 
     def handle(self, *args, **options):
 
@@ -36,3 +37,12 @@ class Command(BaseCommand):
             user.set_password(password=options['password'])
         else:
             user.save()
+        for group_name in options['group']:
+            groups = list(Group.objects.filter(name=group_name)[0:1])
+            if groups:
+                group = groups[0]
+            else:
+                group = Group(name=group_name)
+            if username not in group.members:
+                group.members.append(username)
+            group.save()
