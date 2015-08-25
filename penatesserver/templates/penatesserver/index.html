@@ -8,6 +8,10 @@
         <ul>
             <li><a href="{% url 'user_list' %}">{% trans 'Users' %}</a></li>
             <li><a href="{% url 'penatesserver.views.change_own_password' %}">{% trans 'Change your password' %}</a></li>
+            <li><a href="{% url 'penatesserver.views.get_user_certificate' %}">{% trans 'Get your certificate' %}</a></li>
+            <li><a href="{% url 'penatesserver.views.get_email_certificate' %}">{% trans 'Get your certificate for emails' %}</a></li>
+            <li><a href="{% url 'penatesserver.views.get_signature_certificate' %}">{% trans 'Get your certificate for signing' %}</a></li>
+            <li><a href="{% url 'penatesserver.views.get_encipherment_certificate' %}">{% trans 'Get your certificate for encipherment' %}</a></li>
             <li><a href="{% url 'group_list' %}">{% trans 'Groups' %}</a></li>
         </ul>
     </div>
@@ -21,7 +25,8 @@ sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_
 sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_ecdsa_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
 sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_ed25519_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
 sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_rsa_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
-IP_ADDRESS=`sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : <a href="{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_info' %}">{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_info' %}</a> | grep REMOTE_ADDR | cut -f 2 -d ':'`
+IP_ADDRESS=`sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : <a
+                href="{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_info' %}">{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_info' %}</a> | grep REMOTE_ADDR | cut -f 2 -d ':'`
 MAC_ADDRESS=`/sbin/ifconfig | grep -B 2 ${IP_ADDRESS} | grep HWaddr | cut -d 'H' -f 2 | cut -d ' ' -f 2` 
 sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : {{ protocol }}://{{ server_name }}/auth/set_dhcp/${MAC_ADDRESS}/
 sudo chmod 0400 /etc/krb5.keytab /etc/ssl/private/host.pem

@@ -12,6 +12,8 @@ from django.utils.lru_cache import lru_cache
 from django.utils.translation import ugettext as _
 from django.db import models
 import subprocess
+from penatesserver.pki.constants import RESOURCE, USER, EMAIL, SIGNATURE, ENCIPHERMENT
+from penatesserver.pki.service import CertificateEntry, PKI
 
 from penatesserver.powerdns.models import Record
 from penatesserver.utils import force_bytestrings, force_bytestring, password_hash
@@ -20,6 +22,7 @@ __author__ = 'flanker'
 
 from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField
 import ldapdb.models
+
 name_pattern = r'[a-zA-Z][\w_]{0,199}'
 name_validators = [RegexValidator('^%s$' % name_pattern)]
 
@@ -150,6 +153,30 @@ class User(BaseLdapModel):
         super(User, self).delete(using=using)
         Principal.objects.filter(name=self.principal_name).delete()
 
+    @property
+    def user_certificate_entry(self):
+        return CertificateEntry(self.name, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Users'),
+                                emailAddress=self.mail, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                                stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=USER)
+
+    @property
+    def email_certificate_entry(self):
+        return CertificateEntry(self.name, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Users'),
+                                emailAddress=self.mail, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                                stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=EMAIL)
+
+    @property
+    def signature_certificate_entry(self):
+        return CertificateEntry(self.name, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Users'),
+                                emailAddress=self.mail, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                                stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=SIGNATURE)
+
+    @property
+    def encipherment_certificate_entry(self):
+        return CertificateEntry(self.name, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Users'),
+                                emailAddress=self.mail, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                                stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=ENCIPHERMENT)
+
 
 class Principal(BaseLdapModel):
     base_dn = 'cn=krbContainer,' + settings.LDAP_BASE_DN
@@ -234,7 +261,7 @@ class Service(models.Model):
     scheme = models.CharField(_('Scheme'), db_index=True, blank=False, default='https', max_length=40)
     hostname = models.CharField(_('Service hostname'), db_index=True, blank=False, default='localhost', max_length=255)
     port = models.IntegerField(_('Port'), db_index=True, blank=False, default=443)
-    protocol = models.CharField(_('tcp, udp or socket'), db_index=True, choices=(('tcp', 'tcp'), ('udp', 'udp'), ('socket', 'socket'), ), default='tcp', max_length=10)
+    protocol = models.CharField(_('tcp, udp or socket'), db_index=True, choices=(('tcp', 'tcp'), ('udp', 'udp'), ('socket', 'socket'),), default='tcp', max_length=10)
     use_ssl = models.BooleanField(_('use SSL?'), db_index=True, default=False, blank=True)
     kerberos_service = models.CharField(_('Kerberos service'), blank=True, null=True, default=None, max_length=40)
     description = models.TextField(_('description'), blank=True, default='')

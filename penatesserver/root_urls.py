@@ -33,5 +33,9 @@ urls = [
     url(r'^auth/group/$', GroupList.as_view(), name='group_list'),
     url(r'^auth/group/(?P<name>%s)$' % name_pattern, GroupDetail.as_view(), name='group_detail'),
     url(r'^auth/change_password/$', 'penatesserver.views.change_own_password'),
+    url(r'^auth/get_user_certificate/$', 'penatesserver.views.get_user_certificate'),
+    url(r'^auth/get_email_certificate/$', 'penatesserver.views.get_email_certificate'),
+    url(r'^auth/get_signature_certificate/$', 'penatesserver.views.get_signature_certificate'),
+    url(r'^auth/get_encipherment_certificate/$', 'penatesserver.views.get_encipherment_certificate'),
     url(r'^auth/api/', include('rest_framework.urls', namespace='rest_framework'))
 ]

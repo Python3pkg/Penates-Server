@@ -25,7 +25,7 @@ from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER,
 from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain, Record
 from penatesserver.serializers import UserSerializer, GroupSerializer
-from penatesserver.utils import hostname_from_principal, principal_from_hostname, guess_use_ssl
+from penatesserver.utils import hostname_from_principal, principal_from_hostname, guess_use_ssl, CertificateEntryResponse
 
 __author__ = 'flanker'
 
@@ -242,16 +242,7 @@ def get_service_certificate(request, scheme, hostname, port):
                              organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
                              localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                              stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=role)
-    pki = PKI()
-    pki.ensure_certificate(entry)
-    content = b''
-    with open(entry.key_filename, 'rb') as fd:
-        content += fd.read()
-    with open(entry.crt_filename, 'rb') as fd:
-        content += fd.read()
-    with open(entry.ca_filename, 'rb') as fd:
-        content += fd.read()
-    return HttpResponse(content, status=200)
+    return CertificateEntryResponse(entry)
 
 
 def get_dhcpd_conf(request):
@@ -324,3 +315,23 @@ def change_own_password(request):
         form = PasswordForm()
     template_values = {'form': form, }
     return render_to_response('penatesserver/change_password.html', template_values, RequestContext(request))
+
+
+def get_user_certificate(request):
+    ldap_user = get_object_or_404(User, name=request.user.username)
+    return CertificateEntryResponse(ldap_user.user_certificate_entry)
+
+
+def get_email_certificate(request):
+    ldap_user = get_object_or_404(User, name=request.user.username)
+    return CertificateEntryResponse(ldap_user.email_certificate_entry)
+
+
+def get_signature_certificate(request):
+    ldap_user = get_object_or_404(User, name=request.user.username)
+    return CertificateEntryResponse(ldap_user.signature_certificate_entry)
+
+
+def get_encipherment_certificate(request):
+    ldap_user = get_object_or_404(User, name=request.user.username)
+    return CertificateEntryResponse(ldap_user.encipherment_certificate_entry)
