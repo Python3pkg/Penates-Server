@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from penatesserver import __version__
+
 __author__ = 'flanker'
 
 ########################################################################################################################
@@ -40,7 +41,11 @@ REST_FRAMEWORK = {
     # Use hyperlinked styles by default.
     # Only used if the `serializer_class` attribute is not set on a view.
     'DEFAULT_MODEL_SERIALIZER_CLASS': 'rest_framework.serializers.HyperlinkedModelSerializer',
-
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'penatesserver.renderers.ListAdminRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
@@ -48,7 +53,6 @@ REST_FRAMEWORK = {
         # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
     ]
 }
-
 
 OPENSSL_PATH = 'openssl'
 PKI_PATH = '{LOCAL_PATH}/pki'
@@ -66,7 +70,6 @@ PENATES_KEYTAB = '{LOCAL_PATH}/pki/private/kadmin.keytab'
 PENATES_PRINCIPAL = 'penatesserver/admin@{PENATES_REALM}'
 PENATES_ROUTER = '192.168.56.1'
 PENATES_SUBNET = '192.168.56.0/24'
-
 
 LDAP_NAME = 'ldap://192.168.56.101/'
 LDAP_USER = 'cn=admin,dc=test,dc=example,dc=org'

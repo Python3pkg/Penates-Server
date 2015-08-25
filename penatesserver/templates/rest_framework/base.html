@@ -10,7 +10,7 @@
             <meta name="robots" content="NONE,NOARCHIVE"/>
         {% endblock %}
 
-        {% block title %}{{ df_project_name }} {% endblock %}
+        <title>{% block title %}{{ df_project_name }} {% endblock %}</title>
 
         {% block style %}
             {% block bootstrap_theme %}
@@ -28,7 +28,7 @@
 {% block body %}
     <body class="{% block bodyclass %}{% endblock %}">
 
-    <div class="wrapper" style="{% block wrapper_style %}{% endblock %}">
+    <div class="wrapper">
         {% block navbar %}
             <div class="navbar navbar-static-top {% block bootstrap_navbar_variant %}navbar-inverse{% endblock %}">
                 <div class="container">

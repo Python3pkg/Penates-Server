@@ -4,17 +4,16 @@
 {% block content %}
 
     <div>
-    <h1>{% trans 'Users and groups' %}</h1>
-    <ul>
-        <li><a href="{% url 'user_list' %}">{% trans 'Users' %}</a></li>
-        <li><a href="{% url 'user_list' %}">{% trans 'Change user password' %}</a></li>
-        <li><a href="{% url 'group_list' %}">{% trans 'Groups' %}</a></li>
-    </ul>
+        <h1>{% trans 'Users and groups' %}</h1>
+        <ul>
+            <li><a href="{% url 'user_list' %}">{% trans 'Users' %}</a></li>
+            <li><a href="{% url 'user_list' %}">{% trans 'Change user password' %}</a></li>
+            <li><a href="{% url 'group_list' %}">{% trans 'Groups' %}</a></li>
+        </ul>
     </div>
 
-
     <div>
-    <h1>{% trans 'Register a new computer' %}</h1>
+        <h1>{% trans 'Register a new computer' %}</h1>
     <pre>sudo curl -o /etc/krb5.keytab {{ protocol }}://{{ server_name }}/no-auth/get_host_keytab/`hostname -f`
 sudo k5start -q -f /etc/krb5.keytab -U -- curl -o /etc/ssl/private/host.pem --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_host_certificate' %}
 sudo openssl x509 -in /etc/ssl/private/host.pem -out /etc/host.pem
@@ -30,8 +29,9 @@ sudo chmod 0400 /etc/krb5.keytab /etc/ssl/private/host.pem
     </div>
 
     <div>
-    <h1>{% trans 'Get DHCP configuration' %}</h1>
-    <pre>sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : <a href="{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_dhcpd_conf' %}">{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_dhcpd_conf' %}</a></pre>
+        <h1>{% trans 'Get DHCP configuration' %}</h1>
+        <pre>sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : <a
+                href="{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_dhcpd_conf' %}">{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_dhcpd_conf' %}</a></pre>
     </div>
 
 {% endblock %}

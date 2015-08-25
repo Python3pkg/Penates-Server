@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from rest_framework import serializers
+from rest_framework.utils import html
 
 from penatesserver.models import User, Group, name_validators
 
@@ -33,10 +34,18 @@ class UserSerializer(serializers.Serializer):
         return instance
 
 
+class JsonListField(serializers.ListField):
+    def get_value(self, dictionary):
+        if html.is_html_input(dictionary):
+            content = dictionary.get(self.field_name, [''])
+            return [x.strip() for x in content.splitlines() if x.strip()]
+        return dictionary.get(self.field_name, [])
+
+
 class GroupSerializer(serializers.Serializer):
     name = serializers.CharField(validators=list(name_validators))
     gid = serializers.IntegerField(required=False, allow_null=True)
-    members = serializers.ListField(required=False, read_only=True)
+    members = JsonListField(required=False, child=serializers.CharField(validators=list(name_validators)))
 
     def create(self, validated_data):
         if Group.objects.filter(name=validated_data['name']).count() > 0:
