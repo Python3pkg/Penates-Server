@@ -73,7 +73,7 @@ class Group(BaseLdapModel):
     members = ListField(db_column=force_bytestring('memberUid'))
     description = CharField(db_column=force_bytestring('description'), max_length=500, blank=True, default='')
     group_type = IntegerField(db_column=force_bytestring('sambaGroupType'), default=2)
-    samba_sid = CharField(db_column=force_bytestring('sambaSID'), unique=True)
+    samba_sid = CharField(db_column=force_bytestring('sambaSID'), unique=True, default='')
 
     def save(self, using=None):
         self.set_next_free_value('gid', default=10000)
@@ -182,6 +182,7 @@ class Principal(BaseLdapModel):
     base_dn = 'cn=krbContainer,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['krbPrincipal', 'krbPrincipalAux', 'krbTicketPolicyAux'])
     name = CharField(db_column=force_bytestring('krbPrincipalName'), primary_key=True)
+    flags = IntegerField(db_column=force_bytestring('krbTicketFlags'), default=128)
 
 
 class Host(models.Model):
