@@ -110,4 +110,4 @@ DATABASES = {
 DATABASE_ROUTERS = ['ldapdb.router.Router', 'penatesserver.routers.PowerdnsManagerDbRouter', ]
 AUTH_USER_MODEL = 'penatesserver.DjangoUser'
 
-DEBUG = True
+DEBUG = False
