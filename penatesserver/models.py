@@ -11,10 +11,10 @@ from django.utils import timezone
 from django.utils.lru_cache import lru_cache
 from django.utils.translation import ugettext as _
 from django.db import models
-import subprocess
-from penatesserver.pki.constants import RESOURCE, USER, EMAIL, SIGNATURE, ENCIPHERMENT
-from penatesserver.pki.service import CertificateEntry, PKI
 
+from penatesserver.kerb import change_password, delete_principal, add_principal
+from penatesserver.pki.constants import USER, EMAIL, SIGNATURE, ENCIPHERMENT
+from penatesserver.pki.service import CertificateEntry
 from penatesserver.powerdns.models import Record
 from penatesserver.utils import force_bytestrings, force_bytestring, password_hash
 
@@ -124,8 +124,7 @@ class User(BaseLdapModel):
         if group and self.name not in group.members:
             group.members.append(self.name)
             group.save()
-        if Principal.objects.filter(name=self.principal_name).count() == 0:
-            Principal(name=self.principal_name).save()
+        add_principal(self.principal_name)
 
     @property
     def principal_name(self):
@@ -147,12 +146,11 @@ class User(BaseLdapModel):
     def set_password(self, password):
         self.user_password = password_hash(password)
         self.save()
-        p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB, '-q', 'change_password -pw %s %s' % (password, self.principal_name)])
-        p.communicate()
+        change_password(self.principal_name, password)
 
     def delete(self, using=None):
         super(User, self).delete(using=using)
-        Principal.objects.filter(name=self.principal_name).delete()
+        delete_principal(self.principal_name)
 
     @property
     def user_certificate_entry(self):

@@ -2,10 +2,12 @@
 from __future__ import unicode_literals
 import argparse
 import os
+
 from django.conf import settings
+
 from django.core.management import BaseCommand
-import subprocess
-from penatesserver.models import Principal
+
+from penatesserver.kerb import add_principal_to_keytab, keytab_has_principal, add_principal
 
 __author__ = 'Matthieu Gallet'
 
@@ -19,28 +21,22 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         name = '%s@%s' % (options['principal'], settings.PENATES_REALM)
-        if not list(Principal.objects.filter(name=name)[0:1]):
-            Principal(name=name).save()
+        add_principal(name)
         keytab_filename = options['keytab']
-        if keytab_filename:
-            try:
-                exists = os.path.exists(keytab_filename)
-                with open(keytab_filename, 'ab') as fd:
-                    fd.write(b'')
-                if not exists:
-                    os.remove(keytab_filename)
-                else:
-                    p = subprocess.Popen(['ktutil'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                    stdout, stderr = p.communicate('rkt %s\nlist' % keytab_filename)
-                    if stderr:
-                        self.stdout.write(self.style.ERROR('Invalid keytab file %s' % keytab_filename))
-                        raise ValueError()
-                    stdout_text = stdout.decode('utf-8')
-                    for line in stdout_text.splitlines():
-                        if line.strip().endswith(name):
-                            return
-            except OSError:
-                self.stdout.write(self.style.ERROR('Unable to write file: %s' % keytab_filename))
+        if not keytab_filename:
+            return
+        try:
+            exists = os.path.exists(keytab_filename)
+            with open(keytab_filename, 'ab') as fd:
+                fd.write(b'')
+            if not exists:
+                os.remove(keytab_filename)
+            elif keytab_has_principal(name, keytab_filename):
                 return
-            p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB, '-q', 'ktadd -k %s %s' % (keytab_filename, name)])
-            p.communicate()
+        except OSError as e:
+            self.stdout.write(self.style.ERROR('Unable to write file: %s' % keytab_filename))
+            raise e
+        except ValueError as e:
+            self.stdout.write(self.style.ERROR('Invalid keytab file %s' % keytab_filename))
+            raise e
+        add_principal_to_keytab(name, keytab_filename)

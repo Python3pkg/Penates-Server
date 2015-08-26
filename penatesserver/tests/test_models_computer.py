@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from django.conf import settings
 from django.test import TestCase
+
 from penatesserver.models import Computer, Principal
 
 __author__ = 'Matthieu Gallet'

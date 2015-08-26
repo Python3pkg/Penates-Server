@@ -82,6 +82,8 @@ PDNS_PASSWORD = 'toto'
 PDNS_HOST = 'localhost'
 PDNS_PORT = '5432'
 
+KERBEROS_IMPL = 'heimdal'  # or 'mit'
+
 DATABASES = {
     'default': {
         'ENGINE': '{DATABASE_ENGINE}',

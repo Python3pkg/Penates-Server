@@ -5,22 +5,22 @@ import hashlib
 import os
 import re
 import tempfile
-import subprocess
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
-
 from django.template import RequestContext
+
 from django.utils.translation import ugettext as _
 import netaddr
 
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
 from penatesserver.forms import PasswordForm
-from penatesserver.models import Principal, Service, Host, User, Group
+from penatesserver.kerb import add_principal_to_keytab, add_principal, principal_exists
+from penatesserver.models import Service, Host, User, Group
 from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER
 from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain, Record
@@ -54,8 +54,7 @@ def get_keytab(principal):
     # create keytab
     with tempfile.NamedTemporaryFile() as fd:
         keytab_filename = fd.name
-    p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB, '-q', 'ktadd -k %s %s' % (keytab_filename, principal)], stdout=subprocess.PIPE)
-    p.communicate()
+    add_principal_to_keytab(principal, keytab_filename)
     with open(keytab_filename, 'rb') as fd:
         keytab_content = bytes(fd.read())
     os.remove(keytab_filename)
@@ -103,10 +102,10 @@ def get_host_keytab(request, hostname):
     # valid FQDN
     # create Kerberos principal
     principal = principal_from_hostname(long_hostname, settings.PENATES_REALM)
-    if list(Principal.objects.filter(name=principal)[0:1]):
+    if principal_exists(principal):
         return HttpResponse('', status=403)
     else:
-        Principal(name=principal).save()
+        add_principal(principal)
     Host.objects.get_or_create(fqdn=long_hostname)
     # create private key, public key, public certificate, public SSH key
     entry = entry_from_hostname(long_hostname)
@@ -219,8 +218,7 @@ def set_service(request, scheme, hostname, port):
     pki.ensure_certificate(entry)
     # kerberos principal
     principal_name = '%s/%s@%s' % (kerberos_service, fqdn, settings.PENATES_REALM)
-    if not list(Principal.objects.filter(name=principal_name)[0:1]):
-        Principal(name=principal_name).save()
+    add_principal(principal_name)
     # DNS part
     record_name, sep, domain_name = hostname.partition('.')
     if sep == '.':
@@ -239,7 +237,7 @@ def get_service_keytab(request, scheme, hostname, port):
         return HttpResponse(status=404, content='%s://%s:%s/ unknown' % (scheme, hostname, port))
     service = services[0]
     principal_name = '%s/%s@%s' % (service.kerberos_service, fqdn, settings.PENATES_REALM)
-    if not list(Principal.objects.filter(name=principal_name)[0:1]):
+    if not principal_exists(principal_name):
         return HttpResponse(status=404, content='Principal for %s://%s:%s/ undefined' % (scheme, hostname, port))
     keytab_content = get_keytab(principal_name)
     return HttpResponse(keytab_content, status=200, content_type='application/octet-stream')
