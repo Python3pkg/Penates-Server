@@ -15,9 +15,9 @@ def heimdal_command(*args):
 def add_principal_to_keytab(principal, filename):
     if settings.KERBEROS_IMPL == 'mit':
         p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB, '-q', 'ktadd -k %s %s' % (filename, principal)], stdout=subprocess.PIPE)
+        p.communicate()
     else:
-        p = heimdal_command('ext_keytab', '-k', filename, principal)
-    p.communicate()
+        heimdal_command('ext_keytab', '-k', filename, principal)
 
 
 def change_password(principal, password):
