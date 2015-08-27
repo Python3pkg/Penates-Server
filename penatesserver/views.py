@@ -35,30 +35,34 @@ class CertificateEntryResponse(HttpResponse):
         pki = PKI()
         pki.ensure_certificate(entry)
         content = b''
+        # noinspection PyTypeChecker
         with open(entry.key_filename, 'rb') as fd:
             content += fd.read()
+        # noinspection PyTypeChecker
         with open(entry.crt_filename, 'rb') as fd:
             content += fd.read()
+        # noinspection PyTypeChecker
         with open(entry.ca_filename, 'rb') as fd:
             content += fd.read()
         super(CertificateEntryResponse, self).__init__(content=content, content_type='text/plain', **kwargs)
+
+
+class KeytabResponse(HttpResponse):
+    def __init__(self, principal, **kwargs):
+        with tempfile.NamedTemporaryFile() as fd:
+            keytab_filename = fd.name
+        add_principal_to_keytab(principal, keytab_filename)
+        # noinspection PyTypeChecker
+        with open(keytab_filename, 'rb') as fd:
+            keytab_content = bytes(fd.read())
+        os.remove(keytab_filename)
+        super(KeytabResponse, self).__init__(content=keytab_content, content_type='application/keytab', **kwargs)
 
 
 def entry_from_hostname(hostname):
     return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Computers'),
                             emailAddress=settings.PENATES_EMAIL_ADDRESS, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                             stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
-
-
-def get_keytab(principal):
-    # create keytab
-    with tempfile.NamedTemporaryFile() as fd:
-        keytab_filename = fd.name
-    add_principal_to_keytab(principal, keytab_filename)
-    with open(keytab_filename, 'rb') as fd:
-        keytab_content = bytes(fd.read())
-    os.remove(keytab_filename)
-    return keytab_content
 
 
 def index(request):
@@ -118,9 +122,7 @@ def get_host_keytab(request, hostname):
         domain.ensure_record(remote_addr, long_hostname)
         domain.update_soa()
         Host.objects.filter(fqdn=long_hostname).update(main_ip_address=remote_addr)
-    keytab_content = get_keytab(principal)
-
-    return HttpResponse(keytab_content, status=200, content_type='application/octet-stream')
+    return KeytabResponse(principal)
 
 
 def set_dhcp(request, mac_address):
@@ -134,16 +136,7 @@ def set_dhcp(request, mac_address):
 
 def get_host_certificate(request):
     entry = entry_from_hostname(hostname_from_principal(request.user.username))
-    pki = PKI()
-    pki.ensure_certificate(entry)
-    content = b''
-    with open(entry.key_filename, 'rb') as fd:
-        content += fd.read()
-    with open(entry.crt_filename, 'rb') as fd:
-        content += fd.read()
-    with open(entry.ca_filename, 'rb') as fd:
-        content += fd.read()
-    return HttpResponse(content, status=200)
+    return CertificateEntryResponse(entry)
 
 
 def set_ssh_pub(request):
@@ -239,8 +232,7 @@ def get_service_keytab(request, scheme, hostname, port):
     principal_name = '%s/%s@%s' % (service.kerberos_service, fqdn, settings.PENATES_REALM)
     if not principal_exists(principal_name):
         return HttpResponse(status=404, content='Principal for %s://%s:%s/ undefined' % (scheme, hostname, port))
-    keytab_content = get_keytab(principal_name)
-    return HttpResponse(keytab_content, status=200, content_type='application/octet-stream')
+    return KeytabResponse(principal_name)
 
 
 def get_service_certificate(request, scheme, hostname, port):
