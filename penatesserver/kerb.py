@@ -7,12 +7,17 @@ __author__ = 'Matthieu Gallet'
 
 
 def heimdal_command(*args):
-    p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-K', settings.PENATES_KEYTAB, ] + list(args), stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+    args_list = ['kadmin', '-p', settings.PENATES_PRINCIPAL, '-K', settings.PENATES_KEYTAB, ] + list(args)
+    p = subprocess.Popen(args_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
-    with open('/tmp/result-%s' % p.pid, 'wb') as fd:
+    with open('/tmp/heimdal.log' % p.pid, 'ab') as fd:
+        fd.write(b'----------------------------------------\n')
+        fd.write(' '.join(args_list).encode('utf-8'))
+        fd.write(b':\n')
         fd.write(stdout)
+        fd.write(b'----------------------------------------\n')
         fd.write(stderr)
+        fd.write(b'----------------------------------------\n')
     return p
 
 
