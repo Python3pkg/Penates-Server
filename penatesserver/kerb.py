@@ -10,7 +10,7 @@ def heimdal_command(*args):
     args_list = ['kadmin', '-p', settings.PENATES_PRINCIPAL, '-K', settings.PENATES_KEYTAB, ] + list(args)
     p = subprocess.Popen(args_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
-    with open('/tmp/heimdal.log' % p.pid, 'ab') as fd:
+    with open('/tmp/heimdal-%s.log' % p.pid, 'ab') as fd:
         fd.write(b'----------------------------------------\n')
         fd.write(' '.join(args_list).encode('utf-8'))
         fd.write(b':\n')
