@@ -125,7 +125,7 @@ ROLES = {
         "extendedKeyUsage": ["clientAuth"], "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 1024,
         "days": 1000, "basicConstraints": CA_FALSE, "keyType": DSA,
     },
-    TEST_SHA1: {
+    TEST_SHA256: {
         "nsCertType": ["client"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30, "dsaBits": 1024,
         "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"], "cypherType": DES3,
         "extendedKeyUsage": ["clientAuth"], "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 1024,
