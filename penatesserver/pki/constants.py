@@ -71,46 +71,46 @@ EXTENDED_KEY_USAGES = {"clientAuth": "clientAuth", "emailProtection": "emailProt
 
 ROLES = {
     TIME_SERVER: {
-        "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30, "dsaBits": 4096, "cypherType": AES256,
+        "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30, "dsaBits": 4096, "cypherType": DES3,
         "extendedKeyUsage": ["clientAuth", "nsSGC", "serverAuth", "timeStamping"],
         "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment", "nonRepudiation"],
-        "digest": SHA256, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000,
+        "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000,
         "nsCertType": ["client"], "basicConstraints": CA_FALSE, "keyType": RSA,
     },
     RESOURCE: {
         "nsCertType": ["client"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30, "dsaBits": 4096,
         "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"],
-        "cypherType": AES256, "extendedKeyUsage": ["clientAuth"], "digest": SHA256, "keyType": RSA,
+        "cypherType": DES3, "extendedKeyUsage": ["clientAuth"], "digest": SHA1, "keyType": RSA,
         "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000, "basicConstraints": CA_FALSE
     },
     PRINTER: {
         "nsCertType": ["client", "server"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30,
         "dsaBits": 2048, "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"],
-        "cypherType": AES256, "extendedKeyUsage": ["clientAuth", "serverAuth"], "digest": SHA256, "keyType": RSA,
+        "cypherType": DES3, "extendedKeyUsage": ["clientAuth", "serverAuth"], "digest": SHA1, "keyType": RSA,
         "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 2048, "days": 1000, "basicConstraints": CA_FALSE
     },
     SERVICE: {
         "nsCertType": ["client", "server"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30,
         "dsaBits": 4096, "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"],
-        "cypherType": AES256, "extendedKeyUsage": ["clientAuth", "nsSGC", "serverAuth"], "digest": SHA256, "keyType": RSA,
+        "cypherType": DES3, "extendedKeyUsage": ["clientAuth", "nsSGC", "serverAuth"], "digest": SHA1, "keyType": RSA,
         "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000, "basicConstraints": CA_FALSE
     },
     CA: {
         "nsCertType": ["emailCA", "objCA", "sslCA"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30,
-        "dsaBits": 4096, "keyUsage": ["cRLSign", "digitalSignature", "keyCertSign"], "cypherType": AES256,
-        "extendedKeyUsage": ["serverAuth"], "digest": SHA256, "subjectKeyIdentifier": HASH_IDENTIFIER,
+        "dsaBits": 4096, "keyUsage": ["cRLSign", "digitalSignature", "keyCertSign"], "cypherType": DES3,
+        "extendedKeyUsage": ["serverAuth"], "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER,
         "rsaBits": 4096, "days": 8000, "basicConstraints": CA_TRUE, "keyType": RSA,
     },
     CA_TEST: {
         "nsCertType": ["emailCA", "objCA", "sslCA"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30,
-        "dsaBits": 1024, "keyUsage": ["cRLSign", "digitalSignature", "keyCertSign"], "cypherType": AES256,
-        "extendedKeyUsage": ["serverAuth"], "digest": SHA256, "subjectKeyIdentifier": HASH_IDENTIFIER,
+        "dsaBits": 1024, "keyUsage": ["cRLSign", "digitalSignature", "keyCertSign"], "cypherType": DES3,
+        "extendedKeyUsage": ["serverAuth"], "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER,
         "rsaBits": 1024, "days": 8000, "basicConstraints": CA_TRUE, "keyType": RSA,
     },
     COMPUTER: {
         "nsCertType": ["client"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30, "dsaBits": 4096,
-        "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"], "cypherType": AES256,
-        "extendedKeyUsage": ["clientAuth"], "digest": SHA256, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096,
+        "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"], "cypherType": DES3,
+        "extendedKeyUsage": ["clientAuth"], "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096,
         "days": 1000, "basicConstraints": CA_FALSE, "keyType": RSA,
     },
     COMPUTER_TEST: {
@@ -121,61 +121,61 @@ ROLES = {
     },
     TEST_DSA: {
         "nsCertType": ["client"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30, "dsaBits": 1024,
-        "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"], "cypherType": AES256,
-        "extendedKeyUsage": ["clientAuth"], "digest": SHA256, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 1024,
+        "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"], "cypherType": DES3,
+        "extendedKeyUsage": ["clientAuth"], "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 1024,
         "days": 1000, "basicConstraints": CA_FALSE, "keyType": DSA,
     },
-    TEST_SHA256: {
+    TEST_SHA1: {
         "nsCertType": ["client"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30, "dsaBits": 1024,
-        "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"], "cypherType": AES256,
-        "extendedKeyUsage": ["clientAuth"], "digest": SHA256, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 1024,
+        "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"], "cypherType": DES3,
+        "extendedKeyUsage": ["clientAuth"], "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 1024,
         "days": 1000, "basicConstraints": CA_FALSE, "keyType": RSA,
     },
     OCSPSIGNING: {
         "nsCertType": ["client", "server"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30,
         "dsaBits": 4096, "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"],
-        "cypherType": AES256, "extendedKeyUsage": ["OCSPSigning", "clientAuth", "nsSGC", "serverAuth"],
-        "digest": SHA256, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000,
+        "cypherType": DES3, "extendedKeyUsage": ["OCSPSigning", "clientAuth", "nsSGC", "serverAuth"],
+        "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000,
         "basicConstraints": CA_FALSE, "keyType": RSA,
     },
     KERBEROS_DC: {
         "nsCertType": ["client"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30, "dsaBits": 4096,
         "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment", "nonRepudiation"],
-        "cypherType": AES256, "extendedKeyUsage": ["1.3.6.1.5.2.3.5", "clientAuth", "nsSGC", "serverAuth"],
-        "digest": SHA256, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000,
+        "cypherType": DES3, "extendedKeyUsage": ["1.3.6.1.5.2.3.5", "clientAuth", "nsSGC", "serverAuth"],
+        "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000,
         "basicConstraints": CA_FALSE, "keyType": RSA,
     },
     CONFIGURATION: {
         "nsCertType": ["objsign"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30, "dsaBits": 4096,
         "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment", "nonRepudiation"],
-        "cypherType": AES256, "extendedKeyUsage": ["clientAuth", "codeSigning", "nsSGC"], "digest": SHA256,
+        "cypherType": DES3, "extendedKeyUsage": ["clientAuth", "codeSigning", "nsSGC"], "digest": SHA1,
         "keyType": RSA, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000,
         "basicConstraints": CA_FALSE
     },
     USER: {
         "nsCertType": ["client", "email"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30,
         "dsaBits": 4096, "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"],
-        "cypherType": AES256, "basicConstraints": CA_FALSE, "keyType": RSA,
+        "cypherType": DES3, "basicConstraints": CA_FALSE, "keyType": RSA,
         "extendedKeyUsage": ["1.3.6.1.4.1.311.10.3.12", "1.3.6.1.4.1.311.20.2.2", "1.3.6.1.5.2.3.4",
                              "1.3.6.1.5.5.7.3.7", "1.3.6.1.5.5.8.2.2", "clientAuth", "emailProtection"],
-        "digest": SHA256, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000,
+        "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000,
     },
     EMAIL: {
         "nsCertType": ["email"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30,
-        "dsaBits": 4096, "keyUsage": ["dataEncipherment"], "cypherType": AES256,
-        "extendedKeyUsage": ["emailProtection"], "digest": SHA256, "subjectKeyIdentifier": HASH_IDENTIFIER,
+        "dsaBits": 4096, "keyUsage": ["dataEncipherment"], "cypherType": DES3,
+        "extendedKeyUsage": ["emailProtection"], "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER,
         "rsaBits": 4096, "days": 1000, "basicConstraints": CA_FALSE, "keyType": RSA,
     },
     SIGNATURE: {
         "nsCertType": [], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30, "dsaBits": 4096,
-        "keyUsage": ["digitalSignature", "keyAgreement", "keyEncipherment"], "cypherType": AES256,
-        "extendedKeyUsage": ["1.3.6.1.4.1.311.10.3.12"], "digest": SHA256, "subjectKeyIdentifier": HASH_IDENTIFIER,
+        "keyUsage": ["digitalSignature", "keyAgreement", "keyEncipherment"], "cypherType": DES3,
+        "extendedKeyUsage": ["1.3.6.1.4.1.311.10.3.12"], "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER,
         "rsaBits": 4096, "days": 1000, "basicConstraints": CA_FALSE, "keyType": RSA,
     },
     ENCIPHERMENT: {
         "nsCertType": [], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30, "dsaBits": 4096,
-        "keyUsage": ["dataEncipherment", "keyEncipherment"], "cypherType": AES256, "extendedKeyUsage": [],
-        "digest": SHA256, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000,
+        "keyUsage": ["dataEncipherment", "keyEncipherment"], "cypherType": DES3, "extendedKeyUsage": [],
+        "digest": SHA1, "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000,
         "basicConstraints": CA_FALSE, "keyType": RSA,
     },
 }
