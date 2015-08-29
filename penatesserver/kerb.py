@@ -53,8 +53,7 @@ def add_principal(principal):
     if principal_exists(principal):
         return
     if settings.KERBEROS_IMPL == 'mit':
-        if Principal.objects.filter(name=principal).count() == 0:
-            Principal(name=principal).save()
+        Principal(name=principal).save()
     else:
         heimdal_command('add', '--random-key', '--max-ticket-life=1d', '--max-renewable-life=1w', '--attributes=',
                         '--expiration-time=never', '--pw-expiration-time=never', '--policy=default', principal)
