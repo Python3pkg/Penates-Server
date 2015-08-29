@@ -50,6 +50,8 @@ def keytab_has_principal(principal, keytab_filename):
 
 def add_principal(principal):
     from penatesserver.models import Principal
+    if principal_exists(principal):
+        return
     if settings.KERBEROS_IMPL == 'mit':
         if Principal.objects.filter(name=principal).count() == 0:
             Principal(name=principal).save()
