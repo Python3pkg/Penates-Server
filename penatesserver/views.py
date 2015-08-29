@@ -339,3 +339,18 @@ def get_signature_certificate(request):
 def get_encipherment_certificate(request):
     ldap_user = get_object_or_404(User, name=request.user.username)
     return CertificateEntryResponse(ldap_user.encipherment_certificate_entry)
+
+
+def get_ca_certificate(request):
+    pki = PKI()
+    with open(pki.cacrt_path, 'rb') as fd:
+        content = fd.read()
+    return HttpResponse(content, content_type='text/plain')
+
+
+def get_crl(request):
+    pki = PKI()
+    pki.ensure_crl()
+    with open(pki.cacrl_path, 'rb') as fd:
+        content = fd.read()
+    return HttpResponse(content, content_type='text/plain')

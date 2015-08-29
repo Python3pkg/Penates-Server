@@ -4,6 +4,13 @@
 {% block content %}
 
     <div>
+        <h1>{% trans 'Root' %}</h1>
+        <ul>
+            <li><a href="{% url 'penatesserver.views.get_ca_certificate' %}">{% trans 'CA root certificate' %}</a></li>
+        </ul>
+    </div>
+
+    <div>
         <h1>{% trans 'Users and groups' %}</h1>
         <ul>
             <li><a href="{% url 'user_list' %}">{% trans 'Users' %}</a></li>

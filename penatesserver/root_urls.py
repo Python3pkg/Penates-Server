@@ -19,6 +19,8 @@ urls = [
     ('^index$', 'penatesserver.views.index'),
     url(r'^', include(router.urls)),
     url(r'^no-auth/get_host_keytab/(?P<hostname>[a-zA-Z0-9\.\-_]+)$', 'penatesserver.views.get_host_keytab'),
+    url(r'^no-auth/ca.pem$', 'penatesserver.views.get_ca_certificate'),
+    url(r'^no-auth/crl.pem$', 'penatesserver.views.get_crl'),
     url(r'^auth/get_info/$', 'penatesserver.views.get_info'),
     url(r'^auth/set_dhcp/(?P<mac_address>([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2})/$', 'penatesserver.views.set_dhcp'),
     url(r'^auth/conf/dhcpd.conf$', 'penatesserver.views.get_dhcpd_conf'),

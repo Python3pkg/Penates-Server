@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import codecs
 import os
 import tempfile
 import shutil
+
 from django.test import TestCase
 
 from penatesserver.pki.constants import CA_TEST, COMPUTER_TEST, TEST_DSA, TEST_SHA256
@@ -53,6 +55,8 @@ class TestPKI(TestCase):
         # noinspection PyUnresolvedReferences
         shutil.rmtree(cls.dirname)
 
+
+class TestCertRole(TestPKI):
     def test_ca(self):
         self.assertTrue(os.path.isfile(self.pki.cacrt_path))
         self.assertTrue(os.path.isfile(self.pki.cakey_path))
@@ -89,3 +93,21 @@ class TestPKI(TestCase):
         self.assertTrue(entry.key_filename)
         self.assertTrue(entry.crt_filename)
         self.assertTrue(entry.ssh_filename)
+
+
+class TestCrl(TestPKI):
+    def test_crl(self):
+        entry = CertificateEntry('test_computer', organizationName='test_org', organizationalUnitName='test_unit',
+                                 emailAddress='test@example .com', localityName='City',
+                                 countryName='FR', stateOrProvinceName='Province', altNames=[],
+                                 role=COMPUTER_TEST, dirname=self.dirname)
+        self.pki.ensure_certificate(entry)
+        with codecs.open(entry.crt_filename, 'r', encoding='utf-8') as fd:
+            content = fd.read()
+        self.pki.ensure_crl()
+        self.pki.ensure_crl()
+        self.pki.revoke_certificate(content)
+        self.pki.ensure_certificate(entry)
+        self.pki.ensure_certificate(entry)
+        with open(self.pki.dirname + '/index.txt', b'r') as fd:
+            self.assertEqual(3, len(fd.read().splitlines()))

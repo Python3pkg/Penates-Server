@@ -10,12 +10,14 @@ import codecs
 import hashlib
 import os
 import datetime
+import re
 import shlex
 from subprocess import CalledProcessError
 import subprocess
 import tempfile
 
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.utils.text import slugify
 from django.utils.timezone import utc
@@ -110,7 +112,9 @@ class PKI(object):
     def __init__(self, dirname=None):
         self.dirname = dirname or settings.PKI_PATH
         self.cacrt_path = os.path.join(self.dirname, 'cacert.pem')
+        self.cacrl_path = os.path.join(self.dirname, 'cacrl.pem')
         self.cakey_path = os.path.join(self.dirname, 'private', 'cakey.pem')
+        self.crt_sources_path = os.path.join(self.dirname, 'crt_sources.txt')
 
     def initialize(self):
         serial = os.path.join(self.dirname, 'serial.txt')
@@ -175,9 +179,9 @@ class PKI(object):
                         'stateOrProvinceName', 'countryName', 'commonName'):
                 context[key] = getattr(entry, key)
             alt_names = list(entry.altNames)
-            for k in ('basicConstraints', 'subjectKeyIdentifier', 'authorityKeyIdentifier', ):
+            for k in ('basicConstraints', 'subjectKeyIdentifier', 'authorityKeyIdentifier',):
                 context['policy_details'].append((k, role[k]))
-            for k in ('keyUsage', 'extendedKeyUsage', 'nsCertType', ):
+            for k in ('keyUsage', 'extendedKeyUsage', 'nsCertType',):
                 context['policy_details'].append((k, ', '.join(role[k])))
             if '1.3.6.1.5.2.3.4' in role['extendedKeyUsage'] and settings.PENATES_REALM:
                 alt_names.append(('otherName', '1.3.6.1.5.2.2;SEQUENCE:princ_name'))
@@ -190,10 +194,11 @@ class PKI(object):
                 alt_list = ['{0}.{1} = {2}'.format(alt[0], i, alt[1]) for (i, alt) in enumerate(alt_names)]
                 context['altNamesString'] = "\n".join(alt_list)
                 context['altSection'] = "subjectAltName=@alt_section"
-            # context['crlPoint'] = config.crl_url
-            # context['ocspPoint'] = config.ocsp_url
-            # context['caPoint'] = config.ca_url
-            # build a file structure which is compatible with ``openssl ca'' commands
+                if settings.SERVER_NAME:
+                    context['crlPoint'] = '%s://%s/%s' % (settings.PROTOCOL, settings.SERVER_NAME, reverse('penatesserver.views.get_crl'))
+                    context['caPoint'] = '%s://%s/%s' % (settings.PROTOCOL, settings.SERVER_NAME, reverse('penatesserver.views.get_ca_certificate'))
+                # context['ocspPoint'] = config.ocsp_url
+                # build a file structure which is compatible with ``openssl ca'' commands
         # noinspection PyUnresolvedReferences
         conf_content = render_to_string('penatesserver/pki/openssl.cnf', context)
         conf_path = os.path.join(self.dirname, 'openssl.cnf')
@@ -280,6 +285,10 @@ class PKI(object):
                '-notext -days {days} -md {digest} -batch -utf8 ').format(openssl=settings.OPENSSL_PATH, cfg=conf_path,
                                                                          req=entry.req_filename, crt=entry.crt_filename,
                                                                          days=role['days'], digest=role['digest']))
+        serial = self.__get_certificate_serial(entry.crt_filename)
+        with codecs.open(self.crt_sources_path, 'a', encoding='utf-8') as fd:
+            fd.write('%s\t%s\t%s\t%s\n' % (serial, os.path.relpath(entry.key_filename, self.dirname),
+                                         os.path.relpath(entry.req_filename, self.dirname), os.path.relpath(entry.crt_filename, self.dirname)))
 
     def __gen_ca_key(self, entry):
         """
@@ -417,8 +426,7 @@ class PKI(object):
             return False
         return True
 
-    @staticmethod
-    def __check_certificate(entry, path):
+    def __check_certificate(self, entry, path):
         common_name = entry.commonName
         if not os.path.isfile(path):
             # logging.warning(_('Certificate %(path)s of %(cn)s not found') % {'cn': common_name, 'path': path})
@@ -435,4 +443,87 @@ class PKI(object):
         if end_date is None or end_date < after_now:
             # logging.warning(_('Certificate %(path)s for %(cn)s is about to expire') % {'cn': common_name, 'path': path})
             return False
+        serial = self.__get_certificate_serial(path)
+        if self.__get_index_file()[serial][1] != 'V':
+            return False
         return True
+
+    def revoke_certificate(self, crt_content, regen_crl=True):
+        with tempfile.NamedTemporaryFile() as fd:
+            fd.write(crt_content.encode('utf-8'))
+            fd.flush()
+            serial = self.__get_certificate_serial(fd.name)
+            infos = self.__get_index_file()[serial]
+            if infos[1] != 'V':
+                return
+            conf_path = self.__gen_openssl_conf()
+            local('"{openssl}" ca -config "{cfg}" -revoke {filename}'.format(openssl=settings.OPENSSL_PATH, cfg=conf_path,
+                                                                             filename=fd.name))
+        key_filename = os.path.join(self.dirname, infos[5])
+        if os.path.isfile(key_filename):
+            with open(key_filename, 'rb') as fd:
+                content = fd.read()
+            os.remove(key_filename)
+            with open(key_filename + '.bak', 'ab') as fd:
+                fd.write(content)
+        req_filename = os.path.join(self.dirname, infos[6])
+        if os.path.isfile(req_filename):
+            os.remove(req_filename)
+        crt_filename = os.path.join(self.dirname, infos[7])
+        if os.path.isfile(crt_filename):
+            os.remove(crt_filename)
+        if regen_crl:
+            self.__gen_crl(20)
+
+    @staticmethod
+    def __get_certificate_serial(filename):
+        cmd = [settings.OPENSSL_PATH, 'x509', '-serial', '-noout', '-in', filename]
+        serial_text = subprocess.check_output(cmd, stderr=subprocess.PIPE).decode('utf-8')
+        matcher = re.match(r'^serial=(\d+)$', serial_text.strip())
+        if not matcher:
+            raise ValueError
+        return matcher.group(1)
+
+    def ensure_crl(self):
+        if not self.__check_crl():
+            self.__gen_crl(20)
+
+    def __check_crl(self):
+        try:
+            content = subprocess.check_output([settings.OPENSSL_PATH, 'crl', '-noout', '-nextupdate', '-in', self.cacrl_path], stderr=subprocess.PIPE)
+        except CalledProcessError:
+            return False
+        key, sep, value = content.decode('utf-8').partition('=')
+        if key != 'nextUpdate' or sep != '=':
+            return False
+        return t61_to_time(value.strip()) > (datetime.datetime.now(utc) + datetime.timedelta(seconds=86400))
+
+    def __gen_crl(self, crldays):
+        config = self.__gen_openssl_conf()
+        content = subprocess.check_output([settings.OPENSSL_PATH, 'ca', '-gencrl', '-utf8', '-config', config, '-keyfile', self.cakey_path,
+                                           '-cert', self.cacrt_path, '-crldays', str(crldays)], stderr=subprocess.PIPE)
+        with open(self.cacrl_path, 'wb') as fd:
+            fd.write(content)
+
+    def __get_index_file(self):
+        """Return a dict ["serial"] = ["serial", "V|R", "valid_date", "revoke_date", "cn", "key filename", "req filename", "crt filename"]
+        :return:
+        :rtype:
+        """
+        result = {}
+        with codecs.open(os.path.join(self.dirname, 'index.txt'), 'r', encoding='utf-8') as fd:
+            for line in fd:
+                if not line:
+                    continue
+                state, valid_date, revoke_date, serial, unused, cn = line.split('\t')
+                result[serial] = [serial, state, valid_date, revoke_date, cn, None, None, None]
+        with codecs.open(self.crt_sources_path, 'r', encoding='utf-8') as fd:
+            for line in fd:
+                if not line:
+                    continue
+                serial, key, req, crt = line.split('\t')
+                result[serial][5] = key
+                result[serial][6] = req
+                result[serial][7] = crt
+        return result
+
