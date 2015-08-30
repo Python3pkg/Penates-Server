@@ -99,7 +99,7 @@ class Migration(migrations.Migration):
             name='SambaDomain',
             fields=[
                 ('dn', models.CharField(max_length=200)),
-                ('rid_base', ldapdb.models.fields.IntegerField(default=1000, db_column=b'sambaAlgorithmicRidBase')),
+                ('rid_base', ldapdb.models.fields.IntegerField(default=2000, db_column=b'sambaAlgorithmicRidBase')),
                 ('sid', ldapdb.models.fields.CharField(max_length=200, db_column=b'sambaSID')),
                 ('name', ldapdb.models.fields.CharField(max_length=200, serialize=False, primary_key=True, db_column=b'sambaDomainName')),
             ],

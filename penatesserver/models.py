@@ -40,7 +40,7 @@ class BaseLdapModel(ldapdb.models.Model):
     class Meta(object):
         abstract = True
 
-    def set_next_free_value(self, attr_name, default=1000):
+    def set_next_free_value(self, attr_name, default=2000):
         if getattr(self, attr_name) is not None:
             return
         values = list(self.__class__.objects.all().order_by(b'-' + attr_name.encode('utf-8'))[0:1])
@@ -53,7 +53,7 @@ class BaseLdapModel(ldapdb.models.Model):
 class SambaDomain(BaseLdapModel):
     base_dn = settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['sambaDomain'])
-    rid_base = IntegerField(db_column=force_bytestring('sambaAlgorithmicRidBase'), default=1000)
+    rid_base = IntegerField(db_column=force_bytestring('sambaAlgorithmicRidBase'), default=2000)
     sid = CharField(db_column=force_bytestring('sambaSID'))
     name = CharField(db_column=force_bytestring('sambaDomainName'), primary_key=True)
 
