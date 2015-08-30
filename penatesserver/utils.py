@@ -56,22 +56,22 @@ def ensure_location(filename):
 
 def hostname_from_principal(principal):
     """
-    >>> hostname_from_principal('HOST/test.example.org') == 'test.example.org'
+    >>> hostname_from_principal('host/test.example.org') == 'test.example.org'
     True
-    >>> hostname_from_principal('HOST/test.example.org@TEST.EXAMPLE.ORG') == 'test.example.org'
+    >>> hostname_from_principal('host/test.example.org@TEST.EXAMPLE.ORG') == 'test.example.org'
     True
     """
-    if not principal.startswith('HOST/'):
+    if not principal.startswith('host/'):
         raise ValueError
     return principal[5:].partition('@')[0]
 
 
 def principal_from_hostname(hostname, realm):
     """
-    >>> principal_from_hostname('test.example.org', 'TEST.EXAMPLE.ORG') == 'HOST/test.example.org@TEST.EXAMPLE.ORG'
+    >>> principal_from_hostname('test.example.org', 'TEST.EXAMPLE.ORG') == 'host/test.example.org@TEST.EXAMPLE.ORG'
     True
     """
-    return 'HOST/%s@%s' % (hostname, realm)
+    return 'host/%s@%s' % (hostname, realm)
 
 
 def ensure_list(value):

@@ -31,7 +31,7 @@ class TestModelComputer(TestCase):
 class TestPrincipal(TestCase):
 
     def test_principal(self):
-        principal_name = 'HOST/test.%s' % settings.PENATES_DOMAIN
+        principal_name = 'host/test.%s' % settings.PENATES_DOMAIN
         Principal.objects.filter(name=principal_name).delete()
         obj = Principal(name=principal_name)
         obj.save()
