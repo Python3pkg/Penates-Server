@@ -80,6 +80,23 @@ class Group(BaseLdapModel):
         self.set_next_free_value('gid', default=10000)
         self.samba_sid = '%s-%d' % (get_samba_sid(), self.gid)
         super(Group, self).save(using=using)
+        group_of_names = list(GroupOfNames.objects.filter(name=self.name)[0:1])
+        if not group_of_names:
+            group = GroupOfNames(name=self.name, members=[])
+            group.save()
+        else:
+            group = group_of_names[0]
+        new_members = ['uid=%s,%s' % (x, User.base_dn) for x in self.members]
+        if new_members != group.members:
+            group.members = new_members
+            group.save()
+
+
+class GroupOfNames(BaseLdapModel):
+    base_dn = 'ou=CoreGroups,' + settings.LDAP_BASE_DN
+    object_classes = force_bytestrings(['groupOfNames'])
+    name = CharField(db_column=force_bytestring('cn'), max_length=200, primary_key=True, validators=list(name_validators))
+    members = ListField(db_column=force_bytestring('member'))
 
 
 class User(BaseLdapModel):
@@ -98,6 +115,7 @@ class User(BaseLdapModel):
     user_certificate = CharField(db_column=force_bytestring('userCertificate'), default=None)
     # forced values
     samba_sid = CharField(db_column=force_bytestring('sambaSID'), default=None)
+    samba_account_name = CharField(db_column=force_bytestring('samAccountName'), default=None)
     primary_group_samba_sid = CharField(db_column=force_bytestring('sambaPrimaryGroupSID'), default=None)
     home_directory = CharField(db_column=force_bytestring('homeDirectory'), default=None)
     mail = CharField(db_column=force_bytestring('mail'), default=None)
@@ -113,6 +131,7 @@ class User(BaseLdapModel):
         group = self.set_gid_number()
         self.cn = self.name
         self.sn = self.name
+        self.samba_account_name = self.name
         self.gecos = self.display_name
         self.samba_domain_name = settings.PENATES_REALM
         self.mail = '%s@%s' % (self.name, settings.PENATES_DOMAIN)
