@@ -82,11 +82,11 @@ class Group(BaseLdapModel):
         super(Group, self).save(using=using)
         group_of_names = list(GroupOfNames.objects.filter(name=self.name)[0:1])
         if not group_of_names:
-            group = GroupOfNames(name=self.name, members=[])
+            group = GroupOfNames(name=self.name, members=['cn=admin,' + settings.LDAP_BASE_DN])
             group.save()
         else:
             group = group_of_names[0]
-        new_members = ['uid=%s,%s' % (x, User.base_dn) for x in self.members]
+        new_members = ['cn=admin,' + settings.LDAP_BASE_DN] + ['uid=%s,%s' % (x, User.base_dn) for x in self.members]
         if new_members != group.members:
             group.members = new_members
             group.save()
@@ -101,7 +101,7 @@ class GroupOfNames(BaseLdapModel):
 
 class User(BaseLdapModel):
     base_dn = 'ou=Users,' + settings.LDAP_BASE_DN
-    object_classes = force_bytestrings(['posixAccount', 'inetOrgPerson', 'sambaSamAccount', ])
+    object_classes = force_bytestrings(['posixAccount', 'shadowAccount', 'inetOrgPerson', 'sambaSamAccount', 'person'])
     name = CharField(db_column=force_bytestring('uid'), max_length=200, primary_key=True, validators=list(name_validators))
     display_name = CharField(db_column=force_bytestring('displayName'), max_length=200)
     uid_number = IntegerField(db_column=force_bytestring('uidNumber'), default=None, unique=True)
