@@ -197,7 +197,7 @@ def set_service(request, scheme, hostname, port):
         return HttpResponse(status=401, content='%s is already registered' % hostname)
     if role not in (SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER):
         return HttpResponse(status=401, content='Role %s is not allowed' % role)
-    if kerberos_service not in ('HTTP', 'XMPP', 'smtp', ):
+    if kerberos_service not in ('HTTP', 'XMPP', 'smtp', 'IPP', 'ldap', 'cifs', 'imap', 'postgres'):
         return HttpResponse(status=401, content='Kerberos service %s is not allowed' % role)
     # Penates service
     service, created = Service.objects.get_or_create(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)
