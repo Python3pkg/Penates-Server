@@ -115,7 +115,6 @@ class User(BaseLdapModel):
     user_certificate = CharField(db_column=force_bytestring('userCertificate'), default=None)
     # forced values
     samba_sid = CharField(db_column=force_bytestring('sambaSID'), default=None)
-    samba_account_name = CharField(db_column=force_bytestring('samAccountName'), default=None)
     primary_group_samba_sid = CharField(db_column=force_bytestring('sambaPrimaryGroupSID'), default=None)
     home_directory = CharField(db_column=force_bytestring('homeDirectory'), default=None)
     mail = CharField(db_column=force_bytestring('mail'), default=None)
@@ -131,7 +130,6 @@ class User(BaseLdapModel):
         group = self.set_gid_number()
         self.cn = self.name
         self.sn = self.name
-        self.samba_account_name = self.name
         self.gecos = self.display_name
         self.samba_domain_name = settings.PENATES_REALM
         self.mail = '%s@%s' % (self.name, settings.PENATES_DOMAIN)
