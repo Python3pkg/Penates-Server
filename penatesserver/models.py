@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import codecs
+import os
 
 from django.conf import settings
 from django.contrib.auth.models import PermissionsMixin, UserManager
@@ -16,7 +18,7 @@ from penatesserver.kerb import change_password, delete_principal, add_principal
 from penatesserver.pki.constants import USER, EMAIL, SIGNATURE, ENCIPHERMENT
 from penatesserver.pki.service import CertificateEntry
 from penatesserver.powerdns.models import Record
-from penatesserver.utils import force_bytestrings, force_bytestring, password_hash
+from penatesserver.utils import force_bytestrings, force_bytestring, password_hash, ensure_location
 
 __author__ = 'flanker'
 
@@ -164,6 +166,18 @@ class User(BaseLdapModel):
         self.user_password = password_hash(password)
         self.save()
         change_password(self.principal_name, password)
+        ensure_location(self.password_filename)
+        with codecs.open(self.password_filename, 'w', encoding='utf-8') as fd:
+            fd.write(password)
+        os.chmod(self.password_filename, 0o400)
+
+    @property
+    def password_filename(self):
+        return os.path.join(settings.PKI_PATH, 'private', 'passwords', self.name + '.txt')
+
+    def read_password(self):
+        with codecs.open(self.password_filename, 'r', encoding='utf-8') as fd:
+            return fd.read()
 
     def delete(self, using=None):
         super(User, self).delete(using=using)

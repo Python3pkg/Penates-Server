@@ -4,8 +4,10 @@ import codecs
 import os
 import tempfile
 import shutil
+from django.conf import settings
 
 from django.test import TestCase
+import subprocess
 
 from penatesserver.pki.constants import CA_TEST, COMPUTER_TEST, TEST_DSA, TEST_SHA256
 from penatesserver.pki.service import CertificateEntry, PKI
@@ -93,6 +95,22 @@ class TestCertRole(TestPKI):
         self.assertTrue(entry.key_filename)
         self.assertTrue(entry.crt_filename)
         self.assertTrue(entry.ssh_filename)
+
+    def test_export_pkcs12(self):
+        entry = CertificateEntry('test_pkcs12', organizationName='test_org', organizationalUnitName='test_unit',
+                                 emailAddress='test@example .com', localityName='City',
+                                 countryName='FR', stateOrProvinceName='Province', altNames=[],
+                                 role=TEST_SHA256, dirname=self.dirname)
+        with tempfile.NamedTemporaryFile() as fd:
+            filename = fd.name
+        self.pki.gen_pkcs12(entry, filename=filename, password='password')
+        print(filename)
+        with codecs.open(entry.key_filename, 'r', encoding='utf-8') as fd:
+            src_key_content = fd.read()
+        subprocess.Popen([settings.OPENSSL_PATH, 'pkcs12', '-in', filename,
+                          '-passin', 'stdin', '-nocerts', ])
+
+
 
 
 class TestCrl(TestPKI):

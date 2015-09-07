@@ -227,6 +227,7 @@ class PKI(object):
                                                                      key=entry.key_filename))
             os.remove(param)
         os.chmod(entry.key_filename, 0o600)
+        # TODO sauvegarde de la clef
 
     @staticmethod
     def __gen_pub(entry):
@@ -527,3 +528,9 @@ class PKI(object):
                 result[serial][7] = crt
         return result
 
+    def gen_pkcs12(self, entry, filename, password):
+        assert isinstance(entry, CertificateEntry)
+        self.ensure_certificate(entry)
+        p = subprocess.Popen([settings.OPENSSL_PATH, 'pkcs12', '-export', '-out', filename, '-passout', 'stdin', '-aes256', '-in', entry.crt_filename, '-inkey', entry.key_filename,
+                              '-certfile', self.cacrt_path, '-name', entry.filename, ])
+        p.communicate(password.encode('utf-8'))

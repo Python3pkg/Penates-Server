@@ -1,0 +1,283 @@
+{% load i18n penates %}<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>PayloadDescription</key>
+			<string>{% trans 'Configure the security of the configuration profile.' %}</string>
+			<key>PayloadDisplayName</key>
+			<string>{% trans 'Security profile' %}</string>
+			<key>PayloadIdentifier</key>
+			<string>{{ domain }}.ProfileSecurity</string>
+			<key>PayloadOrganization</key>
+			<string>{{ domain }}</string>
+			<key>PayloadType</key>
+			<string>com.apple.profileRemovalPassword</string>
+			<key>PayloadUUID</key>
+			<string>{{ uuid }}</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>RemovalPassword</key>
+			<string>{{ password }}</string>
+		</dict>
+
+        {% for server in ldap_servers %}
+		<dict>
+			<key>LDAPAccountDescription</key>
+			<string>{% trans 'LDAP account' %} {{ server.hostname }}</string>
+			<key>LDAPAccountHostName</key>
+			<string>{{ server.hostname }}:{{ server.port }}</string>
+			<key>LDAPAccountUseSSL</key>
+			{% if server.use_ssl %}<true/>{% else %}<false/>{% endif %}
+			<key>LDAPSearchSettings</key>
+			<array>
+				<dict>
+					<key>LDAPSearchSettingDescription</key>
+					<string>{% trans 'My search' %}</string>
+					<key>LDAPSearchSettingScope</key>
+					<string>LDAPSearchSettingScopeSubtree</string>
+					<key>LDAPSearchSettingSearchBase</key>
+					<string>ou=Users,{{ ldap_base_dn }}</string>
+				</dict>
+			</array>
+			<key>PayloadDescription</key>
+			<string>{% trans 'Configure a LDAP account.' %}</string>
+			<key>PayloadDisplayName</key>
+			<string>{% trans 'LDAP' %}</string>
+			<key>PayloadIdentifier</key>
+			<string>{{ domain }}.ldap</string>
+			<key>PayloadOrganization</key>
+			<string>{{ organization }}</string>
+			<key>PayloadType</key>
+			<string>com.apple.ldap.account</string>
+			<key>PayloadUUID</key>
+			<string>{% generate_uuid %}</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>
+        {% endfor %}
+
+		<dict>
+			<key>CalDAVAccountDescription</key>
+			<string>Mon compte CalDAV</string>
+			<key>CalDAVHostName</key>
+			<string>caldav.test.example.org</string>
+			<key>CalDAVPassword</key>
+			<string>toto</string>
+			<key>CalDAVPort</key>
+			<integer>8443</integer>
+			<key>CalDAVUseSSL</key>
+			<true/>
+			<key>CalDAVUsername</key>
+			<string>login</string>
+			<key>PayloadDescription</key>
+			<string>Configure un compte CalDAV.</string>
+			<key>PayloadDisplayName</key>
+			<string>CalDAV (Mon compte CalDAV)</string>
+			<key>PayloadIdentifier</key>
+			<string>test.example.org.CalDAV</string>
+			<key>PayloadOrganization</key>
+			<string>example.org</string>
+			<key>PayloadType</key>
+			<string>com.apple.caldav.account</string>
+			<key>PayloadUUID</key>
+			<string>05D94212-6EE9-460E-9033-84991F8A4CBA</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>
+
+		<dict>
+			<key>PayloadDescription</key>
+			<string>Configure les abonnements calendriers</string>
+			<key>PayloadDisplayName</key>
+			<string>Calendrier auquel vous Ãªtes abonnÃ© (My Subscribed Calendar)</string>
+			<key>PayloadIdentifier</key>
+			<string>test.example.org.CalSub</string>
+			<key>PayloadOrganization</key>
+			<string>example.org</string>
+			<key>PayloadType</key>
+			<string>com.apple.subscribedcalendar.account</string>
+			<key>PayloadUUID</key>
+			<string>0AC6F0A6-ED5C-4C93-9725-560B49F8EB07</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>SubCalAccountDescription</key>
+			<string>My Subscribed Calendar</string>
+			<key>SubCalAccountHostName</key>
+			<string>https://calendar.test.example.org</string>
+			<key>SubCalAccountPassword</key>
+			<string>password</string>
+			<key>SubCalAccountUseSSL</key>
+			<true/>
+			<key>SubCalAccountUsername</key>
+			<string>login</string>
+		</dict>
+		<dict>
+			<key>EmailAccountDescription</key>
+			<string>Compte de sociÃ©tÃ©</string>
+			<key>EmailAccountName</key>
+			<string>display_name</string>
+			<key>EmailAccountType</key>
+			<string>EmailTypeIMAP</string>
+			<key>EmailAddress</key>
+			<string>login@test.example.org</string>
+			<key>IncomingMailServerAuthentication</key>
+			<string>EmailAuthPassword</string>
+			<key>IncomingMailServerHostName</key>
+			<string>imap.test.example.org</string>
+			<key>IncomingMailServerPortNumber</key>
+			<integer>993</integer>
+			<key>IncomingMailServerUseSSL</key>
+			<true/>
+			<key>IncomingMailServerUsername</key>
+			<string>login</string>
+			<key>IncomingPassword</key>
+			<string>toto</string>
+			<key>OutgoingMailServerAuthentication</key>
+			<string>EmailAuthPassword</string>
+			<key>OutgoingMailServerHostName</key>
+			<string>smtp.test.example.org</string>
+			<key>OutgoingMailServerPortNumber</key>
+			<integer>587</integer>
+			<key>OutgoingMailServerUseSSL</key>
+			<true/>
+			<key>OutgoingMailServerUsername</key>
+			<string>login</string>
+			<key>OutgoingPassword</key>
+			<string>toto</string>
+			<key>OutgoingPasswordSameAsIncomingPassword</key>
+			<true/>
+			<key>PayloadDescription</key>
+			<string>Configure un compte de courrier Ã©lectronique.</string>
+			<key>PayloadDisplayName</key>
+			<string>Compte IMAP (Compte de sociÃ©tÃ©)</string>
+			<key>PayloadIdentifier</key>
+			<string>test.example.org.adresse Ã©lectronique</string>
+			<key>PayloadOrganization</key>
+			<string>example.org</string>
+			<key>PayloadType</key>
+			<string>com.apple.mail.managed</string>
+			<key>PayloadUUID</key>
+			<string>C4C6269A-3656-4345-939C-02FFFB556A94</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>PreventAppSheet</key>
+			<true/>
+			<key>PreventMove</key>
+			<false/>
+			<key>SMIMEEnabled</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>EAP</key>
+			<dict/>
+			<key>IPSec</key>
+			<dict>
+				<key>AuthenticationMethod</key>
+				<string>SharedSecret</string>
+				<key>SharedSecret</key>
+				<data>
+				c2hhcmVkX3NlY3JldA==
+				</data>
+			</dict>
+			<key>IPv4</key>
+			<dict>
+				<key>OverridePrimary</key>
+				<integer>1</integer>
+			</dict>
+			<key>PPP</key>
+			<dict>
+				<key>AuthName</key>
+				<string>user_account</string>
+				<key>CommRemoteAddress</key>
+				<string>vpn01.test.example.org</string>
+			</dict>
+			<key>PayloadDescription</key>
+			<string>Configure les rÃ©glages VPN, y compris lâauthentification.</string>
+			<key>PayloadDisplayName</key>
+			<string>VPN (VPN example.org)</string>
+			<key>PayloadIdentifier</key>
+			<string>test.example.org.VPN</string>
+			<key>PayloadOrganization</key>
+			<string>example.org</string>
+			<key>PayloadType</key>
+			<string>com.apple.vpn.managed</string>
+			<key>PayloadUUID</key>
+			<string>98D65B3C-A5DE-4438-B9F2-D617E52E7404</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>Proxies</key>
+			<dict/>
+			<key>UserDefinedName</key>
+			<string>VPN example.org</string>
+			<key>VPNType</key>
+			<string>L2TP</string>
+		</dict>
+{#		<dict>#}
+{#			<key>CardDAVAccountDescription</key>#}
+{#			<string>Mon compte CardDAV</string>#}
+{#			<key>CardDAVHostName</key>#}
+{#			<string>carddav.test.example.org</string>#}
+{#			<key>CardDAVPassword</key>#}
+{#			<string>password</string>#}
+{#			<key>CardDAVPort</key>#}
+{#			<integer>8843</integer>#}
+{#			<key>CardDAVUseSSL</key>#}
+{#			<true/>#}
+{#			<key>CardDAVUsername</key>#}
+{#			<string>login</string>#}
+{#			<key>PayloadDescription</key>#}
+{#			<string>Configure des comptes CardDAV.</string>#}
+{#			<key>PayloadDisplayName</key>#}
+{#			<string>CardDAV</string>#}
+{#			<key>PayloadIdentifier</key>#}
+{#			<string>test.example.org.carddav</string>#}
+{#			<key>PayloadOrganization</key>#}
+{#			<string>example.org</string>#}
+{#			<key>PayloadType</key>#}
+{#			<string>com.apple.carddav.account</string>#}
+{#			<key>PayloadUUID</key>#}
+{#			<string>3AC79E00-8B72-4EAD-ADC5-BEB2CCEA90B9</string>#}
+{#			<key>PayloadVersion</key>#}
+{#			<integer>1</integer>#}
+{#		</dict>#}
+		<dict>
+			<key>PayloadCertificateFileName</key>
+			<string>cacert.cer</string>
+			<key>PayloadContent</key>
+			<data>{{ ca_cert|base64_encode }}</data>
+			<key>PayloadDescription</key>
+			<string>{% trans 'Root certificate' %}</string>
+			<key>PayloadDisplayName</key>
+			<string>{{ domain }}</string>
+			<key>PayloadIdentifier</key>
+			<string>{{ domain }}.reference</string>
+			<key>PayloadOrganization</key>
+			<string>{{ organization }}</string>
+			<key>PayloadType</key>
+			<string>com.apple.security.root</string>
+			<key>PayloadUUID</key>
+			<string>{% generate_uuid %}</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>
+	</array>
+	<key>PayloadDescription</key>
+	<string>{% trans 'Default profile' %}</string>
+	<key>PayloadDisplayName</key>
+	<string>{{ domain }}</string>
+	<key>PayloadIdentifier</key>
+	<string>{{ domain }}</string>
+	<key>PayloadOrganization</key>
+	<string>{{ organization }}</string>
+	<key>PayloadRemovalDisallowed</key>
+	<true/>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>{% generate_uuid %}</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import base64
+import codecs
 import hashlib
 import os
 import re
 import tempfile
+import uuid
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -354,3 +356,26 @@ def get_crl(request):
     with open(pki.cacrl_path, 'rb') as fd:
         content = fd.read()
     return HttpResponse(content, content_type='text/plain')
+
+
+def get_user_mobileconfig(request):
+    user = get_object_or_404(User, name=request.user.username)
+    pki = PKI()
+    with codecs.open(pki.cacrt_path, 'r', encoding='utf-8') as fd:
+        ca_cert = fd.read()
+    template_values = {
+        'domain': settings.PENATES_DOMAIN, 'organization': settings.PENATES_ORGANIZATION,
+        'ldap_servers': [],
+        'carddav_servers': [],
+        'caldav_servers': [],
+        'email_servers': [],
+        'vpn_servers': [],
+        'password': user.read_password(),
+        'ldap_base_dn': settings.LDAP_BASE_DN,
+        'ca_cert': ca_cert,
+    }
+    for service in Service.objects.all():
+        if service.scheme == 'ldap':
+            template_values['ldap_servers'].append(service)
+    return render_to_response('penatesserver/mobileconfig.xml', template_values,
+                              content_type='application/xml')

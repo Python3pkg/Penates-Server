@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, division
+import base64
+import uuid
 from django import template
+from django.utils.six import text_type
 import netaddr
 
 __author__ = 'Matthieu Gallet'
@@ -67,3 +70,22 @@ def subnet_end(subnet):
     network = netaddr.IPNetwork(subnet)
     size = 32 if network.version == 4 else 128
     return str(network.network - 2 + 2 ** (size - network.prefixlen))
+
+
+@register.simple_tag
+def generate_uuid():
+    return str(uuid.uuid4()).upper()
+
+
+@register.filter
+def base64_encode(binary_content):
+    """
+    >>> base64_encode('VW1JWWhQTlBPcXMwPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tQWI0WGdCNTlpUGxkekRoeGUxNE51UHZ1eDZVCkNjUHdxbTNXaGFw')[0:50]
+    'VlcxSldXaFFUbEJQY1hNd1BRb3RMUzB0TFVWT1JDQkRSVkpVU1'
+    >>> ord(base64_encode('VW1JWWhQTlBPcXMwPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tQWI0WGdCNTlpUGxkekRoeGUxNE51UHZ1eDZVCkNjUHdxbTNXaGFw')[50])
+    10
+    """
+    if isinstance(binary_content, text_type):
+        binary_content = binary_content.encode('utf-8')
+    value = base64.b64encode(binary_content)
+    return b'\n'.join([value[i:i+50] for i in range(0, len(value), 50)])
