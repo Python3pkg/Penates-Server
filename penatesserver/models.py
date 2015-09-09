@@ -22,11 +22,16 @@ from penatesserver.utils import force_bytestrings, force_bytestring, password_ha
 
 __author__ = 'flanker'
 
-from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField
+from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField as ImageField_
 import ldapdb.models
 
 name_pattern = r'[a-zA-Z][\w_]{0,199}'
 name_validators = [RegexValidator('^%s$' % name_pattern)]
+
+
+class ImageField(ImageField_):
+    def get_internal_type(self):
+        return 'CharField'
 
 
 class BaseLdapModel(ldapdb.models.Model):
@@ -110,7 +115,7 @@ class User(BaseLdapModel):
     gid_number = IntegerField(db_column=force_bytestring('gidNumber'), default=None)
     login_shell = CharField(db_column=force_bytestring('loginShell'), default='/bin/bash')
     description = CharField(db_column=force_bytestring('description'), default='Description')
-    jpeg_photo = ImageField(db_column=force_bytestring('jpegPhoto'))
+    jpeg_photo = ImageField(db_column=force_bytestring('jpegPhoto'), max_length=10000000)
     phone = CharField(db_column=force_bytestring('telephoneNumber'), default=None)
     samba_acct_flags = CharField(db_column=force_bytestring('sambaAcctFlags'), default='[UX         ]')
     user_smime_certificate = CharField(db_column=force_bytestring('userSMIMECertificate'), default=None)

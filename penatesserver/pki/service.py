@@ -445,7 +445,9 @@ class PKI(object):
             # logging.warning(_('Certificate %(path)s for %(cn)s is about to expire') % {'cn': common_name, 'path': path})
             return False
         serial = self.__get_certificate_serial(path)
-        if self.__get_index_file()[serial][1] != 'V':
+        if serial is None:
+            return False
+        elif self.__get_index_file()[serial][1] != 'V':
             return False
         return True
 
@@ -480,9 +482,9 @@ class PKI(object):
     def __get_certificate_serial(filename):
         cmd = [settings.OPENSSL_PATH, 'x509', '-serial', '-noout', '-in', filename]
         serial_text = subprocess.check_output(cmd, stderr=subprocess.PIPE).decode('utf-8')
-        matcher = re.match(r'^serial=(\d+)$', serial_text.strip())
+        matcher = re.match(r'^serial=([\dA-F]+)$', serial_text.strip())
         if not matcher:
-            raise ValueError
+            return None
         return matcher.group(1)
 
     def ensure_crl(self):
@@ -518,19 +520,23 @@ class PKI(object):
                     continue
                 state, valid_date, revoke_date, serial, unused, cn = line.split('\t')
                 result[serial] = [serial, state, valid_date, revoke_date, cn, None, None, None]
-        with codecs.open(self.crt_sources_path, 'r', encoding='utf-8') as fd:
-            for line in fd:
-                if not line:
-                    continue
-                serial, key, req, crt = line.split('\t')
-                result[serial][5] = key
-                result[serial][6] = req
-                result[serial][7] = crt
+        if os.path.isfile(self.crt_sources_path):
+            with codecs.open(self.crt_sources_path, 'r', encoding='utf-8') as fd:
+                for line in fd:
+                    if not line:
+                        continue
+                    serial, key, req, crt = line.split('\t')
+                    result[serial][5] = key
+                    result[serial][6] = req
+                    result[serial][7] = crt
         return result
 
     def gen_pkcs12(self, entry, filename, password):
         assert isinstance(entry, CertificateEntry)
         self.ensure_certificate(entry)
-        p = subprocess.Popen([settings.OPENSSL_PATH, 'pkcs12', '-export', '-out', filename, '-passout', 'stdin', '-aes256', '-in', entry.crt_filename, '-inkey', entry.key_filename,
-                              '-certfile', self.cacrt_path, '-name', entry.filename, ])
-        p.communicate(password.encode('utf-8'))
+        with tempfile.NamedTemporaryFile() as fd:
+            fd.write(password.encode('utf-8'))
+            fd.flush()
+            p = subprocess.Popen([settings.OPENSSL_PATH, 'pkcs12', '-export', '-out', filename, '-passout', 'file:%s' % fd.name, '-aes256', '-in', entry.crt_filename, '-inkey', entry.key_filename,
+                                  '-certfile', self.cacrt_path, '-name', entry.filename, ])
+            p.communicate()

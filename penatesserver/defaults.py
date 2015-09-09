@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from djangofloor.utils import FilePath
 from penatesserver import __version__
 
 __author__ = 'flanker'
@@ -75,12 +76,12 @@ LDAP_NAME = 'ldap://192.168.56.101/'
 LDAP_USER = 'cn=admin,dc=test,dc=example,dc=org'
 LDAP_PASSWORD = 'toto'
 
-PDNS_ENGINE = 'django.db.backends.postgresql_psycopg2'
-PDNS_NAME = 'powerdns'
 PDNS_USER = 'powerdns'
 PDNS_PASSWORD = 'toto'
 PDNS_HOST = 'localhost'
 PDNS_PORT = '5432'
+PDNS_ENGINE = 'django.db.backends.sqlite3'
+PDNS_NAME = FilePath('{DATA_PATH}/pdns.sqlite3')
 
 KERBEROS_IMPL = 'heimdal'  # or 'mit'
 

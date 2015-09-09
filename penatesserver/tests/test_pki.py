@@ -16,7 +16,6 @@ __author__ = 'Matthieu Gallet'
 
 
 class TestCA(TestCase):
-
     @classmethod
     def setUpClass(cls):
         TestCase.setUpClass()
@@ -51,11 +50,24 @@ class TestPKI(TestCase):
                                         role=CA_TEST, dirname=cls.dirname)
         cls.pki.initialize()
         cls.pki.ensure_ca(cls.ca_entry)
+        cls.tmp_filenames = []
 
     @classmethod
     def tearDownClass(cls):
         # noinspection PyUnresolvedReferences
         shutil.rmtree(cls.dirname)
+        # noinspection PyUnresolvedReferences
+        for filename in cls.tmp_filenames:
+            if os.path.isfile(filename):
+                os.remove(filename)
+
+    @classmethod
+    def get_tmp_filename(cls):
+        with tempfile.NamedTemporaryFile() as fd:
+            filename = fd.name
+        # noinspection PyUnresolvedReferences
+        cls.tmp_filenames.append(filename)
+        return filename
 
 
 class TestCertRole(TestPKI):
@@ -101,16 +113,20 @@ class TestCertRole(TestPKI):
                                  emailAddress='test@example .com', localityName='City',
                                  countryName='FR', stateOrProvinceName='Province', altNames=[],
                                  role=TEST_SHA256, dirname=self.dirname)
-        with tempfile.NamedTemporaryFile() as fd:
-            filename = fd.name
-        self.pki.gen_pkcs12(entry, filename=filename, password='password')
-        print(filename)
+        filename = self.get_tmp_filename()
+        password = 'password'
+        self.pki.gen_pkcs12(entry, filename=filename, password=password)
         with codecs.open(entry.key_filename, 'r', encoding='utf-8') as fd:
             src_key_content = fd.read()
-        subprocess.Popen([settings.OPENSSL_PATH, 'pkcs12', '-in', filename,
-                          '-passin', 'stdin', '-nocerts', ])
-
-
+        password_file = self.get_tmp_filename()
+        with codecs.open(password_file, 'w', encoding='utf-8') as fd:
+            fd.write(password)
+            fd.flush()
+        p = subprocess.Popen([settings.OPENSSL_PATH, 'pkcs12', '-in', filename, '-passin', 'file:%s' % password_file,
+                              '-nodes', '-nocerts', ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate(input=password.encode('utf-8'))
+        dst_key_content = stdout.decode('utf-8')
+        self.assertTrue(src_key_content in dst_key_content)
 
 
 class TestCrl(TestPKI):

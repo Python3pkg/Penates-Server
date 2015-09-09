@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+import penatesserver.models
 import django.contrib.auth.models
 import django.utils.timezone
 import django.core.validators
@@ -48,6 +49,17 @@ class Migration(migrations.Migration):
                 ('description', ldapdb.models.fields.CharField(default='', max_length=500, db_column=b'description', blank=True)),
                 ('group_type', ldapdb.models.fields.IntegerField(default=None, db_column=b'sambaGroupType')),
                 ('samba_sid', ldapdb.models.fields.CharField(default='', unique=True, max_length=200, db_column=b'sambaSID')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='GroupOfNames',
+            fields=[
+                ('dn', models.CharField(max_length=200)),
+                ('name', ldapdb.models.fields.CharField(max_length=200, serialize=False, primary_key=True, db_column=b'cn', validators=[django.core.validators.RegexValidator('^[a-zA-Z][\\w_]{0,199}$')])),
+                ('members', ldapdb.models.fields.ListField(db_column=b'member')),
             ],
             options={
                 'abstract': False,
@@ -134,7 +146,7 @@ class Migration(migrations.Migration):
                 ('gid_number', ldapdb.models.fields.IntegerField(default=None, db_column=b'gidNumber')),
                 ('login_shell', ldapdb.models.fields.CharField(default='/bin/bash', max_length=200, db_column=b'loginShell')),
                 ('description', ldapdb.models.fields.CharField(default='Description', max_length=200, db_column=b'description')),
-                ('jpeg_photo', ldapdb.models.fields.ImageField(db_column=b'jpegPhoto')),
+                ('jpeg_photo', penatesserver.models.ImageField(max_length=10000000, db_column=b'jpegPhoto')),
                 ('phone', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'telephoneNumber')),
                 ('samba_acct_flags', ldapdb.models.fields.CharField(default='[UX         ]', max_length=200, db_column=b'sambaAcctFlags')),
                 ('user_smime_certificate', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'userSMIMECertificate')),

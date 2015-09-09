@@ -360,9 +360,20 @@ def get_crl(request):
 
 def get_user_mobileconfig(request):
     user = get_object_or_404(User, name=request.user.username)
+    password = user.read_password()
     pki = PKI()
-    with codecs.open(pki.cacrt_path, 'r', encoding='utf-8') as fd:
-        ca_cert = fd.read()
+    p12_certificates = []
+    for (entry, title) in (
+            (user.user_certificate_entry, _('User certificate')),
+            (user.encipherment_certificate_entry, _('Encipherment certificate')),
+            (user.email_certificate_entry, _('Email certificate')),
+            (user.signature_certificate_entry, _('Signature certificate')),
+    ):
+        with tempfile.NamedTemporaryFile() as fd:
+            filename = fd.name
+        pki.gen_pkcs12(entry, filename, password=password)
+        p12_certificates.append((filename, title))
+
     template_values = {
         'domain': settings.PENATES_DOMAIN, 'organization': settings.PENATES_ORGANIZATION,
         'ldap_servers': [],
@@ -370,12 +381,21 @@ def get_user_mobileconfig(request):
         'caldav_servers': [],
         'email_servers': [],
         'vpn_servers': [],
-        'password': user.read_password(),
+        'password': password,
+        'username': user.name,
         'ldap_base_dn': settings.LDAP_BASE_DN,
-        'ca_cert': ca_cert,
+        'ca_cert_path': pki.cacrt_path,
+        'p12_certificates': p12_certificates,
     }
     for service in Service.objects.all():
         if service.scheme == 'ldap':
             template_values['ldap_servers'].append(service)
-    return render_to_response('penatesserver/mobileconfig.xml', template_values,
-                              content_type='application/xml')
+        elif service.scheme == 'carddav':
+            template_values['carddav_servers'].append(service)
+        elif service.scheme == 'caldav':
+            template_values['caldav_servers'].append(service)
+    rep = render_to_response('penatesserver/mobileconfig.xml', template_values,
+                             content_type='application/xml')
+    for filename, title in p12_certificates:
+        os.remove(filename)
+    return rep

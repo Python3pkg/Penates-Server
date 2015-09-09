@@ -77,7 +77,6 @@ def generate_uuid():
     return str(uuid.uuid4()).upper()
 
 
-@register.filter
 def base64_encode(binary_content):
     """
     >>> base64_encode('VW1JWWhQTlBPcXMwPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tQWI0WGdCNTlpUGxkekRoeGUxNE51UHZ1eDZVCkNjUHdxbTNXaGFw')[0:50]
@@ -87,5 +86,13 @@ def base64_encode(binary_content):
     """
     if isinstance(binary_content, text_type):
         binary_content = binary_content.encode('utf-8')
+    value = base64.b64encode(binary_content)
+    return b'\n'.join([value[i:i+50] for i in range(0, len(value), 50)])
+
+
+@register.filter
+def base64_file(filename):
+    with open(filename, 'rb') as fd:
+        binary_content = fd.read()
     value = base64.b64encode(binary_content)
     return b'\n'.join([value[i:i+50] for i in range(0, len(value), 50)])

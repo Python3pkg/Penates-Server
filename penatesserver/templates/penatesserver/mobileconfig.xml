@@ -58,34 +58,113 @@
 		</dict>
         {% endfor %}
 
+        {% for server in caldav_servers %}
 		<dict>
 			<key>CalDAVAccountDescription</key>
-			<string>Mon compte CalDAV</string>
+			<string>{% trans 'Calendar server' %}</string>
 			<key>CalDAVHostName</key>
-			<string>caldav.test.example.org</string>
+			<string>{{ server.hostname }}</string>
 			<key>CalDAVPassword</key>
-			<string>toto</string>
+			<string>{{ password }}</string>
 			<key>CalDAVPort</key>
-			<integer>8443</integer>
+			<integer>{{ server.port }}</integer>
 			<key>CalDAVUseSSL</key>
-			<true/>
+			{% if server.user_ssl %}<true/>{% else %}<false/>{% endif %}
 			<key>CalDAVUsername</key>
-			<string>login</string>
+			<string>{{ username }}</string>
 			<key>PayloadDescription</key>
-			<string>Configure un compte CalDAV.</string>
+			<string>{% trans 'Configure a CalDAV account' %}</string>
 			<key>PayloadDisplayName</key>
-			<string>CalDAV (Mon compte CalDAV)</string>
+			<string>CalDAV ({{ server.hostname }})</string>
 			<key>PayloadIdentifier</key>
-			<string>test.example.org.CalDAV</string>
+			<string>{{ domain }}</string>
 			<key>PayloadOrganization</key>
-			<string>example.org</string>
+			<string>{{ organization }}</string>
 			<key>PayloadType</key>
 			<string>com.apple.caldav.account</string>
 			<key>PayloadUUID</key>
-			<string>05D94212-6EE9-460E-9033-84991F8A4CBA</string>
+			<string>{% generate_uuid %}</string>
 			<key>PayloadVersion</key>
 			<integer>1</integer>
 		</dict>
+        {% endfor %}
+
+		{% for server in carddav_servers %}
+        <dict>
+			<key>CardDAVAccountDescription</key>
+			<string>Mon compte CardDAV</string>
+			<key>CardDAVHostName</key>
+			<string>{{ server.hostname }}</string>
+			<key>CardDAVPassword</key>
+			<string>{{ password }}</string>
+			<key>CardDAVPort</key>
+            <integer>{{ server.port }}</integer>
+			<key>CardDAVUseSSL</key>
+			{% if server.user_ssl %}<true/>{% else %}<false/>{% endif %}
+			<key>CardDAVUsername</key>
+			<string>{{ username }}</string>
+			<key>PayloadDescription</key>
+			<string>{% trans 'Configure a CardDAV account' %}</string>
+			<key>PayloadDisplayName</key>
+			<string>CardDAV</string>
+			<key>PayloadIdentifier</key>
+			<string>{{ domain }}</string>
+			<key>PayloadOrganization</key>
+			<string>{{ organization }}</string>
+			<key>PayloadType</key>
+			<string>com.apple.caldav.account</string>
+			<key>PayloadUUID</key>
+			<string>{% generate_uuid %}</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>
+        {% endfor %}
+
+		<dict>
+			<key>PayloadCertificateFileName</key>
+			<string>cacert.cer</string>
+			<key>PayloadContent</key>
+			<data>{{ ca_cert_path|base64_file }}</data>
+			<key>PayloadDescription</key>
+			<string>{% trans 'Root certificate' %}</string>
+			<key>PayloadDisplayName</key>
+			<string>{{ domain }}</string>
+			<key>PayloadIdentifier</key>
+			<string>{{ domain }}.reference</string>
+			<key>PayloadOrganization</key>
+			<string>{{ organization }}</string>
+			<key>PayloadType</key>
+			<string>com.apple.security.root</string>
+			<key>PayloadUUID</key>
+			<string>{% generate_uuid %}</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>
+    {% for certificate in p12_certificates %}
+		<dict>
+			<key>Password</key>
+			<string>{{ password }}</string>
+			<key>PayloadCertificateFileName</key>
+			<string>{{ username }}.p12</string>
+			<key>PayloadContent</key>
+			<data>{{ certificate.0|base64_file }}</data>
+    		<key>PayloadDescription</key>
+			<string>{{ certificate.1 }}</string>
+			<key>PayloadDisplayName</key>
+			<string>{{ certificate.1 }}.p12</string>
+			<key>PayloadIdentifier</key>
+			<string>{{ domain }}.{{ certificate.1 }}</string>
+			<key>PayloadOrganization</key>
+			<string>{{ organization }}</string>
+			<key>PayloadType</key>
+			<string>com.apple.security.pkcs12</string>
+			<key>PayloadUUID</key>
+			<string>{% generate_uuid %}</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>
+    {% endfor %}
+
 
 		<dict>
 			<key>PayloadDescription</key>
@@ -213,54 +292,6 @@
 			<string>VPN example.org</string>
 			<key>VPNType</key>
 			<string>L2TP</string>
-		</dict>
-{#		<dict>#}
-{#			<key>CardDAVAccountDescription</key>#}
-{#			<string>Mon compte CardDAV</string>#}
-{#			<key>CardDAVHostName</key>#}
-{#			<string>carddav.test.example.org</string>#}
-{#			<key>CardDAVPassword</key>#}
-{#			<string>password</string>#}
-{#			<key>CardDAVPort</key>#}
-{#			<integer>8843</integer>#}
-{#			<key>CardDAVUseSSL</key>#}
-{#			<true/>#}
-{#			<key>CardDAVUsername</key>#}
-{#			<string>login</string>#}
-{#			<key>PayloadDescription</key>#}
-{#			<string>Configure des comptes CardDAV.</string>#}
-{#			<key>PayloadDisplayName</key>#}
-{#			<string>CardDAV</string>#}
-{#			<key>PayloadIdentifier</key>#}
-{#			<string>test.example.org.carddav</string>#}
-{#			<key>PayloadOrganization</key>#}
-{#			<string>example.org</string>#}
-{#			<key>PayloadType</key>#}
-{#			<string>com.apple.carddav.account</string>#}
-{#			<key>PayloadUUID</key>#}
-{#			<string>3AC79E00-8B72-4EAD-ADC5-BEB2CCEA90B9</string>#}
-{#			<key>PayloadVersion</key>#}
-{#			<integer>1</integer>#}
-{#		</dict>#}
-		<dict>
-			<key>PayloadCertificateFileName</key>
-			<string>cacert.cer</string>
-			<key>PayloadContent</key>
-			<data>{{ ca_cert|base64_encode }}</data>
-			<key>PayloadDescription</key>
-			<string>{% trans 'Root certificate' %}</string>
-			<key>PayloadDisplayName</key>
-			<string>{{ domain }}</string>
-			<key>PayloadIdentifier</key>
-			<string>{{ domain }}.reference</string>
-			<key>PayloadOrganization</key>
-			<string>{{ organization }}</string>
-			<key>PayloadType</key>
-			<string>com.apple.security.root</string>
-			<key>PayloadUUID</key>
-			<string>{% generate_uuid %}</string>
-			<key>PayloadVersion</key>
-			<integer>1</integer>
 		</dict>
 	</array>
 	<key>PayloadDescription</key>
