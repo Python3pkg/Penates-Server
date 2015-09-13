@@ -69,8 +69,8 @@ class Domain(models.Model):
                 content = '%s %s %s 10800 3600 604800 3600' % (hostname, settings.PENATES_EMAIL_ADDRESS, self.get_soa_serial())
                 Record.objects.get_or_create(domain=self, type='SOA', name=self.name, content=content)
         elif scheme == 'smtp':
-            content = '10 %s' % hostname
-            Record.objects.get_or_create(domain=self, type='MX', name=self.name, content=content)
+            content = '%s' % hostname
+            Record.objects.get_or_create(defaults={'prio': 10}, domain=self, type='MX', name=self.name, content=content)
         if srv_field:
             matcher_full = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
             matcher_protocol = re.match(r'^(\w+)/(\w+)$', srv_field)
