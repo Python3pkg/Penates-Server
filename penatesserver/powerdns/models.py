@@ -68,9 +68,11 @@ class Domain(models.Model):
             if Record.objects.filter(domain=self, type='SOA').count() == 0:
                 content = '%s %s %s 10800 3600 604800 3600' % (hostname, settings.PENATES_EMAIL_ADDRESS, self.get_soa_serial())
                 Record.objects.get_or_create(domain=self, type='SOA', name=self.name, content=content)
-        elif scheme == 'smtp':
-            content = '%s' % hostname
-            Record.objects.get_or_create(defaults={'prio': 10}, domain=self, type='MX', name=self.name, content=content)
+        elif scheme == 'smtp' and port == 25:
+            Record.objects.get_or_create(defaults={'prio': 10}, domain=self, type='MX', name=self.name, content=hostname)
+            content = 'v=spf1 mx mx:%s -all' % self.name
+            if Record.objects.filter(domain=self, type='TXT', name=self.name, content__startswith='v=spf1').update(content=content) == 0:
+                Record(domain=self, type='TXT', name=self.name, content=content).save()
         if srv_field:
             matcher_full = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
             matcher_protocol = re.match(r'^(\w+)/(\w+)$', srv_field)
