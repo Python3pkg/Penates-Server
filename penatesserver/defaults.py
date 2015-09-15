@@ -110,6 +110,7 @@ DATABASES = {
     },
 
 }
+STORE_CLEARTEXT_PASSWORDS = False
 DATABASE_ROUTERS = ['ldapdb.router.Router', 'penatesserver.routers.PowerdnsManagerDbRouter', ]
 AUTH_USER_MODEL = 'penatesserver.DjangoUser'
 

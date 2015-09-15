@@ -171,18 +171,21 @@ class User(BaseLdapModel):
         self.user_password = password_hash(password)
         self.save()
         change_password(self.principal_name, password)
-        ensure_location(self.password_filename)
-        with codecs.open(self.password_filename, 'w', encoding='utf-8') as fd:
-            fd.write(password)
-        os.chmod(self.password_filename, 0o400)
+        if settings.STORE_CLEARTEXT_PASSWORDS:
+            ensure_location(self.password_filename)
+            with codecs.open(self.password_filename, 'w', encoding='utf-8') as fd:
+                fd.write(password)
+            os.chmod(self.password_filename, 0o400)
 
     @property
     def password_filename(self):
         return os.path.join(settings.PKI_PATH, 'private', 'passwords', self.name + '.txt')
 
     def read_password(self):
-        with codecs.open(self.password_filename, 'r', encoding='utf-8') as fd:
-            return fd.read()
+        if settings.STORE_CLEARTEXT_PASSWORDS:
+            with codecs.open(self.password_filename, 'r', encoding='utf-8') as fd:
+                return fd.read()
+        return ''
 
     def delete(self, using=None):
         super(User, self).delete(using=using)
