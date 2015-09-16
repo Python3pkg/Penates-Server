@@ -73,6 +73,8 @@ class Domain(models.Model):
             content = 'v=spf1 mx mx:%s -all' % self.name
             if Record.objects.filter(domain=self, type='TXT', name=self.name, content__startswith='v=spf1').update(content=content) == 0:
                 Record(domain=self, type='TXT', name=self.name, content=content).save()
+        elif scheme == 'dkim':
+            pass
         if srv_field:
             matcher_full = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
             matcher_protocol = re.match(r'^(\w+)/(\w+)$', srv_field)

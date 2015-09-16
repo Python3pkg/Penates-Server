@@ -199,7 +199,7 @@ def set_service(request, scheme, hostname, port):
         return HttpResponse(status=401, content='%s is already registered' % hostname)
     if role not in (SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER):
         return HttpResponse(status=401, content='Role %s is not allowed' % role)
-    if kerberos_service not in ('HTTP', 'XMPP', 'smtp', 'IPP', 'ldap', 'cifs', 'imap', 'postgres'):
+    if kerberos_service and kerberos_service not in ('HTTP', 'XMPP', 'smtp', 'IPP', 'ldap', 'cifs', 'imap', 'postgres'):
         return HttpResponse(status=401, content='Kerberos service %s is not allowed' % role)
     # Penates service
     service, created = Service.objects.get_or_create(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)
@@ -211,9 +211,10 @@ def set_service(request, scheme, hostname, port):
                              stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=role)
     pki = PKI()
     pki.ensure_certificate(entry)
-    # kerberos principal
-    principal_name = '%s/%s@%s' % (kerberos_service, fqdn, settings.PENATES_REALM)
-    add_principal(principal_name)
+    if kerberos_service:
+        # kerberos principal
+        principal_name = '%s/%s@%s' % (kerberos_service, fqdn, settings.PENATES_REALM)
+        add_principal(principal_name)
     # DNS part
     record_name, sep, domain_name = hostname.partition('.')
     if sep == '.':
