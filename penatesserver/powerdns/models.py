@@ -80,9 +80,10 @@ class Domain(models.Model):
             with codecs.open(entry.pub_filename, 'r', encoding='utf-8') as fd:
                 content = fd.read()
             content = 'v=DKIM1; k=rsa; p=' + content.replace('-----END PUBLIC KEY-----', '').replace('-----BEGIN PUBLIC KEY-----', '').strip()
+            subdomain = self.ensure_subdomain('_domainkey.%s' % self.name)
             name = '%s._domainkey.%s' % (hostname.partition('.')[0], self.name)
-            if Record.objects.filter(domain=self, type='TXT', name=name, content__startswith='v=DKIM1;').update(content=content) == 0:
-                Record(domain=self, type='TXT', name=name, content=content).save()
+            if Record.objects.filter(domain=subdomain, type='TXT', name=name, content__startswith='v=DKIM1;').update(content=content) == 0:
+                Record(domain=subdomain, type='TXT', name=name, content=content).save()
         if srv_field:
             matcher_full = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
             matcher_protocol = re.match(r'^(\w+)/(\w+)$', srv_field)
@@ -112,9 +113,10 @@ class Domain(models.Model):
         return True
 
     def ensure_srv_record(self, scheme, service, port, prio, weight, fqdn):
-        name = '_%s._%s' % (service, scheme)
+        subdomain = self.ensure_subdomain('_%s.%s' % (scheme, self.name))
+        name = '_%s._%s.%s' % (service, scheme, self.name)
         content = '%s %s %s' % (weight, port, fqdn)
-        Record.objects.get_or_create(defaults={'prio': prio}, domain=self, type='SRV', name=name, content=content)
+        Record.objects.get_or_create(defaults={'prio': prio}, domain=subdomain, type='SRV', name=name, content=content)
 
     def ensure_record(self, source, target):
         """
@@ -135,11 +137,7 @@ class Domain(models.Model):
                     reverse_record_name, sep, reverse_domain_name = add.reverse_dns.partition('.')
                     reverse_domain_name = reverse_domain_name[:-1]
                     reverse_target = add.reverse_dns[:-1]
-                    reverse_domain, created = Domain.objects.get_or_create(name=reverse_domain_name)
-                    if Record.objects.filter(domain=reverse_domain, type='SOA').count() == 0:
-                        soa_records = list(Record.objects.filter(domain=self, type='SOA')[0:1])
-                        if soa_records:
-                            Record.objects.get_or_create(domain=reverse_domain, type='SOA', name=reverse_domain.name, content=soa_records[0].content)
+                    reverse_domain = self.ensure_subdomain(reverse_domain_name)
                     if Record.objects.filter(domain=reverse_domain, name=reverse_target, type='PTR').update(content=target) == 0:
                         Record(domain=reverse_domain, name=reverse_target, type='PTR', content=target, ttl=3600).save()
                         assert isinstance(reverse_domain, Domain)
@@ -148,6 +146,14 @@ class Domain(models.Model):
                 record_type = 'CNAME'
             Record(domain=self, name=target, type=record_type, content=source, ttl=3600).save()
         return True
+
+    def ensure_subdomain(self, subdomain_name):
+        subdomain, created = Domain.objects.get_or_create(name=subdomain_name)
+        if Record.objects.filter(domain=subdomain, type='SOA').count() == 0:
+            soa_records = list(Record.objects.filter(domain=self, type='SOA')[0:1])
+            if soa_records:
+                Record.objects.get_or_create(domain=subdomain, type='SOA', name=subdomain.name, content=soa_records[0].content)
+        return subdomain
 
 
 class Record(models.Model):
@@ -165,7 +171,7 @@ class Record(models.Model):
     def __repr__(self):
         if self.type in ('NS', 'SOA', 'MX'):
             return 'Record(%s [%s] -> %s)' % (self.name, self.type, self.content)
-        return 'Record(%s.%s [%s] -> %s)' % (self.name, self.domain.name, self.type, self.content)
+        return 'Record(%s [%s] -> %s)' % (self.name, self.type, self.content)
 
     class Meta(object):
         managed = False
