@@ -80,10 +80,9 @@ class Domain(models.Model):
             with codecs.open(entry.pub_filename, 'r', encoding='utf-8') as fd:
                 content = fd.read()
             content = 'v=DKIM1; k=rsa; p=' + content.replace('-----END PUBLIC KEY-----', '').replace('-----BEGIN PUBLIC KEY-----', '').strip()
-            subdomain = self.ensure_subdomain('_domainkey.%s' % self.name)
             name = '%s._domainkey.%s' % (hostname.partition('.')[0], self.name)
-            if Record.objects.filter(domain=subdomain, type='TXT', name=name, content__startswith='v=DKIM1;').update(content=content) == 0:
-                Record(domain=subdomain, type='TXT', name=name, content=content).save()
+            if Record.objects.filter(domain=self, type='TXT', name=name, content__startswith='v=DKIM1;').update(content=content) == 0:
+                Record(domain=self, type='TXT', name=name, content=content).save()
         if srv_field:
             matcher_full = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
             matcher_protocol = re.match(r'^(\w+)/(\w+)$', srv_field)
@@ -113,10 +112,9 @@ class Domain(models.Model):
         return True
 
     def ensure_srv_record(self, scheme, service, port, prio, weight, fqdn):
-        subdomain = self.ensure_subdomain('_%s.%s' % (scheme, self.name))
         name = '_%s._%s.%s' % (service, scheme, self.name)
         content = '%s %s %s' % (weight, port, fqdn)
-        Record.objects.get_or_create(defaults={'prio': prio}, domain=subdomain, type='SRV', name=name, content=content)
+        Record.objects.get_or_create(defaults={'prio': prio}, domain=self, type='SRV', name=name, content=content)
 
     def ensure_record(self, source, target):
         """
@@ -154,6 +152,9 @@ class Domain(models.Model):
             if soa_records:
                 Record.objects.get_or_create(domain=subdomain, type='SOA', name=subdomain.name, content=soa_records[0].content)
         return subdomain
+
+    def __repr__(self):
+        return "Domain('self.name')"
 
 
 class Record(models.Model):
