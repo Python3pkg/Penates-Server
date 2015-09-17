@@ -83,6 +83,10 @@ class Domain(models.Model):
             name = '%s._domainkey.%s' % (hostname.partition('.')[0], self.name)
             if Record.objects.filter(domain=self, type='TXT', name=name, content__startswith='v=DKIM1;').update(content=content) == 0:
                 Record(domain=self, type='TXT', name=name, content=content).save()
+            content = 't=n;o=-;r=postmaster@%s' % self.name
+            name = '_domainkey.%s' % self.name
+            if Record.objects.filter(domain=self, type='TXT', name=name, content=content).count() == 0:
+                Record(domain=self, type='TXT', name=name, content=content).save()
         if srv_field:
             matcher_full = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
             matcher_protocol = re.match(r'^(\w+)/(\w+)$', srv_field)
