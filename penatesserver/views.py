@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import base64
-import codecs
 import hashlib
 import os
 import re
 import tempfile
-import uuid
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -14,10 +12,8 @@ from django.http import HttpResponse
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
-
 from django.utils.translation import ugettext as _
 import netaddr
-
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
 from penatesserver.forms import PasswordForm
@@ -186,6 +182,9 @@ def set_extra_service(request, hostname):
 
 def set_service(request, scheme, hostname, port):
     scheme, use_ssl = guess_use_ssl(scheme)
+    port = int(port)
+    if not (0 <= port <= 65536):
+        return HttpResponse('Invalid port: %s' % port, status=403, content_type='text/plain')
     srv_field = request.GET.get('srv', None)
     kerberos_service = request.GET.get('keytab', None)
     role = request.GET.get('role', SERVICE)
@@ -220,7 +219,7 @@ def set_service(request, scheme, hostname, port):
     if sep == '.':
         domain, created = Domain.objects.get_or_create(name=domain_name)
         domain.ensure_record(fqdn, hostname)
-        domain.set_extra_records(scheme, hostname, port, fqdn, srv_field)
+        domain.set_extra_records(scheme, hostname, port, fqdn, srv_field, entry=entry)
         domain.update_soa()
     return HttpResponse(status=201, content='%s://%s:%s/ created' % (scheme, hostname, port))
 

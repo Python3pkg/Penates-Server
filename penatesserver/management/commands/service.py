@@ -7,6 +7,7 @@ from django.core.management import BaseCommand, call_command
 from django.utils.translation import ugettext as _
 
 from penatesserver.models import Service
+from penatesserver.pki.service import CertificateEntry
 from penatesserver.powerdns.models import Domain
 from penatesserver.utils import guess_use_ssl
 
@@ -61,6 +62,10 @@ class Command(BaseCommand):
                      stateOrProvinceName=settings.PENATES_STATE, altNames=[],
                      cert=options['cert'], key=options['key'], pubkey=options['pubkey'], ssh=options['ssh'],
                      pubssh=options['pubssh'], ca=options['ca'], initialize=False)
+        entry = CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
+                                 organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
+                                 localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                                 stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=options['role'])
 
         # kerberos part
         if kerberos_service:
@@ -72,5 +77,5 @@ class Command(BaseCommand):
         if sep == '.':
             domain, created = Domain.objects.get_or_create(name=domain_name)
             domain.ensure_record(fqdn, hostname)
-            domain.set_extra_records(scheme, hostname, port, fqdn, srv_field)
+            domain.set_extra_records(scheme, hostname, port, fqdn, srv_field, entry=entry)
             domain.update_soa()

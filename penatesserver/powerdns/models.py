@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import codecs
 import datetime
 import re
 import time
 from django.conf import settings
 import netaddr
+from penatesserver.pki.service import CertificateEntry
 
 __author__ = 'Matthieu Gallet'
 
@@ -62,7 +64,7 @@ class Domain(models.Model):
     def default_record_values(ttl=86400, prio=0, disabled=False, auth=True, change_date=None):
         return {'ttl': ttl, 'prio': prio, 'disabled': disabled, 'auth': auth, 'change_date': change_date or time.time()}
 
-    def set_extra_records(self, scheme, hostname, port, fqdn, srv_field):
+    def set_extra_records(self, scheme, hostname, port, fqdn, srv_field, entry=None):
         if scheme == 'dns':
             Record.objects.get_or_create(domain=self, type='NS', name=self.name, content=hostname)
             if Record.objects.filter(domain=self, type='SOA').count() == 0:
@@ -73,8 +75,14 @@ class Domain(models.Model):
             content = 'v=spf1 mx mx:%s -all' % self.name
             if Record.objects.filter(domain=self, type='TXT', name=self.name, content__startswith='v=spf1').update(content=content) == 0:
                 Record(domain=self, type='TXT', name=self.name, content=content).save()
-        elif scheme == 'dkim':
-            pass
+        elif scheme == 'dkim' and entry is not None:
+            assert isinstance(entry, CertificateEntry)
+            with codecs.open(entry.pub_filename, 'r', encoding='utf-8') as fd:
+                content = fd.read()
+            content = 'v=DKIM1; k=rsa; p=' + content.replace('-----END PUBLIC KEY-----', '').replace('-----BEGIN PUBLIC KEY-----', '').strip()
+            name = '%s._domainkey.%s' % (hostname.partition('.')[0], self.name)
+            if Record.objects.filter(domain=self, type='TXT', name=name, content__startswith='v=DKIM1;').update(content=content) == 0:
+                Record(domain=self, type='TXT', name=name, content=content).save()
         if srv_field:
             matcher_full = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
             matcher_protocol = re.match(r'^(\w+)/(\w+)$', srv_field)
