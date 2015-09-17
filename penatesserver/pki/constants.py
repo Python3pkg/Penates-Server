@@ -14,6 +14,7 @@ OCSPSIGNING = "OCSPSigning"
 COMPUTER = "Computer"
 CA = "CA"
 SERVICE = "Service"
+SERVICE_1024 = 'Service1024'
 PRINTER = "Printer"
 RESOURCE = "Resource"
 TIME_SERVER = "Time Server"
@@ -94,6 +95,12 @@ ROLES = {
         "dsaBits": 4096, "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"],
         "cypherType": AES256, "extendedKeyUsage": ["clientAuth", "nsSGC", "serverAuth"], "digest": SHA256, "keyType": RSA,
         "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 4096, "days": 1000, "basicConstraints": CA_FALSE
+    },
+    SERVICE_1024: {
+        "nsCertType": ["client", "server"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30,
+        "dsaBits": 1024, "keyUsage": ["dataEncipherment", "digitalSignature", "keyAgreement", "keyEncipherment"],
+        "cypherType": AES256, "extendedKeyUsage": ["clientAuth", "nsSGC", "serverAuth"], "digest": SHA256, "keyType": RSA,
+        "subjectKeyIdentifier": HASH_IDENTIFIER, "rsaBits": 1024, "days": 1000, "basicConstraints": CA_FALSE
     },
     CA: {
         "nsCertType": ["emailCA", "objCA", "sslCA"], "authorityKeyIdentifier": IDENTIFIER_ALWAYS, "crlDays": 30,

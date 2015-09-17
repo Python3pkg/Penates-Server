@@ -19,7 +19,7 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 from penatesserver.forms import PasswordForm
 from penatesserver.kerb import add_principal_to_keytab, add_principal, principal_exists
 from penatesserver.models import Service, Host, User, Group
-from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER
+from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER, SERVICE_1024
 from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain, Record
 from penatesserver.serializers import UserSerializer, GroupSerializer
@@ -196,7 +196,7 @@ def set_service(request, scheme, hostname, port):
     # a few checks
     if Service.objects.filter(hostname=hostname).exclude(fqdn=fqdn).count() > 0:
         return HttpResponse(status=401, content='%s is already registered' % hostname)
-    if role not in (SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER):
+    if role not in (SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER, SERVICE_1024):
         return HttpResponse(status=401, content='Role %s is not allowed' % role)
     if kerberos_service and kerberos_service not in ('HTTP', 'XMPP', 'smtp', 'IPP', 'ldap', 'cifs', 'imap', 'postgres'):
         return HttpResponse(status=401, content='Kerberos service %s is not allowed' % role)
@@ -244,6 +244,8 @@ def get_service_certificate(request, scheme, hostname, port):
     services = list(Service.objects.filter(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)[0:1])
     if not services:
         return HttpResponse(status=404, content='%s://%s:%s/ unknown' % (scheme, hostname, port))
+    if role not in (SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER, SERVICE_1024):
+        return HttpResponse(status=401, content='Role %s is not allowed' % role)
     entry = CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
                              organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
                              localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
