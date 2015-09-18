@@ -256,6 +256,8 @@ def get_service_certificate(request, scheme, hostname, port):
     pki.ensure_certificate(entry)
     record_name, sep, domain_name = hostname.partition('.')
     domain = Domain.objects.get(name=domain_name)
+    record_name = '_%s.%s' % (protocol, hostname)
+    Record.objects.get_or_create(name=record_name, domain=domain)
     record_name = '_%d._%s.%s' % (port, protocol, hostname)
     content = '3 0 1 %s' % entry.crt_sha256
     if Record.objects.filter(name=record_name, domain=domain, type='TLSA').update(content=content) == 0:
