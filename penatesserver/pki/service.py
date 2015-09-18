@@ -98,6 +98,32 @@ class CertificateEntry(object):
     def ca_filename(self):
         return os.path.join(self.dirname, 'cacert.pem')
 
+    @property
+    def crt_sha256(self):
+        return self.pem_hash(self.crt_filename, hashlib.sha256)
+
+    @property
+    def pub_sha256(self):
+        return self.pem_hash(self.pub_filename, hashlib.sha256)
+
+    @property
+    def crt_sha512(self):
+        return self.pem_hash(self.crt_filename, hashlib.sha512)
+
+    @property
+    def pub_sha512(self):
+        return self.pem_hash(self.pub_filename, hashlib.sha512)
+
+    @staticmethod
+    def pem_hash(filename, hash_cls=None):
+        if hash_cls is None:
+            hash_cls = hashlib.sha256
+        with codecs.open(filename, 'r', encoding='utf-8') as fd:
+            content = fd.read()
+        b64_der = ''.join(content.splitlines()[1:-1])
+        der = base64.b64decode(b64_der)
+        return hash_cls(der).hexdigest()
+
     def __repr__(self):
         return self.commonName
 

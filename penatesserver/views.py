@@ -29,9 +29,10 @@ __author__ = 'flanker'
 
 
 class CertificateEntryResponse(HttpResponse):
-    def __init__(self, entry, **kwargs):
-        pki = PKI()
-        pki.ensure_certificate(entry)
+    def __init__(self, entry, ensure_entry=True, **kwargs):
+        if ensure_entry:
+            pki = PKI()
+            pki.ensure_certificate(entry)
         content = b''
         # noinspection PyTypeChecker
         with open(entry.key_filename, 'rb') as fd:
@@ -241,6 +242,7 @@ def get_service_certificate(request, scheme, hostname, port):
     fqdn = hostname_from_principal(request.user.username)
     role = request.GET.get('role', SERVICE)
     protocol = request.GET.get('protocol', 'tcp')
+    port = int(port)
     services = list(Service.objects.filter(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)[0:1])
     if not services:
         return HttpResponse(status=404, content='%s://%s:%s/ unknown' % (scheme, hostname, port))
@@ -250,6 +252,14 @@ def get_service_certificate(request, scheme, hostname, port):
                              organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
                              localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                              stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=role)
+    pki = PKI()
+    pki.ensure_certificate(entry)
+    record_name, sep, domain_name = hostname.partition('.')
+    domain = Domain.objects.get(name=domain_name)
+    record_name = '_%d._%s.%s' % (port, protocol, hostname)
+    content = '3 0 1 %s' % entry.crt_sha256
+    if Record.objects.filter(name=record_name, domain=domain, type='TLSA').update(content=content) == 0:
+        Record(name=record_name, domain=domain, type='TLSA', content=content).save()
     return CertificateEntryResponse(entry)
 
 

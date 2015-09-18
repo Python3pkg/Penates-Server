@@ -115,8 +115,10 @@ class Domain(models.Model):
         Record.objects.filter(pk=record.pk).update(content=' '.join((hostname, email, serial, refresh, retry, expire, default_ttl)))
         return True
 
-    def ensure_srv_record(self, scheme, service, port, prio, weight, fqdn):
-        name = '_%s._%s.%s' % (service, scheme, self.name)
+    def ensure_srv_record(self, protocol, service, port, prio, weight, fqdn):
+        name = '_%s.%s' % (protocol, self.name)
+        Record.objects.get_or_create(defaults={'prio': None}, domain=self, type=None, name=name, content=None)
+        name = '_%s._%s.%s' % (service, protocol, self.name)
         content = '%s %s %s' % (weight, port, fqdn)
         Record.objects.get_or_create(defaults={'prio': prio}, domain=self, type='SRV', name=name, content=content)
 
@@ -177,6 +179,16 @@ class Record(models.Model):
         if self.type in ('NS', 'SOA', 'MX'):
             return 'Record(%s [%s] -> %s)' % (self.name, self.type, self.content)
         return 'Record(%s [%s] -> %s)' % (self.name, self.type, self.content)
+
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        domain_name = self.domain.name
+        self.auth = self.name.endswith(domain_name)
+        if self.auth:
+            comp = self.name[:-(1 + len(domain_name))].split('.')
+            comp.reverse()
+            self.ordername = ' '.join(comp)
+        super(Record, self).save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
 
     class Meta(object):
         managed = False
