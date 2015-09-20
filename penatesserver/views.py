@@ -416,7 +416,7 @@ def get_user_mobileconfig(request):
         elif service.scheme == 'smtps':
             mail_services.setdefault(service.hostname)['smtp'] = service
 
-    template_values['email_servers'] = list(mail_services.keys())
+    template_values['email_servers'] = list(mail_services.values())
     rep = render_to_response('penatesserver/mobileconfig.xml', template_values,
                              content_type='application/xml')
     for filename, title in p12_certificates:
