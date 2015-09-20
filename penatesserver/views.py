@@ -387,6 +387,7 @@ def get_user_mobileconfig(request):
     ):
         with tempfile.NamedTemporaryFile() as fd:
             filename = fd.name
+        pki.ensure_certificate(entry)
         pki.gen_pkcs12(entry, filename, password=password)
         p12_certificates.append((filename, title))
 
