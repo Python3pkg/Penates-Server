@@ -19,8 +19,13 @@
             <li><a href="{% url 'penatesserver.views.get_email_certificate' %}">{% trans 'Get your certificate for emails' %}</a></li>
             <li><a href="{% url 'penatesserver.views.get_signature_certificate' %}">{% trans 'Get your certificate for signing' %}</a></li>
             <li><a href="{% url 'penatesserver.views.get_encipherment_certificate' %}">{% trans 'Get your certificate for encipherment' %}</a></li>
-            <li><a href="{% url 'penatesserver.views.get_user_mobileconfig' %}">{% trans 'Apple mobileconfig' %}</a></li>
             <li><a href="{% url 'group_list' %}">{% trans 'Groups' %}</a></li>
+            <li>
+                <form method="get" action="{% url 'penatesserver.views.get_user_mobileconfig' %}">
+                    <label for="mobileconfig_password">{% trans 'Password' %}</label> <input id="mobileconfig_password" type="password" name="password" value="">
+                    <input type="submit" value="{% trans 'Apple mobileconfig' %}" class="btn btn-success">
+                </form>
+            </li>
         </ul>
     </div>
 

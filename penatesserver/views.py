@@ -374,7 +374,9 @@ def get_crl(request):
 
 def get_user_mobileconfig(request):
     user = get_object_or_404(User, name=request.user.username)
-    password = user.read_password()
+    password = request.GET.get('password', '')
+    if not password:
+        password = user.read_password()
     pki = PKI()
     p12_certificates = []
     for (entry, title) in (
