@@ -403,6 +403,7 @@ def get_user_mobileconfig(request):
         'ca_cert_path': pki.cacrt_path,
         'p12_certificates': p12_certificates,
     }
+    mail_services = {}
     for service in Service.objects.all():
         if service.scheme == 'ldap':
             template_values['ldap_servers'].append(service)
@@ -410,6 +411,12 @@ def get_user_mobileconfig(request):
             template_values['carddav_servers'].append(service)
         elif service.scheme == 'caldav':
             template_values['caldav_servers'].append(service)
+        elif service.scheme == 'imaps':
+            mail_services.setdefault(service.hostname)['imap'] = service
+        elif service.scheme == 'smtps':
+            mail_services.setdefault(service.hostname)['smtp'] = service
+
+    template_values['email_servers'] = list(mail_services.keys())
     rep = render_to_response('penatesserver/mobileconfig.xml', template_values,
                              content_type='application/xml')
     for filename, title in p12_certificates:

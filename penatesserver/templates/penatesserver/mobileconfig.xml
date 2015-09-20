@@ -165,6 +165,68 @@
 		</dict>
     {% endfor %}
 
+    {% for service in email_servers %}
+		<dict>
+			<key>EmailAccountDescription</key>
+			<string>{% trans 'e-mail account' %}</string>
+			<key>EmailAccountName</key>
+			<string>{% trans 'base e-mail account' %}</string>
+			<key>EmailAccountType</key>
+			<string>EmailTypeIMAP</string>
+			<key>EmailAddress</key>
+			<string>{{ username }}@{{ domain }}</string>
+            {% if service.imap %}
+			<key>IncomingMailServerAuthentication</key>
+			<string>EmailAuthPassword</string>
+			<key>IncomingMailServerHostName</key>
+			<string>{{ service.imap.hostname }}</string>
+			<key>IncomingMailServerPortNumber</key>
+			<integer>{{ service.imap.port }}</integer>
+			<key>IncomingMailServerUseSSL</key>
+			{% if service.imap.use_ssl %}<true/>{% else %}<false/>{% endif %}
+			<key>IncomingMailServerUsername</key>
+			<string>{{ username }}</string>
+			<key>IncomingPassword</key>
+			<string>{{ password }}</string>
+            {% endif %}
+            {% if service.smtp %}
+			<key>OutgoingMailServerAuthentication</key>
+			<string>EmailAuthPassword</string>
+			<key>OutgoingMailServerHostName</key>
+			<string>{{ service.smtp.hostname }}</string>
+			<key>OutgoingMailServerPortNumber</key>
+			<integer>{{ service.smtp.port }}</integer>
+			<key>OutgoingMailServerUseSSL</key>
+			{% if service.smtp.use_ssl %}<true/>{% else %}<false/>{% endif %}
+			<key>OutgoingMailServerUsername</key>
+			<string>{{ username }}</string>
+			<key>OutgoingPassword</key>
+			<string>{{ password }}</string>
+			<key>OutgoingPasswordSameAsIncomingPassword</key>
+			<true/>
+            {% endif %}
+			<key>PayloadDescription</key>
+			<string>{% trans 'Configure an email account' %}</string>
+			<key>PayloadDisplayName</key>
+			<string>{% trans 'IMAP account' %}</string>
+			<key>PayloadIdentifier</key>
+			<string>{{ domain }}.email.account</string>
+			<key>PayloadOrganization</key>
+			<string>{{ organization }}</string>
+			<key>PayloadType</key>
+			<string>com.apple.mail.managed</string>
+			<key>PayloadUUID</key>
+			<string>{% generate_uuid %}</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>PreventAppSheet</key>
+			<true/>
+			<key>PreventMove</key>
+			<false/>
+			<key>SMIMEEnabled</key>
+			<true/>
+		</dict>
+    {% endfor %}
 
 		<dict>
 			<key>PayloadDescription</key>
@@ -191,62 +253,6 @@
 			<true/>
 			<key>SubCalAccountUsername</key>
 			<string>login</string>
-		</dict>
-		<dict>
-			<key>EmailAccountDescription</key>
-			<string>Compte de sociÃ©tÃ©</string>
-			<key>EmailAccountName</key>
-			<string>display_name</string>
-			<key>EmailAccountType</key>
-			<string>EmailTypeIMAP</string>
-			<key>EmailAddress</key>
-			<string>login@test.example.org</string>
-			<key>IncomingMailServerAuthentication</key>
-			<string>EmailAuthPassword</string>
-			<key>IncomingMailServerHostName</key>
-			<string>imap.test.example.org</string>
-			<key>IncomingMailServerPortNumber</key>
-			<integer>993</integer>
-			<key>IncomingMailServerUseSSL</key>
-			<true/>
-			<key>IncomingMailServerUsername</key>
-			<string>login</string>
-			<key>IncomingPassword</key>
-			<string>toto</string>
-			<key>OutgoingMailServerAuthentication</key>
-			<string>EmailAuthPassword</string>
-			<key>OutgoingMailServerHostName</key>
-			<string>smtp.test.example.org</string>
-			<key>OutgoingMailServerPortNumber</key>
-			<integer>587</integer>
-			<key>OutgoingMailServerUseSSL</key>
-			<true/>
-			<key>OutgoingMailServerUsername</key>
-			<string>login</string>
-			<key>OutgoingPassword</key>
-			<string>toto</string>
-			<key>OutgoingPasswordSameAsIncomingPassword</key>
-			<true/>
-			<key>PayloadDescription</key>
-			<string>Configure un compte de courrier Ã©lectronique.</string>
-			<key>PayloadDisplayName</key>
-			<string>Compte IMAP (Compte de sociÃ©tÃ©)</string>
-			<key>PayloadIdentifier</key>
-			<string>test.example.org.adresse Ã©lectronique</string>
-			<key>PayloadOrganization</key>
-			<string>example.org</string>
-			<key>PayloadType</key>
-			<string>com.apple.mail.managed</string>
-			<key>PayloadUUID</key>
-			<string>C4C6269A-3656-4345-939C-02FFFB556A94</string>
-			<key>PayloadVersion</key>
-			<integer>1</integer>
-			<key>PreventAppSheet</key>
-			<true/>
-			<key>PreventMove</key>
-			<false/>
-			<key>SMIMEEnabled</key>
-			<true/>
 		</dict>
 		<dict>
 			<key>EAP</key>
