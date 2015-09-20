@@ -377,6 +377,7 @@ def get_user_mobileconfig(request):
     password = request.GET.get('password', '')
     if not password:
         password = user.read_password()
+    password = password or 'password'
     pki = PKI()
     p12_certificates = []
     for (entry, title) in (
