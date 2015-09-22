@@ -226,6 +226,7 @@ def set_service(request, scheme, hostname, port):
 
 
 def get_service_keytab(request, scheme, hostname, port):
+    scheme, use_ssl = guess_use_ssl(scheme)
     fqdn = hostname_from_principal(request.user.username)
     protocol = request.GET.get('protocol', 'tcp')
     services = list(Service.objects.filter(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)[0:1])
@@ -239,6 +240,7 @@ def get_service_keytab(request, scheme, hostname, port):
 
 
 def get_service_certificate(request, scheme, hostname, port):
+    scheme, use_ssl = guess_use_ssl(scheme)
     fqdn = hostname_from_principal(request.user.username)
     role = request.GET.get('role', SERVICE)
     protocol = request.GET.get('protocol', 'tcp')
