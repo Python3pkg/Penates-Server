@@ -108,7 +108,7 @@ class GroupOfNames(BaseLdapModel):
 
 class User(BaseLdapModel):
     base_dn = 'ou=Users,' + settings.LDAP_BASE_DN
-    object_classes = force_bytestrings(['posixAccount', 'shadowAccount', 'inetOrgPerson', 'sambaSamAccount', 'person'])
+    object_classes = force_bytestrings(['posixAccount', 'shadowAccount', 'inetOrgPerson', 'sambaSamAccount', 'person', 'AsteriskSIPUser'])
     name = CharField(db_column=force_bytestring('uid'), max_length=200, primary_key=True, validators=list(name_validators))
     display_name = CharField(db_column=force_bytestring('displayName'), max_length=200)
     uid_number = IntegerField(db_column=force_bytestring('uidNumber'), default=None, unique=True)
@@ -132,14 +132,26 @@ class User(BaseLdapModel):
     # password values
     user_password = CharField(db_column=force_bytestring('userPassword'), default=None)
     # samba_nt_password = CharField(db_column=force_bytestring('sambaNTPassword'), default=None)
+    ast_account_caller_id = CharField(db_column=force_bytestring('AstAccountCallerID'), default=None)
+    ast_accountContext = CharField(db_column=force_bytestring('AstAccountContext'), default='LocalSets')
+    ast_accountDTMFMode = CharField(db_column=force_bytestring('AstAccountDTMFMode'), default='rfc2833')
+    ast_account_mailbox = CharField(db_column=force_bytestring('AstAccountMailbox'), default=None)
+    ast_accountNAT = CharField(db_column=force_bytestring('AstAccountNAT'), default='yes')
+    ast_accountQualify = CharField(db_column=force_bytestring('AstAccountQualify'), default='yes')
+    ast_accountType = CharField(db_column=force_bytestring('AstAccountType'), default='friend')
+    ast_accountDisallowedCodec = CharField(db_column=force_bytestring('AstAccountDisallowedCodec'), default='all')
+    ast_accountAllowedCodec = CharField(db_column=force_bytestring('AstAccountAllowedCodec'), default='ulaw')
+    ast_accountMusicOnHold = CharField(db_column=force_bytestring('AstAccountMusicOnHold'), default='default')
 
     def save(self, using=None):
         group = self.set_gid_number()
         self.cn = self.name
         self.sn = self.name
         self.gecos = self.display_name
+        self.ast_account_caller_id = self.display_name
         self.samba_domain_name = settings.PENATES_REALM
         self.mail = '%s@%s' % (self.name, settings.PENATES_DOMAIN)
+        self.ast_account_mailbox = self.mail
         self.home_directory = '/home/%s' % self.name
         self.set_next_free_value('uid_number')
         self.samba_sid = '%s-%d' % (get_samba_sid(), self.uid_number)
