@@ -7,11 +7,9 @@ import time
 from django.conf import settings
 import netaddr
 from penatesserver.pki.service import CertificateEntry
+from django.db import models
 
 __author__ = 'Matthieu Gallet'
-
-
-from django.db import models
 
 
 class Comment(models.Model):
