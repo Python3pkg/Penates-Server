@@ -315,7 +315,7 @@ class PKI(object):
         serial = self.__get_certificate_serial(entry.crt_filename)
         with codecs.open(self.crt_sources_path, 'a', encoding='utf-8') as fd:
             fd.write('%s\t%s\t%s\t%s\n' % (serial, os.path.relpath(entry.key_filename, self.dirname),
-                                         os.path.relpath(entry.req_filename, self.dirname), os.path.relpath(entry.crt_filename, self.dirname)))
+                                           os.path.relpath(entry.req_filename, self.dirname), os.path.relpath(entry.crt_filename, self.dirname)))
 
     def __gen_ca_key(self, entry):
         """
@@ -387,7 +387,6 @@ class PKI(object):
         :return:
         :rtype: `boolean`
         """
-        common_name = entry.commonName
         if not os.path.isfile(path):
             # logging.warning(_('Public key %(path)s of %(cn)s not found') % {'cn': common_name, 'path': path})
             return False
@@ -408,7 +407,6 @@ class PKI(object):
         :return:
         :rtype: `boolean`
         """
-        common_name = entry.commonName
         if not os.path.isfile(path):
             # logging.warning(_('Private key %(path)s of %(cn)s not found') % {'cn': common_name, 'path': path})
             return False
@@ -428,7 +426,8 @@ class PKI(object):
         :return:
         :rtype: `boolean`
         """
-        common_name = entry.commonName
+        # noinspection PyUnusedLocal
+        entry = entry
         if not os.path.isfile(path):
             # logging.warning(_('SSH public key %(path)s of %(cn)s not found') % {'cn': common_name, 'path': path})
             return False
@@ -442,7 +441,8 @@ class PKI(object):
         :return:
         :rtype: `boolean`
         """
-        common_name = entry.commonName
+        # noinspection PyUnusedLocal
+        entry = entry
         if not os.path.isfile(path):
             # logging.warning(_('Request %(path)s of %(cn)s not found') % {'cn': common_name, 'path': path})
             return False
@@ -454,7 +454,8 @@ class PKI(object):
         return True
 
     def __check_certificate(self, entry, path):
-        common_name = entry.commonName
+        # noinspection PyUnusedLocal
+        entry = entry
         if not os.path.isfile(path):
             # logging.warning(_('Certificate %(path)s of %(cn)s not found') % {'cn': common_name, 'path': path})
             return False

@@ -18,7 +18,7 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 
 from penatesserver.forms import PasswordForm
 from penatesserver.kerb import add_principal_to_keytab, add_principal, principal_exists
-from penatesserver.models import Service, Host, User, Group
+from penatesserver.models import Service, Host, User, Group, MountPoint
 from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER, SERVICE_1024
 from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain, Record
@@ -140,6 +140,30 @@ def get_host_certificate(request):
     return CertificateEntryResponse(entry)
 
 
+def set_mount_point(request):
+    hostname = hostname_from_principal(request.user.username)
+    hosts = list(Host.objects.filter(fqdn=hostname)[0:1])
+    if not hosts:
+        return HttpResponse(status=404)
+    host = hosts[0]
+    mount_point = request.GET.get('mount_point')
+    if not mount_point:
+        return HttpResponse('mount_point GET argument not provided', status=400)
+    device = request.GET.get('device')
+    if not device:
+        return HttpResponse('device GET argument not provided', status=400)
+    fs_type = request.GET.get('fs_type')
+    if not fs_type:
+        return HttpResponse('fs_type GET argument not provided', status=400)
+    options = request.GET.get('options')
+    if not options:
+        return HttpResponse('options GET argument not provided', status=400)
+    if MountPoint.objects.filter(host=host, mount_point=mount_point).update(fs_type=fs_type, device=device, options=options) == 1:
+        return HttpResponse('', status=204)
+    MountPoint(host=host, mount_point=mount_point, fs_type=fs_type, device=device, options=options).save()
+    return HttpResponse('', status=201)
+
+
 def set_ssh_pub(request):
     hostname = hostname_from_principal(request.user.username)
     short_hostname, sep, domain_name = hostname.partition('.')
@@ -185,15 +209,16 @@ def set_extra_service(request, hostname):
 
 def set_service(request, scheme, hostname, port):
     encryption = request.GET.get('encryption', 'none')
+    srv_field = request.GET.get('srv', None)
+    kerberos_service = request.GET.get('keytab', None)
+    role = request.GET.get('role', SERVICE)
+    protocol = request.GET.get('protocol', 'tcp')
+
     if encryption not in ('none', 'tls', 'starttls'):
         return HttpResponse('valid encryption levels are none, tls, or starttls')
     port = int(port)
     if not (0 <= port <= 65536):
         return HttpResponse('Invalid port: %s' % port, status=403, content_type='text/plain')
-    srv_field = request.GET.get('srv', None)
-    kerberos_service = request.GET.get('keytab', None)
-    role = request.GET.get('role', SERVICE)
-    protocol = request.GET.get('protocol', 'tcp')
     if protocol not in ('tcp', 'udp', 'socket'):
         return HttpResponse('Invalid protocol: %s' % protocol, status=403, content_type='text/plain')
     description = request.body

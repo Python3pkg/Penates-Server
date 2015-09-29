@@ -34,17 +34,27 @@
     <pre>sudo curl -o /etc/krb5.keytab {{ protocol }}://{{ server_name }}/no-auth/get_host_keytab/`hostname -f`
 sudo k5start -q -f /etc/krb5.keytab -U -- curl -o /etc/ssl/private/host.pem --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_host_certificate' %}
 sudo openssl x509 -in /etc/ssl/private/host.pem -out /etc/host.pem
-sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_dsa_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
 sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_ecdsa_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
 sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_ed25519_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
 sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_rsa_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
+sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_mount_point' %}?mount_point=/&amp;options=rw&amp;fs_type=ext4&amp;device=/dev/sda1
 IP_ADDRESS=`sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : <a
                 href="{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_info' %}">{{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_info' %}</a> | grep REMOTE_ADDR | cut -f 2 -d ':'`
-MAC_ADDRESS=`/sbin/ifconfig | grep -B 2 ${IP_ADDRESS} | grep HWaddr | cut -d 'H' -f 2 | cut -d ' ' -f 2` 
+MAC_ ADDRESS=`/sbin/ifconfig | grep -B 2 ${IP_ADDRESS} | grep HWaddr | cut -d 'H' -f 2 | cut -d ' ' -f 2`
 sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : {{ protocol }}://{{ server_name }}/auth/set_dhcp/${MAC_ADDRESS}/
 sudo chmod 0400 /etc/krb5.keytab /etc/ssl/private/host.pem
     </pre>
     </div>
+
+
+    <div>
+        <h1>{% trans 'Register a new service' %}</h1>
+    <pre>sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_service' scheme=SCHEME hostname=HOSTNAME port=0 %}?encryption=none|tls|starttls&amp;srv_field=scheme&amp;kerberos_service=SCHEME&amp;role=Service&amp;protocol=tcp|udp
+sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_extra_service' hostname=HOSTNAME %}?ip=IP_ADDRESS
+
+    </pre>
+    </div>
+
 
     <div>
         <h1>{% trans 'Get DHCP configuration' %}</h1>

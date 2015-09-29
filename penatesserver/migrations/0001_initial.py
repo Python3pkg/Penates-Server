@@ -85,6 +85,17 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name='MountPoint',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('mount_point', models.CharField(default='/', max_length=255, verbose_name='mount point')),
+                ('device', models.CharField(default='/dev', max_length=255, verbose_name='device')),
+                ('fs_type', models.CharField(default='ext2', max_length=100, verbose_name='fs type')),
+                ('options', models.CharField(default='', max_length=100, verbose_name='options', blank=True)),
+                ('host', models.ForeignKey(to='penatesserver.Host')),
+            ],
+        ),
+        migrations.CreateModel(
             name='Netgroup',
             fields=[
                 ('dn', models.CharField(max_length=200)),
@@ -95,17 +106,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-        ),
-        migrations.CreateModel(
-            name='Partition',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('mount_point', models.CharField(default='/', max_length=255, verbose_name='mount point')),
-                ('device', models.CharField(default='/dev', max_length=255, verbose_name='device')),
-                ('fs_type', models.CharField(default='ext2', max_length=100, verbose_name='fs type')),
-                ('options', models.CharField(default='', max_length=100, verbose_name='options', blank=True)),
-                ('host', models.ForeignKey(to='penatesserver.Host')),
-            ],
         ),
         migrations.CreateModel(
             name='Principal',

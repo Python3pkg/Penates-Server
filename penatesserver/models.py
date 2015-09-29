@@ -261,7 +261,7 @@ class Host(models.Model):
         return self.os_name
 
 
-class Partition(models.Model):
+class MountPoint(models.Model):
     host = models.ForeignKey(Host, db_index=True)
     mount_point = models.CharField(_('mount point'), max_length=255, default='/')
     device = models.CharField(_('device'), max_length=255, default='/dev')
