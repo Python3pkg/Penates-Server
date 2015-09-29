@@ -9,7 +9,6 @@ from django.utils.translation import ugettext as _
 from penatesserver.models import Service
 from penatesserver.pki.service import CertificateEntry
 from penatesserver.powerdns.models import Domain
-from penatesserver.utils import guess_use_ssl
 
 __author__ = 'Matthieu Gallet'
 
@@ -33,6 +32,7 @@ class Command(BaseCommand):
         parser.add_argument('--ca', default=None, help='Destination file for CA certificate')
         parser.add_argument('--keytab', default=None, help='Destination file for keytab (if --kerberos_service is set)')
         parser.add_argument('--role', default='Service', help='Service type')
+        parser.add_argument('--encryption', default='none', help='Encryption level: none, tls or starttls')
 
     def handle(self, *args, **options):
         # read provided arguments
@@ -40,7 +40,8 @@ class Command(BaseCommand):
         fqdn = options['fqdn']
         hostname = options['hostname']
         keytab = options['keytab']
-        scheme, use_ssl = guess_use_ssl(options['scheme'])
+        scheme = options['scheme']
+        encryption = options['encryption']
         port = int(options['port'])
         protocol = options['protocol']
         srv_field = options['srv']
@@ -53,7 +54,7 @@ class Command(BaseCommand):
 
         # create service object
         service, created = Service.objects.get_or_create(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)
-        Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=options['description'], dns_srv=srv_field, use_ssl=use_ssl)
+        Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=options['description'], dns_srv=srv_field, encryption=encryption)
 
         # certificate part
         call_command('certificate', hostname, options['role'], organizationName=settings.PENATES_ORGANIZATION,

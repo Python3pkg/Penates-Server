@@ -32,7 +32,8 @@ def get_shinken_config(request):
                                  'hostname': service_obj.hostname,
                                  'port': service_obj.port,
                                  'protocol': service_obj.protocol,
-                                 'use_ssl': service_obj.use_ssl,
+                                 'encryption': service_obj.encryption,
+                                 'ssl_suffix': 's' if service_obj.encryption == 'ssl' else '',
                                  'kerberos_service': service_obj.kerberos_service, }
             service = {'host_name': service_obj.fqdn,
                        'service_description': service_obj.description,

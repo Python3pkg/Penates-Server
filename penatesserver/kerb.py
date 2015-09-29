@@ -10,30 +10,26 @@ def heimdal_command(*args):
     args_list = ['kadmin', '-p', settings.PENATES_PRINCIPAL, '-K', settings.PENATES_KEYTAB, ] + list(args)
     p = subprocess.Popen(args_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p.communicate()
-    # stdout, stderr = p.communicate()
-    # with open('/tmp/heimdal-%s.log' % p.pid, 'ab') as fd:
-    #     fd.write(b'----------------------------------------\n')
-    #     fd.write(' '.join(args_list).encode('utf-8'))
-    #     fd.write(b':\n')
-    #     fd.write(stdout)
-    #     fd.write(b'----------------------------------------\n')
-    #     fd.write(stderr)
-    #     fd.write(b'----------------------------------------\n')
+    return p
+
+
+def mit_command(*args):
+    arg_list = ['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB, '-q', ] + list(args)
+    p = subprocess.Popen(arg_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p.communicate()
     return p
 
 
 def add_principal_to_keytab(principal, filename):
     if settings.KERBEROS_IMPL == 'mit':
-        p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB, '-q', 'ktadd -k %s %s' % (filename, principal)], stdout=subprocess.PIPE)
-        p.communicate()
+        mit_command('ktadd -k %s %s' % (filename, principal))
     else:
         heimdal_command('ext_keytab', '-k', filename, principal)
 
 
 def change_password(principal, password):
     if settings.KERBEROS_IMPL == 'mit':
-        p = subprocess.Popen(['kadmin', '-p', settings.PENATES_PRINCIPAL, '-k', '-t', settings.PENATES_KEYTAB, '-q', 'change_password -pw %s %s' % (password, principal)])
-        p.communicate()
+        mit_command('change_password -pw %s %s' % (password, principal))
     else:
         heimdal_command('passwd', '--password=%s' % password, principal)
 

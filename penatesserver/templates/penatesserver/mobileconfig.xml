@@ -29,7 +29,7 @@
 			<key>LDAPAccountHostName</key>
 			<string>{{ server.hostname }}:{{ server.port }}</string>
 			<key>LDAPAccountUseSSL</key>
-			{% if server.use_ssl %}<true/>{% else %}<false/>{% endif %}
+			{% if server.encryption == 'tls' %}<true/>{% else %}<false/>{% endif %}
 			<key>LDAPSearchSettings</key>
 			<array>
 				<dict>
@@ -183,7 +183,7 @@
 			<key>IncomingMailServerPortNumber</key>
 			<integer>{{ service.imap.port }}</integer>
 			<key>IncomingMailServerUseSSL</key>
-			{% if service.imap.use_ssl %}<true/>{% else %}<false/>{% endif %}
+			{% if service.imap.encryption == 'tls' %}<true/>{% else %}<false/>{% endif %}
 			<key>IncomingMailServerUsername</key>
 			<string>{{ username }}</string>
 			<key>IncomingPassword</key>
@@ -197,7 +197,7 @@
 			<key>OutgoingMailServerPortNumber</key>
 			<integer>{{ service.smtp.port }}</integer>
 			<key>OutgoingMailServerUseSSL</key>
-			{% if service.smtp.use_ssl %}<true/>{% else %}<false/>{% endif %}
+			{% if service.smtp.encryption == 'tls' %}<true/>{% else %}<false/>{% endif %}
 			<key>OutgoingMailServerUsername</key>
 			<string>{{ username }}</string>
 			<key>OutgoingPassword</key>

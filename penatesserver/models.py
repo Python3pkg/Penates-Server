@@ -261,6 +261,14 @@ class Host(models.Model):
         return self.os_name
 
 
+class Partition(models.Model):
+    host = models.ForeignKey(Host, db_index=True)
+    mount_point = models.CharField(_('mount point'), max_length=255, default='/')
+    device = models.CharField(_('device'), max_length=255, default='/dev')
+    fs_type = models.CharField(_('fs type'), max_length=100, default='ext2')
+    options = models.CharField(_('options'), max_length=100, blank=True, default='')
+
+
 class Netgroup(BaseLdapModel):
     base_dn = 'ou=netgroups,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['nisNetgroup', ])
@@ -317,7 +325,9 @@ class Service(models.Model):
     hostname = models.CharField(_('Service hostname'), db_index=True, blank=False, default='localhost', max_length=255)
     port = models.IntegerField(_('Port'), db_index=True, blank=False, default=443)
     protocol = models.CharField(_('tcp, udp or socket'), db_index=True, choices=(('tcp', 'tcp'), ('udp', 'udp'), ('socket', 'socket'),), default='tcp', max_length=10)
-    use_ssl = models.BooleanField(_('use SSL?'), db_index=True, default=False, blank=True)
+    encryption = models.CharField(_('encryption'), db_index=True,
+                                  choices=(('none', _('No encryption')), ('tls', _('SSL/TLS')),
+                                           ('starttls', _('START TLS')), ), max_length=10, default='none')
     kerberos_service = models.CharField(_('Kerberos service'), blank=True, null=True, default=None, max_length=40)
     description = models.TextField(_('description'), blank=True, default=_('Service'))
     dns_srv = models.CharField(_('DNS SRV field'), blank=True, null=True, default=None, max_length=90)
@@ -325,10 +335,10 @@ class Service(models.Model):
     status_last_update = models.DateTimeField(_('Status last update'), default=None, null=True, blank=True, db_index=True)
 
     def __str__(self):
-        return '%s%s://%s:%s/' % (self.scheme, 's' if self.use_ssl else '', self.hostname, self.port)
+        return '%s://%s:%s/' % (self.scheme, self.hostname, self.port)
 
     def __unicode__(self):
-        return '%s%s://%s:%s/' % (self.scheme, 's' if self.use_ssl else '', self.hostname, self.port)
+        return '%s://%s:%s/' % (self.scheme, self.hostname, self.port)
 
     def __repr__(self):
-        return 'Service("%s%s://%s:%s/")' % (self.scheme, 's' if self.use_ssl else '', self.hostname, self.port)
+        return 'Service("%s://%s:%s/")' % (self.scheme, self.hostname, self.port)

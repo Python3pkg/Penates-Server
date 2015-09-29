@@ -122,13 +122,6 @@ def dhcp_dict_to_list(value_dict):
     return ['%s %s' % (key, ' '.join(ensure_list(value))) for (key, value) in value_dict.items()]
 
 
-def guess_use_ssl(scheme):
-    use_ssl = False
-    if scheme.endswith('s') and scheme != 'dns':
-        scheme, use_ssl = scheme[:-1], True
-    return scheme, use_ssl
-
-
 def get_salt(chars=string.ascii_letters + string.digits, length=16):
     """Generate a random salt. Default length is 16.
        Originated from mkpasswd in Luma

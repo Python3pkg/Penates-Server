@@ -111,6 +111,7 @@ DATABASES = {
 
 }
 STORE_CLEARTEXT_PASSWORDS = False
+OFFER_HOST_KEYTABS = True
 DATABASE_ROUTERS = ['ldapdb.router.Router', 'penatesserver.routers.PowerdnsManagerDbRouter', ]
 AUTH_USER_MODEL = 'penatesserver.DjangoUser'
 

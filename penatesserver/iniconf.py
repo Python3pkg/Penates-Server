@@ -42,6 +42,7 @@ INI_MAPPING = [
     OptionParser('ADMIN_EMAIL', 'global.admin_email'),
     OptionParser('TIME_ZONE', 'global.time_zone'),
     OptionParser('LANGUAGE_CODE', 'global.language_code'),
+    OptionParser('OFFER_HOST_KEYTABS', 'global.offer_host_keytabs'),
     OptionParser('FLOOR_AUTHENTICATION_HEADER', 'global.remote_user_header'),
 
 ]

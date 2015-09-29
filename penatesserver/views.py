@@ -23,7 +23,7 @@ from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER,
 from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain, Record
 from penatesserver.serializers import UserSerializer, GroupSerializer
-from penatesserver.utils import hostname_from_principal, principal_from_hostname, guess_use_ssl
+from penatesserver.utils import hostname_from_principal, principal_from_hostname
 
 __author__ = 'flanker'
 
@@ -121,7 +121,9 @@ def get_host_keytab(request, hostname):
         domain.ensure_record(remote_addr, long_hostname)
         domain.update_soa()
         Host.objects.filter(fqdn=long_hostname).update(main_ip_address=remote_addr)
-    return KeytabResponse(principal)
+    if settings.OFFER_HOST_KEYTABS:
+        return KeytabResponse(principal)
+    return HttpResponse('', content_type='text/plain', status=201)
 
 
 def set_dhcp(request, mac_address):
@@ -182,7 +184,9 @@ def set_extra_service(request, hostname):
 
 
 def set_service(request, scheme, hostname, port):
-    scheme, use_ssl = guess_use_ssl(scheme)
+    encryption = request.GET.get('encryption', 'none')
+    if encryption not in ('none', 'tls', 'starttls'):
+        return HttpResponse('valid encryption levels are none, tls, or starttls')
     port = int(port)
     if not (0 <= port <= 65536):
         return HttpResponse('Invalid port: %s' % port, status=403, content_type='text/plain')
@@ -203,7 +207,7 @@ def set_service(request, scheme, hostname, port):
         return HttpResponse(status=401, content='Kerberos service %s is not allowed' % role)
     # Penates service
     service, created = Service.objects.get_or_create(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)
-    Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=description, dns_srv=srv_field, use_ssl=use_ssl)
+    Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=description, dns_srv=srv_field, encryption=encryption)
     # certificates
     entry = CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
                              organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
@@ -226,7 +230,6 @@ def set_service(request, scheme, hostname, port):
 
 
 def get_service_keytab(request, scheme, hostname, port):
-    scheme, use_ssl = guess_use_ssl(scheme)
     fqdn = hostname_from_principal(request.user.username)
     protocol = request.GET.get('protocol', 'tcp')
     services = list(Service.objects.filter(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)[0:1])
@@ -240,7 +243,6 @@ def get_service_keytab(request, scheme, hostname, port):
 
 
 def get_service_certificate(request, scheme, hostname, port):
-    scheme, use_ssl = guess_use_ssl(scheme)
     fqdn = hostname_from_principal(request.user.username)
     role = request.GET.get('role', SERVICE)
     protocol = request.GET.get('protocol', 'tcp')
