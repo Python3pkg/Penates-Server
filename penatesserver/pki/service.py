@@ -21,8 +21,9 @@ from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.utils.text import slugify
 from django.utils.timezone import utc
+from django.utils.translation import ugettext as _
 
-from penatesserver.pki.constants import ROLES, RSA, RESOURCE
+from penatesserver.pki.constants import ROLES, RSA, RESOURCE, USER, ENCIPHERMENT, SIGNATURE, EMAIL, COMPUTER_TEST, COMPUTER, CA
 from penatesserver.utils import t61_to_time, ensure_location
 
 
@@ -139,8 +140,17 @@ class PKI(object):
         self.dirname = dirname or settings.PKI_PATH
         self.cacrt_path = os.path.join(self.dirname, 'cacert.pem')
         self.cacrl_path = os.path.join(self.dirname, 'cacrl.pem')
+        self.careq_path = os.path.join(self.dirname, 'private', 'careq.pem')
         self.cakey_path = os.path.join(self.dirname, 'private', 'cakey.pem')
         self.crt_sources_path = os.path.join(self.dirname, 'crt_sources.txt')
+
+    def get_subca_entry(self, entry):
+        assert isinstance(entry, CertificateEntry)
+        if entry.role in (USER, EMAIL, SIGNATURE, ENCIPHERMENT):
+            return os.path.join(self.dirname, 'users_crt.pem'), os.path.join(self.dirname, 'private', 'users_key.pem')
+        elif entry.role in (COMPUTER, COMPUTER_TEST):
+            return os.path.join(self.dirname, 'hosts_crt.pem'), os.path.join(self.dirname, 'private', 'hosts_key.pem')
+        return os.path.join(self.dirname, 'services_crt.pem'), os.path.join(self.dirname, 'private', 'services_key.pem')
 
     def initialize(self):
         serial = os.path.join(self.dirname, 'serial.txt')
@@ -179,13 +189,11 @@ class PKI(object):
             self.__gen_ssh(entry)
             self.__gen_request(entry)
             self.__gen_certificate(entry)
-        elif not self.__check_req(entry, entry.req_filename):
+        elif not self.__check_certificate(entry, entry.crt_filename):
             self.__gen_request(entry)
             self.__gen_certificate(entry)
-        elif not self.__check_certificate(entry, entry.crt_filename):
-            self.__gen_certificate(entry)
 
-    def __gen_openssl_conf(self, entry=None):
+    def __gen_openssl_conf(self, entry=None, ca_infos=None):
         """
         principal: used to define values
         ca: used to define issuer values for settings.CA_POINT, settings.CRL_POINT, settings.OCSP_POINT
@@ -196,10 +204,14 @@ class PKI(object):
 
         :type entry: :class:`penatesserver.pki.service.CertificateEntry`
         """
-        context = {'dirname': self.dirname, 'policy_details': [],
-                   'crlPoint': '', 'caPoint': '', 'altSection': '', 'altNamesString': '',
-                   'krbRealm': '', 'krbClientName': '', }  # contain all template values
+        if ca_infos is None:
+            ca_crt_path, ca_key_path = self.cacrt_path, self.cakey_path
+        else:
+            ca_crt_path, ca_key_path = ca_infos
+        context = {'dirname': self.dirname, 'policy_details': [], 'crlPoint': '', 'caPoint': '', 'altSection': '', 'altNamesString': '',
+                   'krbRealm': '', 'krbClientName': '', 'ca_key_path': ca_key_path, 'ca_crt_path': ca_crt_path, }  # contain all template values
         if entry is not None:
+            assert isinstance(entry, CertificateEntry)
             role = ROLES[entry.role]
             for key in ('organizationName', 'organizationalUnitName', 'emailAddress', 'localityName',
                         'stateOrProvinceName', 'countryName', 'commonName'):
@@ -223,8 +235,8 @@ class PKI(object):
                 if settings.SERVER_NAME:
                     context['crlPoint'] = '%s://%s%s' % (settings.PROTOCOL, settings.SERVER_NAME, reverse('penatesserver.views.get_crl'))
                     context['caPoint'] = '%s://%s%s' % (settings.PROTOCOL, settings.SERVER_NAME, reverse('penatesserver.views.get_ca_certificate'))
-                # context['ocspPoint'] = config.ocsp_url
-                # build a file structure which is compatible with ``openssl ca'' commands
+                    # context['ocspPoint'] = config.ocsp_url
+                    # build a file structure which is compatible with ``openssl ca'' commands
         # noinspection PyUnresolvedReferences
         conf_content = render_to_string('penatesserver/pki/openssl.cnf', context)
         conf_path = os.path.join(self.dirname, 'openssl.cnf')
@@ -306,7 +318,8 @@ class PKI(object):
         :type entry: :class:`penatesserver.pki.service.CertificateEntry`
         """
         ensure_location(entry.crt_filename)
-        conf_path = self.__gen_openssl_conf(entry)
+        subca_entry = self.get_subca_entry(entry)
+        conf_path = self.__gen_openssl_conf(entry, ca_infos=subca_entry)
         role = ROLES[entry.role]
         local(('"{openssl}" ca -config "{cfg}" -extensions role_req -in "{req}" -out "{crt}" '
                '-notext -days {days} -md {digest} -batch -utf8 ').format(openssl=settings.OPENSSL_PATH, cfg=conf_path,
@@ -364,19 +377,13 @@ class PKI(object):
                                                                          days=role['days'], digest=role['digest']))
 
     def ensure_ca(self, entry):
-        """ génère un certificat pour l'entrée fournie
-        la demande de certificat doit exister, ainsi que la CA
+        """ si la clef privée de la CA n'existe pas, crée une nouvelle CA
         :param entry:
         :type entry: :class:`penatesserver.pki.service.CertificateEntry`
         """
         if not self.__check_key(entry, self.cakey_path):
             self.__gen_ca_key(entry)
             self.__gen_ca_req(entry)
-            self.__gen_ca_crt(entry)
-        elif not self.__check_req(entry, entry.req_filename):
-            self.__gen_ca_req(entry)
-            self.__gen_ca_crt(entry)
-        elif not self.__check_certificate(entry, self.cacrt_path):
             self.__gen_ca_crt(entry)
 
     @staticmethod
