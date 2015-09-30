@@ -21,9 +21,8 @@ from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.utils.text import slugify
 from django.utils.timezone import utc
-from django.utils.translation import ugettext as _
 
-from penatesserver.pki.constants import ROLES, RSA, RESOURCE, USER, ENCIPHERMENT, SIGNATURE, EMAIL, COMPUTER_TEST, COMPUTER, CA
+from penatesserver.pki.constants import ROLES, RSA, RESOURCE, USER, ENCIPHERMENT, SIGNATURE, EMAIL, COMPUTER_TEST, COMPUTER
 from penatesserver.utils import t61_to_time, ensure_location
 
 
