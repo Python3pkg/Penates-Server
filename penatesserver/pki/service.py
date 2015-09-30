@@ -144,7 +144,7 @@ class PKI(object):
         self.cakey_path = os.path.join(self.dirname, 'private', 'cakey.pem')
         self.crt_sources_path = os.path.join(self.dirname, 'crt_sources.txt')
 
-    def get_subca_entry(self, entry):
+    def get_subca_infos(self, entry):
         assert isinstance(entry, CertificateEntry)
         if entry.role in (USER, EMAIL, SIGNATURE, ENCIPHERMENT):
             return os.path.join(self.dirname, 'users_crt.pem'), os.path.join(self.dirname, 'private', 'users_key.pem')
@@ -318,8 +318,8 @@ class PKI(object):
         :type entry: :class:`penatesserver.pki.service.CertificateEntry`
         """
         ensure_location(entry.crt_filename)
-        subca_entry = self.get_subca_entry(entry)
-        conf_path = self.__gen_openssl_conf(entry, ca_infos=subca_entry)
+        subca_infos = self.get_subca_infos(entry)
+        conf_path = self.__gen_openssl_conf(entry, ca_infos=subca_infos)
         role = ROLES[entry.role]
         local(('"{openssl}" ca -config "{cfg}" -extensions role_req -in "{req}" -out "{crt}" '
                '-notext -days {days} -md {digest} -batch -utf8 ').format(openssl=settings.OPENSSL_PATH, cfg=conf_path,

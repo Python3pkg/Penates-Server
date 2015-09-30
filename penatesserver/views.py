@@ -30,8 +30,8 @@ __author__ = 'flanker'
 
 class CertificateEntryResponse(HttpResponse):
     def __init__(self, entry, ensure_entry=True, **kwargs):
+        pki = PKI()
         if ensure_entry:
-            pki = PKI()
             pki.ensure_certificate(entry)
         content = b''
         # noinspection PyTypeChecker
@@ -39,6 +39,10 @@ class CertificateEntryResponse(HttpResponse):
             content += fd.read()
         # noinspection PyTypeChecker
         with open(entry.crt_filename, 'rb') as fd:
+            content += fd.read()
+        ca_crt_path, ca_key_path = pki.get_subca_infos(entry)
+        # noinspection PyTypeChecker
+        with open(ca_crt_path, 'rb') as fd:
             content += fd.read()
         # noinspection PyTypeChecker
         with open(entry.ca_filename, 'rb') as fd:
