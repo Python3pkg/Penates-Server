@@ -147,10 +147,12 @@ class PKI(object):
     def get_subca_infos(self, entry):
         assert isinstance(entry, CertificateEntry)
         if entry.role in (USER, EMAIL, SIGNATURE, ENCIPHERMENT):
-            return os.path.join(self.dirname, 'users_crt.pem'), os.path.join(self.dirname, 'private', 'users_key.pem')
+            key = 'users'
         elif entry.role in (COMPUTER, COMPUTER_TEST):
-            return os.path.join(self.dirname, 'hosts_crt.pem'), os.path.join(self.dirname, 'private', 'hosts_key.pem')
-        return os.path.join(self.dirname, 'services_crt.pem'), os.path.join(self.dirname, 'private', 'services_key.pem')
+            key = 'hosts'
+        else:
+            key = 'services'
+        return os.path.join(self.dirname, '%s_crt.pem' % key), os.path.join(self.dirname, 'private', '%s_key.pem' % key)
 
     def initialize(self):
         serial = os.path.join(self.dirname, 'serial.txt')
