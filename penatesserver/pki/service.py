@@ -12,6 +12,7 @@ import os
 import datetime
 import re
 import shlex
+import shutil
 from subprocess import CalledProcessError
 import subprocess
 import tempfile
@@ -22,7 +23,7 @@ from django.template.loader import render_to_string
 from django.utils.text import slugify
 from django.utils.timezone import utc
 
-from penatesserver.pki.constants import ROLES, RSA, RESOURCE, USER, ENCIPHERMENT, SIGNATURE, EMAIL, COMPUTER_TEST, COMPUTER
+from penatesserver.pki.constants import ROLES, RSA, RESOURCE, USER, ENCIPHERMENT, SIGNATURE, EMAIL, COMPUTER_TEST, COMPUTER, CA
 from penatesserver.utils import t61_to_time, ensure_location
 
 
@@ -137,21 +138,27 @@ class CertificateEntry(object):
 class PKI(object):
     def __init__(self, dirname=None):
         self.dirname = dirname or settings.PKI_PATH
-        self.cacrt_path = os.path.join(self.dirname, 'cacert.pem')
         self.cacrl_path = os.path.join(self.dirname, 'cacrl.pem')
         self.careq_path = os.path.join(self.dirname, 'private', 'careq.pem')
-        self.cakey_path = os.path.join(self.dirname, 'private', 'cakey.pem')
         self.crt_sources_path = os.path.join(self.dirname, 'crt_sources.txt')
+        self.cacrt_path = os.path.join(self.dirname, 'cacert.pem')
+        self.users_crt_path = os.path.join(self.dirname, 'users_crt.pem')
+        self.hosts_crt_path = os.path.join(self.dirname, 'hosts_crt.pem')
+        self.services_crt_path = os.path.join(self.dirname, 'services_crt.pem')
+        self.cakey_path = os.path.join(self.dirname, 'private', 'cakey.pem')
+        self.users_key_path = os.path.join(self.dirname, 'private', 'users_key.pem')
+        self.hosts_key_path = os.path.join(self.dirname, 'private', 'hosts_key.pem')
+        self.services_key_path = os.path.join(self.dirname, 'private', 'services_key.pem')
 
     def get_subca_infos(self, entry):
         assert isinstance(entry, CertificateEntry)
         if entry.role in (USER, EMAIL, SIGNATURE, ENCIPHERMENT):
-            key = 'users'
+            return self.users_crt_path, self.users_key_path
         elif entry.role in (COMPUTER, COMPUTER_TEST):
-            key = 'hosts'
-        else:
-            key = 'services'
-        return os.path.join(self.dirname, '%s_crt.pem' % key), os.path.join(self.dirname, 'private', '%s_key.pem' % key)
+            return self.hosts_crt_path, self.hosts_key_path
+        elif entry.role == CA:
+            return self.cacrt_path, self.cakey_path
+        return self.services_crt_path, self.services_key_path
 
     def initialize(self):
         serial = os.path.join(self.dirname, 'serial.txt')
@@ -386,6 +393,19 @@ class PKI(object):
             self.__gen_ca_key(entry)
             self.__gen_ca_req(entry)
             self.__gen_ca_crt(entry)
+            for sub_name in ('users', 'services', 'hosts'):
+                sub_entry = CertificateEntry('%s.%s' % (sub_name, entry.commonName),
+                                             organizationName=entry.organizationName,
+                                             organizationalUnitName=entry.organizationalUnitName,
+                                             emailAddress=entry.emailAddress,
+                                             localityName=entry.localityName,
+                                             countryName=entry.countryName,
+                                             stateOrProvinceName=entry.stateOrProvinceName,
+                                             dirname=entry.dirname,
+                                             role=CA)
+                self.ensure_certificate(sub_entry)
+                shutil.copy(sub_entry.crt_filename, getattr(self, '%s_crt_path' % sub_name))
+                shutil.copy(sub_entry.key_filename, getattr(self, '%s_key_path' % sub_name))
 
     @staticmethod
     def __check_pub(entry, path):

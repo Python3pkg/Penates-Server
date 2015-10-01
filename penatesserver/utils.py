@@ -61,7 +61,7 @@ def hostname_from_principal(principal):
     >>> hostname_from_principal('host/test.example.org@TEST.EXAMPLE.ORG') == 'test.example.org'
     True
     """
-    if not principal.startswith('host/'):
+    if not principal.startswith('computer/'):
         raise ValueError
     return principal[5:].partition('@')[0]
 
@@ -71,7 +71,7 @@ def principal_from_hostname(hostname, realm):
     >>> principal_from_hostname('test.example.org', 'TEST.EXAMPLE.ORG') == 'host/test.example.org@TEST.EXAMPLE.ORG'
     True
     """
-    return 'host/%s@%s' % (hostname, realm)
+    return 'computer/%s@%s' % (hostname, realm)
 
 
 def ensure_list(value):

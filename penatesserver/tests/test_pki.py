@@ -144,7 +144,7 @@ class TestCrl(TestPKI):
         self.pki.ensure_certificate(entry)
         self.pki.ensure_certificate(entry)
         with open(self.pki.dirname + '/index.txt', b'r') as fd:
-            self.assertEqual(3, len(fd.read().splitlines()))
+            self.assertEqual(6, len(fd.read().splitlines()))
 
 
 class TestSha256(TestCase):
