@@ -6,7 +6,7 @@
     <div>
         <h1>{% trans 'Root' %}</h1>
         <ul>
-            <li><a href="{% url 'penatesserver.views.get_ca_certificate' %}">{% trans 'CA root certificate' %}</a></li>
+            <li><a href="{% url 'penatesserver.pki.views.get_ca_certificate' %}">{% trans 'CA root certificate' %}</a></li>
         </ul>
     </div>
 
@@ -15,10 +15,10 @@
         <ul>
             <li><a href="{% url 'user_list' %}">{% trans 'Users' %}</a></li>
             <li><a href="{% url 'penatesserver.views.change_own_password' %}">{% trans 'Change your password' %}</a></li>
-            <li><a href="{% url 'penatesserver.views.get_user_certificate' %}">{% trans 'Get your certificate' %}</a></li>
-            <li><a href="{% url 'penatesserver.views.get_email_certificate' %}">{% trans 'Get your certificate for emails' %}</a></li>
-            <li><a href="{% url 'penatesserver.views.get_signature_certificate' %}">{% trans 'Get your certificate for signing' %}</a></li>
-            <li><a href="{% url 'penatesserver.views.get_encipherment_certificate' %}">{% trans 'Get your certificate for encipherment' %}</a></li>
+            <li><a href="{% url 'penatesserver.pki.views.get_user_certificate' %}">{% trans 'Get your certificate' %}</a></li>
+            <li><a href="{% url 'penatesserver.pki.views.get_email_certificate' %}">{% trans 'Get your certificate for emails' %}</a></li>
+            <li><a href="{% url 'penatesserver.pki.views.get_signature_certificate' %}">{% trans 'Get your certificate for signing' %}</a></li>
+            <li><a href="{% url 'penatesserver.pki.views.get_encipherment_certificate' %}">{% trans 'Get your certificate for encipherment' %}</a></li>
             <li><a href="{% url 'group_list' %}">{% trans 'Groups' %}</a></li>
             <li>
                 <form method="get" action="{% url 'penatesserver.views.get_user_mobileconfig' %}">
@@ -32,7 +32,7 @@
     <div>
         <h1>{% trans 'Register a new computer' %}</h1>
     <pre>sudo curl -o /etc/krb5.keytab {{ protocol }}://{{ server_name }}/no-auth/get_host_keytab/`hostname -f`
-sudo k5start -q -f /etc/krb5.keytab -U -- curl -o /etc/ssl/private/host.pem --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.get_host_certificate' %}
+sudo k5start -q -f /etc/krb5.keytab -U -- curl -o /etc/ssl/private/host.pem --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.pki.views.get_host_certificate' %}
 sudo openssl x509 -in /etc/ssl/private/host.pem -out /etc/host.pem
 sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_ecdsa_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
 sudo k5start -q -f /etc/krb5.keytab -U -- curl --data-binary @/etc/ssh/ssh_host_ed25519_key.pub --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_ssh_pub' %}
