@@ -34,6 +34,7 @@ FLOOR_INSTALLED_APPS = ['penatesserver', 'rest_framework', 'penatesserver.powerd
 FLOOR_INDEX = 'penatesserver.views.index'
 FLOOR_URL_CONF = 'penatesserver.root_urls.urls'
 FLOOR_PROJECT_NAME = 'Penates Server %s' % __version__
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'cLc7rCD75uO6uFVr6ojn6AYTm2DGT2t7hb7OH5Capk29kcdy7H'
@@ -69,8 +70,9 @@ PENATES_EMAIL_ADDRESS = 'admin@{PENATES_DOMAIN}'
 PENATES_REALM = 'EXAMPLE.ORG'
 PENATES_KEYTAB = '{LOCAL_PATH}/pki/private/kadmin.keytab'
 PENATES_PRINCIPAL = 'penatesserver/admin@{PENATES_REALM}'
-PENATES_ROUTER = '192.168.56.1'
-PENATES_SUBNET = '192.168.56.0/24'
+
+PENATES_SUBNETS = """192.168.56.0/24,192.168.56.1
+10.8.0.0/16,10.8.0.1"""
 
 LDAP_NAME = 'ldap://192.168.56.101/'
 LDAP_USER = 'cn=admin,dc=test,dc=example,dc=org'

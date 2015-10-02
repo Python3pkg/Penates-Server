@@ -56,9 +56,9 @@ def ensure_location(filename):
 
 def hostname_from_principal(principal):
     """
-    >>> hostname_from_principal('host/test.example.org') == 'test.example.org'
+    >>> hostname_from_principal('host/machine.test.example.org') == 'machine.test.example.org'
     True
-    >>> hostname_from_principal('host/test.example.org@TEST.EXAMPLE.ORG') == 'test.example.org'
+    >>> hostname_from_principal('host/machine.test.example.org@TEST.EXAMPLE.ORG') == 'machine.test.example.org'
     True
     """
     if not principal.startswith('computer/'):
@@ -68,7 +68,7 @@ def hostname_from_principal(principal):
 
 def principal_from_hostname(hostname, realm):
     """
-    >>> principal_from_hostname('test.example.org', 'TEST.EXAMPLE.ORG') == 'host/test.example.org@TEST.EXAMPLE.ORG'
+    >>> principal_from_hostname('machine.test.example.org', 'TEST.EXAMPLE.ORG') == 'host/machine.test.example.org@TEST.EXAMPLE.ORG'
     True
     """
     return 'computer/%s@%s' % (hostname, realm)

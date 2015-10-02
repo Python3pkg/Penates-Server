@@ -23,6 +23,7 @@ from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER,
 from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain, Record
 from penatesserver.serializers import UserSerializer, GroupSerializer
+from penatesserver.subnets import get_subnets
 from penatesserver.utils import hostname_from_principal, principal_from_hostname
 
 __author__ = 'flanker'
@@ -100,7 +101,7 @@ def get_host_keytab(request, hostname):
     domain, created = Domain.objects.get_or_create(name=domain_name)
     remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
     if remote_addr:
-        domain.ensure_record(remote_addr, long_hostname)
+        domain.ensure_record(remote_addr, long_hostname, unique=True)
         domain.update_soa()
         Host.objects.filter(fqdn=long_hostname).update(main_ip_address=remote_addr)
     if settings.OFFER_HOST_KEYTABS:
@@ -112,8 +113,20 @@ def set_dhcp(request, mac_address):
     hostname = hostname_from_principal(request.user.username)
     mac_address = mac_address.replace('-', ':')
     remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    admin_mac_address = request.GET.get('mac_address')
+    admin_ip_address = request.GET.get('ip_address')
     if remote_addr:
         Host.objects.filter(fqdn=hostname).update(main_ip_address=remote_addr, main_mac_address=mac_address)
+        Record.objects.filter(name=hostname).update(content=remote_addr)
+    if admin_ip_address and admin_mac_address:
+        domain_name = settings.PENATES_DOMAIN
+        short_hostname = hostname.partition('.')[0]
+        long_admin_hostname = '%s.admin.%s' % (short_hostname, domain_name)
+        Host.objects.filter(fqdn=hostname).update(admin_ip_address=admin_ip_address, admin_mac_address=admin_mac_address)
+        domain, created = Domain.objects.get_or_create(name=domain_name)
+        admin_domain = domain.ensure_subdomain('admin.%s' % domain_name)
+        admin_domain.ensure_record(admin_ip_address, long_admin_hostname, unique=True)
+        admin_domain.update_soa()
     return HttpResponse(status=201)
 
 
@@ -245,7 +258,6 @@ def get_service_keytab(request, scheme, hostname, port):
 
 
 def get_dhcpd_conf(request):
-
     def get_ip_or_none(scheme):
         values = list(Service.objects.filter(scheme=scheme)[0:1])
         if not values:
@@ -256,14 +268,14 @@ def get_dhcpd_conf(request):
         values = list(Service.objects.filter(scheme=scheme))
         return [Record.local_resolve(x.fqdn) or x.hostname for x in values]
 
-    template_values = {'penates_router': settings.PENATES_ROUTER,
-                       'penates_subnet': settings.PENATES_SUBNET,
-                       'penates_domain': settings.PENATES_DOMAIN,
-                       'hosts': Host.objects.all(),
-                       'tftp': get_ip_or_none('tftp'),
-                       'dns_list': get_ip_list('dns'),
-                       'ntp': get_ip_or_none('ntp'),
-                       }
+    template_values = {
+        'penates_subnets': get_subnets(),
+        'penates_domain': settings.PENATES_DOMAIN,
+        'hosts': Host.objects.all(),
+        'tftp': get_ip_or_none('tftp'),
+        'dns_list': get_ip_list('dns'),
+        'ntp': get_ip_or_none('ntp'),
+    }
     return render_to_response('dhcpd/dhcpd.conf', template_values, status=200, content_type='text/plain')
 
 

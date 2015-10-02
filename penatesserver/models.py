@@ -19,12 +19,10 @@ from penatesserver.pki.constants import USER, EMAIL, SIGNATURE, ENCIPHERMENT
 from penatesserver.pki.service import CertificateEntry
 from penatesserver.powerdns.models import Record
 from penatesserver.utils import force_bytestrings, force_bytestring, password_hash, ensure_location
-
-__author__ = 'flanker'
-
 from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField as ImageField_
 import ldapdb.models
 
+__author__ = 'flanker'
 name_pattern = r'[a-zA-Z][\w_]{0,199}'
 name_validators = [RegexValidator('^%s$' % name_pattern)]
 
@@ -244,6 +242,8 @@ class Host(models.Model):
     owner = models.CharField(_('Owner username'), db_index=True, blank=True, default=None, null=True, max_length=255)
     main_ip_address = models.GenericIPAddressField(_('Main IP address'), db_index=True, blank=True, default=None, null=True)
     main_mac_address = models.CharField(_('Main MAC address'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    admin_ip_address = models.GenericIPAddressField(_('Admin IP address'), db_index=True, blank=True, default=None, null=True)
+    admin_mac_address = models.CharField(_('Admin MAC address'), db_index=True, blank=True, default=None, null=True, max_length=255)
     serial = models.CharField(_('Serial number'), db_index=True, blank=True, default=None, null=True, max_length=255)
     model_name = models.CharField(_('Model name'), db_index=True, blank=True, default=None, null=True, max_length=255)
     location = models.CharField(_('Location'), db_index=True, blank=True, default=None, null=True, max_length=255)
@@ -255,6 +255,7 @@ class Host(models.Model):
     disk_size = models.IntegerField(_('Disk size'), db_index=True, blank=True, default=None, null=True)
 
     def hostname(self):
+        # noinspection PyTypeChecker
         return self.fqdn.partition('.')[0]
 
     def bootp_filename(self):

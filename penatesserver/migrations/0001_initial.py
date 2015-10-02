@@ -73,6 +73,8 @@ class Migration(migrations.Migration):
                 ('owner', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Owner username', db_index=True)),
                 ('main_ip_address', models.GenericIPAddressField(default=None, blank=True, null=True, verbose_name='Main IP address', db_index=True)),
                 ('main_mac_address', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Main MAC address', db_index=True)),
+                ('admin_ip_address', models.GenericIPAddressField(default=None, blank=True, null=True, verbose_name='Admin IP address', db_index=True)),
+                ('admin_mac_address', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Admin MAC address', db_index=True)),
                 ('serial', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Serial number', db_index=True)),
                 ('model_name', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Model name', db_index=True)),
                 ('location', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Emplacement', db_index=True)),

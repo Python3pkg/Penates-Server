@@ -5,9 +5,11 @@ import datetime
 import re
 import time
 from django.conf import settings
+from django.utils.six import text_type
 import netaddr
 from penatesserver.pki.service import CertificateEntry
 from django.db import models
+from penatesserver.subnets import get_subnets
 
 __author__ = 'Matthieu Gallet'
 
@@ -64,6 +66,9 @@ class Domain(models.Model):
 
     def set_extra_records(self, scheme, hostname, port, fqdn, srv_field, entry=None):
         if scheme == 'dns':
+            domains = [self]
+            if not self.name.startswith('admin.'):
+                domains = [self, self.ensure_subdomain('admin.%s' % self.name)]
             Record.objects.get_or_create(domain=self, type='NS', name=self.name, content=hostname)
             if Record.objects.filter(domain=self, type='SOA').count() == 0:
                 content = '%s %s %s 10800 3600 604800 3600' % (hostname, settings.PENATES_EMAIL_ADDRESS, self.get_soa_serial())
@@ -98,7 +103,7 @@ class Domain(models.Model):
 
     @staticmethod
     def get_soa_serial():
-        return datetime.datetime.now().strftime('%Y%m%d%H')
+        return datetime.datetime.now().strftime(text_type('%Y%m%d%H'))
 
     def update_soa(self):
         records = list(Record.objects.filter(domain=self, type='SOA')[0:1])
@@ -120,32 +125,40 @@ class Domain(models.Model):
         content = '%s %s %s' % (weight, port, fqdn)
         Record.objects.get_or_create(defaults={'prio': prio}, domain=self, type='SRV', name=name, content=content)
 
-    def ensure_record(self, source, target):
+    def ensure_record(self, source, target, unique=False):
         """
         :param source: orignal name (fqdn of the machine, or IP address)
         :param target: DNS alias to create
+        :param unique: if True, remove any previous
         :rtype: :class:`penatesserver.powerdns.models.Domain`
         """
         record_name, sep, domain_name = target.partition('.')
         if sep != '.' or domain_name != self.name:
             return False
-        if Record.objects.filter(domain=self, name=target, type__in=['A', 'AAAA', 'CNAME']).update(**self.default_record_values(ttl=3600)) > 0:
-            pass
-        elif source != target:
-            try:
-                add = netaddr.IPAddress(source)
-                record_type = 'A' if add.version == 4 else 'AAAA'
-                if add in netaddr.IPNetwork(settings.PENATES_SUBNET):
-                    reverse_record_name, sep, reverse_domain_name = add.reverse_dns.partition('.')
-                    reverse_domain_name = reverse_domain_name[:-1]
-                    reverse_target = add.reverse_dns[:-1]
-                    reverse_domain = self.ensure_subdomain(reverse_domain_name)
-                    if Record.objects.filter(domain=reverse_domain, name=reverse_target, type='PTR').update(content=target) == 0:
-                        Record(domain=reverse_domain, name=reverse_target, type='PTR', content=target, ttl=3600).save()
-                        assert isinstance(reverse_domain, Domain)
-                        reverse_domain.update_soa()
-            except netaddr.core.AddrFormatError:
-                record_type = 'CNAME'
+        if source == target:
+            return True
+        try:
+            add = netaddr.IPAddress(source)
+            record_type = 'A' if add.version == 4 else 'AAAA'
+        except netaddr.core.AddrFormatError:
+            record_type = 'CNAME'
+            add = None
+        if not unique and Record.objects.filter(domain=self, name=target, type=record_type, content=source).count() > 0:
+            return True
+        if record_type == 'A' or record_type == 'AAAA':
+            for subnet_obj in get_subnets():
+                if add.version != subnet_obj.network.version or add not in subnet_obj.network:
+                    continue
+                reverse_record_name, sep, reverse_domain_name = add.reverse_dns.partition('.')
+                reverse_domain_name = reverse_domain_name[:-1]
+                reverse_target = add.reverse_dns[:-1]
+                reverse_domain = self.ensure_subdomain(reverse_domain_name)
+                if Record.objects.filter(domain=reverse_domain, name=reverse_target, type='PTR').update(content=target) == 0:
+                    Record(domain=reverse_domain, name=reverse_target, type='PTR', content=target, ttl=3600).save()
+                    assert isinstance(reverse_domain, Domain)
+                    reverse_domain.update_soa()
+        if Record.objects.filter(domain=self, name=target, type__in=['A', 'AAAA', 'CNAME'])\
+                .update(type=record_type, content=source, ttl=3600) == 0:
             Record(domain=self, name=target, type=record_type, content=source, ttl=3600).save()
         return True
 
@@ -154,7 +167,7 @@ class Domain(models.Model):
         if Record.objects.filter(domain=subdomain, type='SOA').count() == 0:
             soa_records = list(Record.objects.filter(domain=self, type='SOA')[0:1])
             if soa_records:
-                Record.objects.get_or_create(domain=subdomain, type='SOA', name=subdomain.name, content=soa_records[0].content)
+                Record(domain=subdomain, type='SOA', name=subdomain_name, content=soa_records[0].content).save()
         return subdomain
 
     def __repr__(self):
@@ -181,9 +194,10 @@ class Record(models.Model):
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
         domain_name = self.domain.name
+        # noinspection PyTypeChecker
         self.auth = self.name.endswith(domain_name)
         if self.auth:
-            comp = self.name[:-(1 + len(domain_name))].split('.')
+            comp = self.name[:-(1 + len(domain_name))].split(text_type('.'))
             comp.reverse()
             self.ordername = ' '.join(comp)
         super(Record, self).save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
