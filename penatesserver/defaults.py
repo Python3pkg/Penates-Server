@@ -70,8 +70,8 @@ PENATES_EMAIL_ADDRESS = 'admin@{PENATES_DOMAIN}'
 PENATES_REALM = 'EXAMPLE.ORG'
 PENATES_KEYTAB = '{LOCAL_PATH}/pki/private/kadmin.keytab'
 PENATES_PRINCIPAL = 'penatesserver/admin@{PENATES_REALM}'
-
-PENATES_SUBNETS = """192.168.56.0/24,192.168.56.1
+RUNNING_TESTS = False
+PENATES_SUBNETS = """10.19.1.0/24,10.19.1.1
 10.8.0.0/16,10.8.0.1"""
 
 LDAP_NAME = 'ldap://192.168.56.101/'
@@ -85,8 +85,7 @@ PDNS_PORT = '5432'
 PDNS_ENGINE = 'django.db.backends.sqlite3'
 PDNS_NAME = FilePath('{DATA_PATH}/pdns.sqlite3')
 PDNS_ADMIN_PREFIX = 'admin.'
-PDNS_CLIENT_PREFIX = 'infra.'
-PDNS_SERVER_PREFIX = 'infra.'
+PDNS_INFRA_PREFIX = 'infra.'
 
 KERBEROS_IMPL = 'heimdal'  # or 'mit'
 DATABASES = {

@@ -18,5 +18,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         name = options['domain']
-        for prefix in ('', settings.PDNS_ADMIN_PREFIX, settings.PDNS_CLIENT_PREFIX, settings.PDNS_SERVER_PREFIX):
+        for prefix in ('', settings.PDNS_ADMIN_PREFIX, settings.PDNS_INFRA_PREFIX):
             Domain.objects.get_or_create(name='%s%s' % (prefix, name, ))

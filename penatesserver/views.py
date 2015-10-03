@@ -86,7 +86,7 @@ def get_host_keytab(request, hostname):
     ip_address = request.META.get('HTTP_X_FORWARDED_FOR')
     short_hostname = hostname.partition('.')[0]
     domain_name = settings.PENATES_DOMAIN
-    fqdn = '%s.%s' % (short_hostname, domain_name)
+    fqdn = '%s.%s%s' % (short_hostname, settings.PDNS_INFRA_PREFIX, domain_name)
     # valid FQDN
     # create Kerberos principal
     principal = principal_from_hostname(fqdn, settings.PENATES_REALM)
@@ -101,15 +101,11 @@ def get_host_keytab(request, hostname):
     pki.ensure_certificate(entry)
     # create DNS records
     if ip_address:
-        domain = Domain.objects.get(name=domain_name)
-        domain.ensure_record(ip_address, fqdn, unique=True)
-        domain.update_soa()
+        Domain.ensure_auto_record(ip_address, fqdn, unique=True, override_reverse=True)
         Host.objects.filter(fqdn=fqdn).update(main_ip_address=ip_address)
     if admin_ip_address:
         admin_fqdn = '%s.%s%s' % (short_hostname, settings.PDNS_ADMIN_PREFIX, domain_name)
-        admin_domain = Domain.objects.get(name='%s%s' % (settings.PDNS_ADMIN_PREFIX, domain_name))
-        admin_domain.ensure_record(admin_ip_address, admin_fqdn, unique=True)
-        admin_domain.update_soa()
+        Domain.ensure_auto_record(admin_ip_address, admin_fqdn, unique=True, override_reverse=False)
         Host.objects.filter(fqdn=fqdn).update(admin_ip_address=admin_ip_address)
     if settings.OFFER_HOST_KEYTABS:
         return KeytabResponse(principal)
@@ -129,9 +125,7 @@ def set_dhcp(request, mac_address):
         domain_name = '%s%s' % (settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
         long_admin_hostname = '%s.%s' % (hostname.partition('.')[0], domain_name)
         Host.objects.filter(fqdn=hostname).update(admin_ip_address=admin_ip_address, admin_mac_address=admin_mac_address)
-        domain, created = Domain.objects.get_or_create(name=domain_name)
-        domain.ensure_record(admin_ip_address, long_admin_hostname, unique=True)
-        domain.update_soa()
+        Domain.ensure_auto_record(admin_ip_address, long_admin_hostname, unique=True)
     return HttpResponse(status=201)
 
 

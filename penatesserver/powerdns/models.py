@@ -66,13 +66,13 @@ class Domain(models.Model):
 
     def set_extra_records(self, scheme, hostname, port, fqdn, srv_field, entry=None):
         if scheme == 'dns':
-            domains = [self]
-            if not self.name.startswith('admin.'):
-                domains = [self, self.ensure_subdomain('admin.%s' % self.name)]
-            Record.objects.get_or_create(domain=self, type='NS', name=self.name, content=hostname)
-            if Record.objects.filter(domain=self, type='SOA').count() == 0:
-                content = '%s %s %s 10800 3600 604800 3600' % (hostname, settings.PENATES_EMAIL_ADDRESS, self.get_soa_serial())
-                Record.objects.get_or_create(domain=self, type='SOA', name=self.name, content=content)
+            soa_serial = self.get_soa_serial()
+            for domain in Domain.objects.filter(name__in=[self.name, '%s%s' % (settings.PDNS_ADMIN_PREFIX, self.name),
+                                                          '%s%s' % (settings.PDNS_INFRA_PREFIX, self.name)]):
+                Record.objects.get_or_create(domain=domain, type='NS', name=domain.name, content=hostname)
+                if Record.objects.filter(domain=domain, type='SOA').count() == 0:
+                    content = '%s %s %s 10800 3600 604800 3600' % (hostname, settings.PENATES_EMAIL_ADDRESS, soa_serial)
+                    Record.objects.get_or_create(domain=domain, type='SOA', name=domain.name, content=content)
         elif scheme == 'smtp' and port == 25:
             Record.objects.get_or_create(defaults={'prio': 10}, domain=self, type='MX', name=self.name, content=hostname)
             content = 'v=spf1 mx mx:%s -all' % self.name
@@ -125,7 +125,14 @@ class Domain(models.Model):
         content = '%s %s %s' % (weight, port, fqdn)
         Record.objects.get_or_create(defaults={'prio': prio}, domain=self, type='SRV', name=name, content=content)
 
-    def ensure_record(self, source, target, unique=False):
+    @staticmethod
+    def ensure_auto_record(source, target, unique=False, override_reverse=False):
+        base, sep, domain_name = target.partition('.')
+        domain = Domain.objects.get(name=domain_name)
+        domain.ensure_record(source, target, unique=unique, override_reverse=override_reverse)
+        domain.update_soa()
+
+    def ensure_record(self, source, target, unique=False, override_reverse=True):
         """
         :param source: orignal name (fqdn of the machine, or IP address)
         :param target: DNS alias to create
@@ -153,7 +160,8 @@ class Domain(models.Model):
                 reverse_domain_name = reverse_domain_name[:-1]
                 reverse_target = add.reverse_dns[:-1]
                 reverse_domain = self.ensure_subdomain(reverse_domain_name)
-                if Record.objects.filter(domain=reverse_domain, name=reverse_target, type='PTR').update(content=target) == 0:
+                query = Record.objects.filter(domain=reverse_domain, name=reverse_target, type='PTR')
+                if (override_reverse and query.update(content=target) == 0) or (not override_reverse and query.count() == 0):
                     Record(domain=reverse_domain, name=reverse_target, type='PTR', content=target, ttl=3600).save()
                     assert isinstance(reverse_domain, Domain)
                     reverse_domain.update_soa()
@@ -171,7 +179,7 @@ class Domain(models.Model):
         return subdomain
 
     def __repr__(self):
-        return "Domain('self.name')"
+        return "Domain('%s')" % self.name
 
 
 class Record(models.Model):
@@ -188,8 +196,8 @@ class Record(models.Model):
 
     def __repr__(self):
         if self.type in ('NS', 'SOA', 'MX'):
-            return 'Record(%s [%s] -> %s)' % (self.name, self.type, self.content)
-        return 'Record(%s [%s] -> %s)' % (self.name, self.type, self.content)
+            return 'Record("%s [%s] -> %s")' % (self.name, self.type, self.content)
+        return 'Record("%s [%s] -> %s")' % (self.name, self.type, self.content)
 
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):

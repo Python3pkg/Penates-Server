@@ -24,6 +24,7 @@ class ManagedModelTestRunner(DiscoverRunner):
         for m in self.unmanaged_models:
             # noinspection PyProtectedMember
             m._meta.managed = True
+        settings.RUNNING_TESTS = True
         super(ManagedModelTestRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment2(self, **kwargs):

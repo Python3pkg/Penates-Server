@@ -57,16 +57,19 @@ class Command(BaseCommand):
         Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=options['description'], dns_srv=srv_field, encryption=encryption)
 
         # certificate part
-        call_command('certificate', hostname, options['role'], organizationName=settings.PENATES_ORGANIZATION,
-                     organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
-                     localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
-                     stateOrProvinceName=settings.PENATES_STATE, altNames=[],
-                     cert=options['cert'], key=options['key'], pubkey=options['pubkey'], ssh=options['ssh'],
-                     pubssh=options['pubssh'], ca=options['ca'], initialize=False)
-        entry = CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
-                                 organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
-                                 localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
-                                 stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=options['role'])
+        if options['role']:
+            call_command('certificate', hostname, options['role'], organizationName=settings.PENATES_ORGANIZATION,
+                         organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
+                         localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                         stateOrProvinceName=settings.PENATES_STATE, altNames=[],
+                         cert=options['cert'], key=options['key'], pubkey=options['pubkey'], ssh=options['ssh'],
+                         pubssh=options['pubssh'], ca=options['ca'], initialize=False)
+            entry = CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
+                                     organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
+                                     localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                                     stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=options['role'])
+        else:
+            entry = None
 
         # kerberos part
         if kerberos_service:

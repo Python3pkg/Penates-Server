@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import codecs
 import subprocess
 from django.conf import settings
 
@@ -21,6 +22,11 @@ def mit_command(*args):
 
 
 def add_principal_to_keytab(principal, filename):
+    if settings.RUNNING_TESTS:
+        with codecs.open(filename, 'a', encoding='utf-8') as fd:
+            fd.write(principal)
+            fd.write('\n')
+        return
     if settings.KERBEROS_IMPL == 'mit':
         mit_command('ktadd -k %s %s' % (filename, principal))
     else:
@@ -28,6 +34,8 @@ def add_principal_to_keytab(principal, filename):
 
 
 def change_password(principal, password):
+    if settings.RUNNING_TESTS:
+        return
     if settings.KERBEROS_IMPL == 'mit':
         mit_command('change_password -pw %s %s' % (password, principal))
     else:
@@ -35,6 +43,10 @@ def change_password(principal, password):
 
 
 def keytab_has_principal(principal, keytab_filename):
+    if settings.RUNNING_TESTS:
+        with codecs.open(keytab_filename, 'r', encoding='utf-8') as fd:
+            content = fd.read()
+        return principal in content.splitlines()
     if settings.KERBEROS_IMPL == 'mit':
         p = subprocess.Popen(['ktutil'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, stderr = p.communicate('rkt %s\nlist' % keytab_filename)
@@ -51,6 +63,8 @@ def keytab_has_principal(principal, keytab_filename):
 
 
 def add_principal(principal):
+    if settings.RUNNING_TESTS:
+        return
     from penatesserver.models import Principal
     if principal_exists(principal):
         return
@@ -62,6 +76,8 @@ def add_principal(principal):
 
 
 def principal_exists(principal_name):
+    if settings.RUNNING_TESTS:
+        return False
     from penatesserver.models import Principal
     if settings.KERBEROS_IMPL == 'mit':
         return bool(list(Principal.objects.filter(name=principal_name)[0:1]))
@@ -71,6 +87,8 @@ def principal_exists(principal_name):
 
 
 def delete_principal(principal):
+    if settings.RUNNING_TESTS:
+        return
     from penatesserver.models import Principal
     if settings.KERBEROS_IMPL == 'mit':
         Principal.objects.filter(name=principal).delete()
