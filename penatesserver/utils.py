@@ -54,24 +54,27 @@ def ensure_location(filename):
         os.makedirs(dirname)
 
 
+__host_pattern = 'computer/'
+
+
 def hostname_from_principal(principal):
     """
-    >>> hostname_from_principal('computer/machine.test.example.org') == 'machine.test.example.org'
+    >>> hostname_from_principal('%smachine.test.example.org' % __host_pattern) == 'machine.test.example.org'
     True
-    >>> hostname_from_principal('computer/machine.test.example.org@TEST.EXAMPLE.ORG') == 'machine.test.example.org'
+    >>> hostname_from_principal('%smachine.test.example.org@TEST.EXAMPLE.ORG' % __host_pattern) == 'machine.test.example.org'
     True
     """
-    if not principal.startswith('computer/'):
+    if not principal.startswith(__host_pattern):
         raise ValueError
-    return principal[5:].partition('@')[0]
+    return principal[len(__host_pattern):].partition('@')[0]
 
 
 def principal_from_hostname(hostname, realm):
     """
-    >>> principal_from_hostname('machine.test.example.org', 'TEST.EXAMPLE.ORG') == 'computer/machine.test.example.org@TEST.EXAMPLE.ORG'
+    >>> principal_from_hostname('machine.test.example.org', 'TEST.EXAMPLE.ORG') == '%smachine.test.example.org@TEST.EXAMPLE.ORG' % __host_pattern
     True
     """
-    return 'computer/%s@%s' % (hostname, realm)
+    return '%s%s@%s' % (__host_pattern, hostname, realm)
 
 
 def ensure_list(value):

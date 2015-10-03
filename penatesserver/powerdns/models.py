@@ -172,6 +172,7 @@ class Domain(models.Model):
 
     def ensure_subdomain(self, subdomain_name):
         subdomain, created = Domain.objects.get_or_create(name=subdomain_name)
+        Record.objects.get_or_create(defaults={'prio': None}, domain=self, type=None, name=subdomain_name, content=None)
         if Record.objects.filter(domain=subdomain, type='SOA').count() == 0:
             soa_records = list(Record.objects.filter(domain=self, type='SOA')[0:1])
             if soa_records:

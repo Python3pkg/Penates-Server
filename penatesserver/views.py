@@ -114,10 +114,11 @@ def get_host_keytab(request, hostname):
 
 def set_dhcp(request, mac_address):
     hostname = hostname_from_principal(request.user.username)
-    mac_address = mac_address.replace('-', ':')
+    mac_address = mac_address.replace('-', ':').upper()
     remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
     admin_mac_address = request.GET.get('mac_address')
     admin_ip_address = request.GET.get('ip_address')
+    admin_mac_address = admin_mac_address.replace('-', ':').upper()
     if remote_addr:
         Host.objects.filter(fqdn=hostname).update(main_ip_address=remote_addr, main_mac_address=mac_address)
         Record.objects.filter(name=hostname).update(content=remote_addr)
@@ -125,7 +126,7 @@ def set_dhcp(request, mac_address):
         domain_name = '%s%s' % (settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
         long_admin_hostname = '%s.%s' % (hostname.partition('.')[0], domain_name)
         Host.objects.filter(fqdn=hostname).update(admin_ip_address=admin_ip_address, admin_mac_address=admin_mac_address)
-        Domain.ensure_auto_record(admin_ip_address, long_admin_hostname, unique=True)
+        Domain.ensure_auto_record(admin_ip_address, long_admin_hostname, unique=True, override_reverse=False)
     return HttpResponse(status=201)
 
 
@@ -154,12 +155,11 @@ def set_mount_point(request):
 
 
 def set_ssh_pub(request):
-    hostname = hostname_from_principal(request.user.username)
-    short_hostname, sep, domain_name = hostname.partition('.')
-    domain_name = settings.PENATES_DOMAIN
-    long_hostname = '%s.%s' % (short_hostname, domain_name)
-    if Host.objects.filter(fqdn=hostname).count() == 0:
+    fqdn = hostname_from_principal(request.user.username)
+    if Host.objects.filter(fqdn=fqdn).count() == 0:
         return HttpResponse(status=404)
+    fqdn = '%s.%s%s' % (fqdn.partition('.')[0], settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
+    domain_name = '%s%s' % (settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
     pub_ssh_key = request.body
     matcher = re.match(r'([\w\-]+) ([\w\+=/]{1,5000})(|\s.*)$', pub_ssh_key)
     if not matcher:
@@ -170,14 +170,14 @@ def set_ssh_pub(request):
     sha1_hash = hashlib.sha1(base64.b64decode(matcher.group(2))).hexdigest()
     sha256_hash = hashlib.sha256(base64.b64decode(matcher.group(2))).hexdigest()
     algorithm_code = methods[matcher.group(1)]
-    domain, created = Domain.objects.get_or_create(name=domain_name)
+    domain = Domain.objects.get(name=domain_name)
     sha1_value = '%s 1 %s' % (algorithm_code, sha1_hash)
     sha256_value = '%s 2 %s' % (algorithm_code, sha256_hash)
     for value in sha1_value, sha256_value:
-        if Record.objects.filter(domain=domain, name=long_hostname, type='SSHFP', content__startswith=value[:4]).count() == 0:
-            Record(domain=domain, name=long_hostname, type='SSHFP', content=value, ttl=86400).save()
+        if Record.objects.filter(domain=domain, name=fqdn, type='SSHFP', content__startswith=value[:4]).count() == 0:
+            Record(domain=domain, name=fqdn, type='SSHFP', content=value, ttl=86400).save()
         else:
-            Record.objects.filter(domain=domain, name=long_hostname, type='SSHFP', content__startswith=value[:4]).update(content=value)
+            Record.objects.filter(domain=domain, name=fqdn, type='SSHFP', content__startswith=value[:4]).update(content=value)
     return HttpResponse(status=201)
 
 
@@ -219,6 +219,13 @@ def set_service(request, scheme, hostname, port):
         return HttpResponse(status=401, content='Role %s is not allowed' % role)
     if kerberos_service and kerberos_service not in ('HTTP', 'XMPP', 'smtp', 'IPP', 'ldap', 'cifs', 'imap', 'postgres', 'host'):
         return HttpResponse(status=401, content='Kerberos service %s is not allowed' % role)
+    hosts = list(Host.objects.filter(fqdn=fqdn)[0:1])
+    if not hosts:
+        return HttpResponse(status=401, content='Unknown host %s is not allowed' % fqdn)
+    host = hosts[0]
+    if scheme == 'ssh' and kerberos_service == 'host' and host.admin_ip_address != host.main_ip_address:
+        fqdn = '%s.%s%s' % (fqdn.partition('.')[0], settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
+
     # Penates service
     service, created = Service.objects.get_or_create(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)
     Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=description, dns_srv=srv_field, encryption=encryption)
@@ -230,16 +237,17 @@ def set_service(request, scheme, hostname, port):
     pki = PKI()
     pki.ensure_certificate(entry)
     if kerberos_service:
-        # kerberos principal
         principal_name = '%s/%s@%s' % (kerberos_service, fqdn, settings.PENATES_REALM)
         add_principal(principal_name)
     # DNS part
     record_name, sep, domain_name = hostname.partition('.')
     if sep == '.':
-        domain, created = Domain.objects.get_or_create(name=domain_name)
-        domain.ensure_record(fqdn, hostname)
-        domain.set_extra_records(scheme, hostname, port, fqdn, srv_field, entry=entry)
-        domain.update_soa()
+        domains = list(Domain.objects.filter(name=domain_name)[0:1])
+        if domains:
+            domain = domains[0]
+            domain.ensure_record(fqdn, hostname)
+            domain.set_extra_records(scheme, hostname, port, fqdn, srv_field, entry=entry)
+            domain.update_soa()
     return HttpResponse(status=201, content='%s://%s:%s/ created' % (scheme, hostname, port))
 
 

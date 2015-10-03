@@ -18,5 +18,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         name = options['domain']
-        for prefix in ('', settings.PDNS_ADMIN_PREFIX, settings.PDNS_INFRA_PREFIX):
-            Domain.objects.get_or_create(name='%s%s' % (prefix, name, ))
+        domain, created = Domain.objects.get_or_create(name=name)
+        domain.ensure_subdomain('%s%s' % (settings.PDNS_ADMIN_PREFIX, name))
+        domain.ensure_subdomain('%s%s' % (settings.PDNS_INFRA_PREFIX, name))
