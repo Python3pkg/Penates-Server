@@ -34,7 +34,7 @@ FLOOR_INSTALLED_APPS = ['penatesserver', 'rest_framework', 'penatesserver.powerd
 FLOOR_INDEX = 'penatesserver.views.index'
 FLOOR_URL_CONF = 'penatesserver.root_urls.urls'
 FLOOR_PROJECT_NAME = 'Penates Server %s' % __version__
-TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+TEST_RUNNER = 'penatesserver.tests.ManagedModelTestRunner'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'cLc7rCD75uO6uFVr6ojn6AYTm2DGT2t7hb7OH5Capk29kcdy7H'
@@ -84,9 +84,11 @@ PDNS_HOST = 'localhost'
 PDNS_PORT = '5432'
 PDNS_ENGINE = 'django.db.backends.sqlite3'
 PDNS_NAME = FilePath('{DATA_PATH}/pdns.sqlite3')
+PDNS_ADMIN_PREFIX = 'admin.'
+PDNS_CLIENT_PREFIX = 'infra.'
+PDNS_SERVER_PREFIX = 'infra.'
 
 KERBEROS_IMPL = 'heimdal'  # or 'mit'
-
 DATABASES = {
     'default': {
         'ENGINE': '{DATABASE_ENGINE}',

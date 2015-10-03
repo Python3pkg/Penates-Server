@@ -82,28 +82,35 @@ def get_host_keytab(request, hostname):
     :return:
     :rtype:
     """
-    short_hostname, sep, domain_name = hostname.partition('.')
+    admin_ip_address = request.GET.get('ip_address')
+    ip_address = request.META.get('HTTP_X_FORWARDED_FOR')
+    short_hostname = hostname.partition('.')[0]
     domain_name = settings.PENATES_DOMAIN
-    long_hostname = '%s.%s' % (short_hostname, domain_name)
+    fqdn = '%s.%s' % (short_hostname, domain_name)
     # valid FQDN
     # create Kerberos principal
-    principal = principal_from_hostname(long_hostname, settings.PENATES_REALM)
+    principal = principal_from_hostname(fqdn, settings.PENATES_REALM)
     if principal_exists(principal):
         return HttpResponse('', status=403)
     else:
         add_principal(principal)
-    Host.objects.get_or_create(fqdn=long_hostname)
+    Host.objects.get_or_create(fqdn=fqdn)
     # create private key, public key, public certificate, public SSH key
-    entry = entry_from_hostname(long_hostname)
+    entry = entry_from_hostname(fqdn)
     pki = PKI()
     pki.ensure_certificate(entry)
     # create DNS records
-    domain, created = Domain.objects.get_or_create(name=domain_name)
-    remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    if remote_addr:
-        domain.ensure_record(remote_addr, long_hostname, unique=True)
+    if ip_address:
+        domain = Domain.objects.get(name=domain_name)
+        domain.ensure_record(ip_address, fqdn, unique=True)
         domain.update_soa()
-        Host.objects.filter(fqdn=long_hostname).update(main_ip_address=remote_addr)
+        Host.objects.filter(fqdn=fqdn).update(main_ip_address=ip_address)
+    if admin_ip_address:
+        admin_fqdn = '%s.%s%s' % (short_hostname, settings.PDNS_ADMIN_PREFIX, domain_name)
+        admin_domain = Domain.objects.get(name='%s%s' % (settings.PDNS_ADMIN_PREFIX, domain_name))
+        admin_domain.ensure_record(admin_ip_address, admin_fqdn, unique=True)
+        admin_domain.update_soa()
+        Host.objects.filter(fqdn=fqdn).update(admin_ip_address=admin_ip_address)
     if settings.OFFER_HOST_KEYTABS:
         return KeytabResponse(principal)
     return HttpResponse('', content_type='text/plain', status=201)
@@ -119,14 +126,12 @@ def set_dhcp(request, mac_address):
         Host.objects.filter(fqdn=hostname).update(main_ip_address=remote_addr, main_mac_address=mac_address)
         Record.objects.filter(name=hostname).update(content=remote_addr)
     if admin_ip_address and admin_mac_address:
-        domain_name = settings.PENATES_DOMAIN
-        short_hostname = hostname.partition('.')[0]
-        long_admin_hostname = '%s.admin.%s' % (short_hostname, domain_name)
+        domain_name = '%s%s' % (settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
+        long_admin_hostname = '%s.%s' % (hostname.partition('.')[0], domain_name)
         Host.objects.filter(fqdn=hostname).update(admin_ip_address=admin_ip_address, admin_mac_address=admin_mac_address)
         domain, created = Domain.objects.get_or_create(name=domain_name)
-        admin_domain = domain.ensure_subdomain('admin.%s' % domain_name)
-        admin_domain.ensure_record(admin_ip_address, long_admin_hostname, unique=True)
-        admin_domain.update_soa()
+        domain.ensure_record(admin_ip_address, long_admin_hostname, unique=True)
+        domain.update_soa()
     return HttpResponse(status=201)
 
 

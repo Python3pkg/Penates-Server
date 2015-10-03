@@ -1,21 +1,34 @@
 # -*- coding: utf-8 -*-
-"""
-Package gathering all unitary tests for penatesserver.
-Module names must start with `test_` to be taken into account.
-
-You should consider to install :mod:`Distribute` to run all tests with::
-
-    $ python setup.py test
-
-"""
 from __future__ import unicode_literals
-__author__ = 'flanker'
-import unittest
+from django.conf import settings
+from django.test.runner import DiscoverRunner
 
-if __name__ == '__main__':
-    unittest.main()
+__author__ = 'Matthieu Gallet'
 
 
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
+class ManagedModelTestRunner(DiscoverRunner):
+    """
+    Test runner that automatically makes all unmanaged models in your Django
+    project managed for the duration of the test run, so that one doesn't need
+    to execute the SQL manually to create them.
+    """
+    def setup_test_environment(self, **kwargs):
+        try:
+            # noinspection PyUnresolvedReferences
+            from django.apps import apps
+            get_models = apps.get_models
+        except ImportError:
+            from django.db.models.loading import get_models
+        # noinspection PyAttributeOutsideInit,PyProtectedMember
+        self.unmanaged_models = [m for m in get_models() if not m._meta.managed]
+        for m in self.unmanaged_models:
+            # noinspection PyProtectedMember
+            m._meta.managed = True
+        super(ManagedModelTestRunner, self).setup_test_environment(**kwargs)
+
+    def teardown_test_environment2(self, **kwargs):
+        super(ManagedModelTestRunner, self).teardown_test_environment(**kwargs)
+        # reset unmanaged models
+        for m in self.unmanaged_models:
+            # noinspection PyProtectedMember
+            m._meta.managed = False
