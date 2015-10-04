@@ -99,7 +99,7 @@ class Domain(models.Model):
             elif matcher_protocol:
                 self.ensure_srv_record(matcher_protocol.group(1), matcher_protocol.group(2), port, 0, 100, fqdn)
             elif matcher_service:
-                self.ensure_srv_record('tcp', matcher_service.group(2), port, 0, 100, fqdn)
+                self.ensure_srv_record('tcp', matcher_service.group(1), port, 0, 100, fqdn)
 
     def set_certificate_records(self, entry, protocol, hostname, port):
         record_name = '_%s.%s' % (protocol, hostname)
