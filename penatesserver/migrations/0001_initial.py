@@ -121,6 +121,13 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+            name='PrincipalTest',
+            fields=[
+                ('name', models.CharField(max_length=255, serialize=False, primary_key=True, db_index=True)),
+                ('flags', models.IntegerField(default=None, null=True, db_index=True, blank=True)),
+            ],
+        ),
+        migrations.CreateModel(
             name='SambaDomain',
             fields=[
                 ('dn', models.CharField(max_length=200)),

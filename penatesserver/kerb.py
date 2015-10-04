@@ -23,6 +23,8 @@ def mit_command(*args):
 
 def add_principal_to_keytab(principal, filename):
     if settings.RUNNING_TESTS:
+        from penatesserver.models import PrincipalTest
+        PrincipalTest.objects.get(name=principal)
         with codecs.open(filename, 'a', encoding='utf-8') as fd:
             fd.write(principal)
             fd.write('\n')
@@ -35,6 +37,8 @@ def add_principal_to_keytab(principal, filename):
 
 def change_password(principal, password):
     if settings.RUNNING_TESTS:
+        from penatesserver.models import PrincipalTest
+        PrincipalTest.objects.get(name=principal)
         return
     if settings.KERBEROS_IMPL == 'mit':
         mit_command('change_password -pw %s %s' % (password, principal))
@@ -64,6 +68,8 @@ def keytab_has_principal(principal, keytab_filename):
 
 def add_principal(principal):
     if settings.RUNNING_TESTS:
+        from penatesserver.models import PrincipalTest
+        PrincipalTest.objects.get_or_create(name=principal)
         return
     from penatesserver.models import Principal
     if principal_exists(principal):
@@ -77,7 +83,8 @@ def add_principal(principal):
 
 def principal_exists(principal_name):
     if settings.RUNNING_TESTS:
-        return False
+        from penatesserver.models import PrincipalTest
+        return PrincipalTest.objects.filter(name=principal_name).count() > 0
     from penatesserver.models import Principal
     if settings.KERBEROS_IMPL == 'mit':
         return bool(list(Principal.objects.filter(name=principal_name)[0:1]))
@@ -88,6 +95,8 @@ def principal_exists(principal_name):
 
 def delete_principal(principal):
     if settings.RUNNING_TESTS:
+        from penatesserver.models import PrincipalTest
+        PrincipalTest.objects.filter(name=principal).delete()
         return
     from penatesserver.models import Principal
     if settings.KERBEROS_IMPL == 'mit':

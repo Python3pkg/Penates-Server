@@ -101,6 +101,14 @@ class Domain(models.Model):
             elif matcher_service:
                 self.ensure_srv_record('tcp', matcher_service.group(2), port, 0, 100, fqdn)
 
+    def set_certificate_records(self, entry, protocol, hostname, port):
+        record_name = '_%s.%s' % (protocol, hostname)
+        Record.objects.get_or_create(name=record_name, domain=self)
+        record_name = '_%d._%s.%s' % (port, protocol, hostname)
+        content = '3 0 1 %s' % entry.crt_sha256
+        if Record.objects.filter(name=record_name, domain=self, type='TLSA').update(content=content) == 0:
+            Record(name=record_name, domain=self, type='TLSA', content=content).save()
+
     @staticmethod
     def get_soa_serial():
         return datetime.datetime.now().strftime(text_type('%Y%m%d%H'))

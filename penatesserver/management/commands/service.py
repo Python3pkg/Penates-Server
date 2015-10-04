@@ -83,3 +83,5 @@ class Command(BaseCommand):
             domain.ensure_record(fqdn, hostname)
             domain.set_extra_records(scheme, hostname, port, fqdn, srv_field, entry=entry)
             domain.update_soa()
+            if entry:
+                domain.set_certificate_records(entry, protocol, hostname, port)

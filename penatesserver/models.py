@@ -237,6 +237,11 @@ class Principal(BaseLdapModel):
         super(Principal, self).save(using=using)
 
 
+class PrincipalTest(models.Model):
+    name = models.CharField(max_length=255, primary_key=True, db_index=True)
+    flags = models.IntegerField(db_index=True, default=None, blank=True, null=True)
+
+
 class Host(models.Model):
     fqdn = models.CharField(_('Host fqdn'), db_index=True, blank=True, default=None, null=True, max_length=255)
     owner = models.CharField(_('Owner username'), db_index=True, blank=True, default=None, null=True, max_length=255)

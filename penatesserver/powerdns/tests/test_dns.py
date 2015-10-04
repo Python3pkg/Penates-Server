@@ -13,11 +13,12 @@ from django.utils.six import text_type
 from penatesserver.models import DjangoUser
 from penatesserver.pki.constants import CA
 from penatesserver.pki.service import PKI, CertificateEntry
+from penatesserver.pki.views import get_host_certificate
 from penatesserver.powerdns.management.commands.ensure_domain import Command as EnsureDomain
 from penatesserver.management.commands.service import Command as Service
 from penatesserver.powerdns.models import Record, Domain
 from penatesserver.utils import principal_from_hostname
-from penatesserver.views import get_host_keytab, set_dhcp, set_service, set_ssh_pub
+from penatesserver.views import get_host_keytab, set_dhcp, set_service, set_ssh_pub, get_service_keytab
 
 __author__ = 'Matthieu Gallet'
 
@@ -62,19 +63,24 @@ class TestDns(TestCase):
     def test_complete_scenario(self):
         cmd = EnsureDomain()
         cmd.handle(domain=self.domain_name)
-        self.call_service(scheme='ldaps', hostname='directory01.%s' % self.domain_name, port=636, fqdn=self.first_infra_fqdn, encryption='tls')
-        self.call_service(scheme='krb', hostname='directory01.%s' % self.domain_name, port=88, fqdn=self.first_infra_fqdn, srv='tcp/kerberos')
-        self.call_service(scheme='krb', hostname='directory01.%s' % self.domain_name, port=88, fqdn=self.first_infra_fqdn, srv='tcp/kerberos', protocol='udp')
-        self.call_service(scheme='http', hostname='directory01.%s' % self.domain_name, port=443, fqdn=self.first_infra_fqdn, encryption='tls')
-        self.call_service(scheme='dns', hostname='directory01.%s' % self.domain_name, port=53, fqdn=self.first_infra_fqdn, protocol='udp')
+        hostname = 'directory01.%s' % self.domain_name
+        self.call_service(scheme='ldaps', hostname=hostname, port=636, fqdn=self.first_infra_fqdn, encryption='tls')
+        self.call_service(scheme='krb', hostname=hostname, port=88, fqdn=self.first_infra_fqdn, srv='tcp/kerberos')
+        self.call_service(scheme='krb', hostname=hostname, port=88, fqdn=self.first_infra_fqdn, srv='tcp/kerberos', protocol='udp')
+        self.call_service(scheme='http', hostname=hostname, port=443, fqdn=self.first_infra_fqdn, encryption='tls')
+        self.call_service(scheme='dns', hostname=hostname, port=53, fqdn=self.first_infra_fqdn, protocol='udp')
+        self.assertEqual(1, Record.objects.filter(name='_636._tcp.%s' % hostname, type='TLSA').count())
+        self.assertEqual(1, Record.objects.filter(name='_88._tcp.%s' % hostname, type='TLSA').count())
+        self.assertEqual(1, Record.objects.filter(name='_88._udp.%s' % hostname, type='TLSA').count())
+        self.assertEqual(1, Record.objects.filter(name='_443._tcp.%s' % hostname, type='TLSA').count())
 
-        host_keytab_response = get_host_keytab(self.first_request(ip_address=self.first_admin_ip_address), self.first_infra_fqdn)
+        response = get_host_keytab(self.first_request(ip_address=self.first_admin_ip_address), self.first_infra_fqdn)
         principal = principal_from_hostname(self.first_infra_fqdn, settings.PENATES_REALM)
-        self.assertTrue(principal in text_type(host_keytab_response.content))
+        self.assertTrue(principal in text_type(response.content))
 
-        host_keytab_response = get_host_keytab(self.second_request(ip_address=self.second_admin_ip_address), self.second_infra_fqdn)
+        response = get_host_keytab(self.second_request(ip_address=self.second_admin_ip_address), self.second_infra_fqdn)
         principal = principal_from_hostname(self.second_infra_fqdn, settings.PENATES_REALM)
-        self.assertTrue(principal in text_type(host_keytab_response.content))
+        self.assertTrue(principal in text_type(response.content))
 
         domain_names = {x.name for x in Domain.objects.all()}
         for domain_name in [self.domain_name, '%s%s' % (settings.PDNS_ADMIN_PREFIX, self.domain_name), '%s%s' % (settings.PDNS_INFRA_PREFIX, self.domain_name),
@@ -107,6 +113,12 @@ class TestDns(TestCase):
         self.assertEqual(Record.objects.filter(name=self.second_infra_fqdn, type='A', content=self.second_infra_ip_address).count(), 1)
         self.assertEqual(Record.objects.filter(name=self.second_admin_fqdn, type='A', content=self.second_admin_ip_address).count(), 1)
 
+        response = get_service_keytab(self.first_request(protocol='tcp'), 'ssh', self.first_admin_fqdn, '22')
+        self.assertTrue('host/%s@%s' % (self.first_infra_fqdn, settings.PENATES_REALM) in text_type(response.content))
+
+        response = get_service_keytab(self.second_request(protocol='tcp'), 'ssh', self.second_admin_fqdn, '22')
+        self.assertTrue('host/%s@%s' % (self.second_admin_fqdn, settings.PENATES_REALM) in text_type(response.content))
+
         body = "ssh-rsa QkJCQnozcVZRSTlNYTFIYw== flanker@%s" % self.first_infra_fqdn
         response = set_ssh_pub(self.first_request(request_body=body))
         self.assertEqual(201, response.status_code)
@@ -116,12 +128,20 @@ class TestDns(TestCase):
         self.assertEqual(1, Record.objects.filter(name=self.first_admin_fqdn, type='SSHFP', content='1 1 915984d4f71be43b49154b61c786d1a092e49a4d').count())
         self.assertEqual(4, Record.objects.filter(type='SSHFP').count())
 
+        response = get_host_certificate(self.first_request())
+        self.assertTrue('-----BEGIN RSA PRIVATE KEY-----' in text_type(response.content))
+        self.assertTrue('-----END CERTIFICATE-----' in text_type(response.content))
+
+        response = get_host_certificate(self.second_request())
+        self.assertTrue('-----BEGIN RSA PRIVATE KEY-----' in text_type(response.content))
+        self.assertTrue('-----END CERTIFICATE-----' in text_type(response.content))
+
         for record in Record.objects.all():
             print(repr(record))
 
     def call_service(self, **kwargs):
         cmd = Service()
         defaults = {'fqdn': None, 'kerberos_service': None, 'srv': None, 'protocol': 'tcp', 'description': 'description', 'cert': None,
-                    'key': None, 'pubkey': None, 'ssh': None, 'pubssh': None, 'ca': None, 'keytab': None, 'role': None, 'encryption': 'none', }
+                    'key': None, 'pubkey': None, 'ssh': None, 'pubssh': None, 'ca': None, 'keytab': None, 'role': 'Service', 'encryption': 'none', }
         defaults.update(kwargs)
         cmd.handle(**defaults)
