@@ -259,6 +259,10 @@ class Host(models.Model):
     memory_size = models.IntegerField(_('Memory size'), db_index=True, blank=True, default=None, null=True)
     disk_size = models.IntegerField(_('Disk size'), db_index=True, blank=True, default=None, null=True)
 
+    @property
+    def admin_fqdn(self):
+        return '%s.%s%s' % (self.hostname(), settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
+
     def hostname(self):
         # noinspection PyTypeChecker
         return self.fqdn.partition('.')[0]

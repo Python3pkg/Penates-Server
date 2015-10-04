@@ -18,7 +18,7 @@ from penatesserver.powerdns.management.commands.ensure_domain import Command as 
 from penatesserver.management.commands.service import Command as Service
 from penatesserver.powerdns.models import Record, Domain
 from penatesserver.utils import principal_from_hostname
-from penatesserver.views import get_host_keytab, set_dhcp, set_service, set_ssh_pub, get_service_keytab
+from penatesserver.views import get_host_keytab, set_dhcp, set_service, set_ssh_pub, get_service_keytab, get_dhcpd_conf
 
 __author__ = 'Matthieu Gallet'
 
@@ -135,6 +135,9 @@ class TestDns(TestCase):
         response = get_host_certificate(self.second_request())
         self.assertTrue('-----BEGIN RSA PRIVATE KEY-----' in text_type(response.content))
         self.assertTrue('-----END CERTIFICATE-----' in text_type(response.content))
+
+        response = get_dhcpd_conf(self.first_request())
+        print(response.content)
 
         for record in Record.objects.all():
             print(repr(record))
