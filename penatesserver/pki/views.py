@@ -9,7 +9,7 @@ from penatesserver.pki.constants import SERVICE_1024, PRINTER, KERBEROS_DC, SERV
 from penatesserver.pki.service import PKI, CertificateEntry
 from penatesserver.powerdns.models import Record, Domain
 from penatesserver.utils import hostname_from_principal
-from penatesserver.views import entry_from_hostname
+from penatesserver.views import entry_from_hostname, admin_entry_from_hostname
 
 __author__ = 'Matthieu Gallet'
 
@@ -38,6 +38,13 @@ class CertificateEntryResponse(HttpResponse):
 
 def get_host_certificate(request):
     entry = entry_from_hostname(hostname_from_principal(request.user.username))
+    return CertificateEntryResponse(entry)
+
+
+def get_admin_certificate(request):
+    hostname = hostname_from_principal(request.user.username)
+    hostname = '%s.%s%s' % (hostname.partition('.')[0], settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
+    entry = admin_entry_from_hostname(hostname)
     return CertificateEntryResponse(entry)
 
 

@@ -33,6 +33,7 @@ urls = [
     url(r'^auth/group/(?P<name>%s)$' % name_pattern, GroupDetail.as_view(), name='group_detail'),
     url(r'^auth/change_password/$', 'penatesserver.views.change_own_password'),
     url(r'^auth/get_host_certificate/$', 'penatesserver.pki.views.get_host_certificate'),
+    url(r'^auth/get_admin_certificate/$', 'penatesserver.pki.views.get_admin_certificate'),
     url(r'^auth/get_service_certificate/%s$' % service_pattern, 'penatesserver.pki.views.get_service_certificate'),
     url(r'^no-auth/ca.pem$', 'penatesserver.pki.views.get_ca_certificate'),
     url(r'^no-auth/crl.pem$', 'penatesserver.pki.views.get_crl'),

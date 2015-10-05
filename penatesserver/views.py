@@ -47,6 +47,12 @@ def entry_from_hostname(hostname):
                             stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
 
 
+def admin_entry_from_hostname(hostname):
+    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Computers'),
+                            emailAddress=settings.PENATES_EMAIL_ADDRESS, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                            stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
+
+
 def index(request):
     template_values = {'protocol': settings.PROTOCOL,
                        'server_name': settings.SERVER_NAME,
