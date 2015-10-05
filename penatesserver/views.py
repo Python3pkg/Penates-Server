@@ -290,6 +290,8 @@ def get_dhcpd_conf(request):
     template_values = {
         'penates_subnets': get_subnets(),
         'penates_domain': settings.PENATES_DOMAIN,
+        'admin_prefix': settings.PDNS_ADMIN_PREFIX,
+        'infra_prefix': settings.PDNS_INFRA_PREFIX,
         'hosts': Host.objects.all(),
         'tftp': get_ip_or_none('tftp'),
         'dns_list': get_ip_list('dns'),
