@@ -49,8 +49,8 @@ sudo chmod 0400 /etc/krb5.keytab /etc/ssl/private/host.pem
 
     <div>
         <h1>{% trans 'Register a new service' %}</h1>
-    <pre>sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_service' scheme=SCHEME hostname=HOSTNAME port=0 %}?encryption=none|tls|starttls&amp;srv_field=scheme&amp;kerberos_service=SCHEME&amp;role=Service&amp;protocol=tcp|udp
-sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_extra_service' hostname=HOSTNAME %}?ip=IP_ADDRESS
+    <pre>sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_service' scheme='SCHEME' hostname='HOSTNAME' port='0' %}?encryption=none|tls|starttls&amp;srv_field=scheme&amp;kerberos_service=SCHEME&amp;role=Service&amp;protocol=tcp|udp
+sudo k5start -q -f /etc/krb5.keytab -U -- curl --anyauth -u : {{ protocol }}://{{ server_name }}{% url 'penatesserver.views.set_extra_service' hostname='HOSTNAME' %}?ip=IP_ADDRESS
 
     </pre>
     </div>
