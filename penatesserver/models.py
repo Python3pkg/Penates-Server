@@ -23,7 +23,7 @@ from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField 
 import ldapdb.models
 
 __author__ = 'flanker'
-name_pattern = r'[a-zA-Z][\w_]{0,199}'
+name_pattern = r'[a-zA-Z][\w_\-]{0,199}'
 name_validators = [RegexValidator('^%s$' % name_pattern)]
 
 
