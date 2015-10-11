@@ -48,7 +48,7 @@ def shinken_hosts(request, session=None, iso8859=None, tag=None):
     for host in Host.objects.all():
         # noinspection PyTypeChecker
         result.append({
-            'hostname': host.fqdn,
+            'host_name': host.fqdn,
             'alias': '%s,%s' % (host.admin_fqdn, host.fqdn.partition('.')[0]),
             'display_name': host.fqdn,
             'address': host.admin_ip_address,
