@@ -123,7 +123,7 @@ def shinken_contacts(request, session=None, iso8859=None, tag=None):
     check_session(session)
     result = []
     for user in User.objects.all():
-        result.append({'contact_name': user.name, 'alias': user.display_name,
+        result.append({'contact_name': user.name, 'alias': user.display_name, 'use': 'generic-contact', 'password': 'toto',
                        'email': user.mail, 'is_admin': '1' if user.name.endswith('_admin') else '0',
         })
     return result
