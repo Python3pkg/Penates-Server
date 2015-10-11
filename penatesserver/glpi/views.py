@@ -77,44 +77,44 @@ def shinken_services(request, session=None, iso8859=None, tag=None):
                        'host_name': host.fqdn,
                        'service_description': _('Check SSH %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'check_ssh',
-                       'notifications_enabled': 0, })
+                       'notifications_enabled': '0', })
         result.append({'use': 'local-service',
                        'host_name': host.fqdn,
                        'service_description': _('Ping %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'check_ping!100.0,20%!500.0,60%',
-                       'notifications_enabled': 0, })
+                       'notifications_enabled': '0', })
         result.append({'use': 'local-service',
                        'host_name': host.fqdn,
                        'service_description': _('Check / on %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'check_local_disk!20%!10%!/',
-                       'notifications_enabled': 0, })
+                       'notifications_enabled': '0', })
         result.append({'use': 'local-service',
                        'host_name': host.fqdn,
                        'service_description': _('Check logged local users on %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'check_local_users!10!30',
-                       'notifications_enabled': 0, })
+                       'notifications_enabled': '0', })
         result.append({'use': 'local-service',
                        'host_name': host.fqdn,
                        'service_description': _('Check currently running procs on %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'check_local_procs!250!400!RSZDT',
-                       'notifications_enabled': 0, })
+                       'notifications_enabled': '0', })
         result.append({'use': 'local-service',
                        'host_name': host.fqdn,
                        'service_description': _('Check current load on %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'check_local_load!5.0,4.0,3.0!10.0,6.0,4.0',
-                       'notifications_enabled': 0, })
+                       'notifications_enabled': '0', })
         result.append({'use': 'local-service',
                        'host_name': host.fqdn,
                        'service_description': _('Swap usage on %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'check_local_swap!20!10',
-                       'notifications_enabled': 0, })
+                       'notifications_enabled': '0', })
     for service in Service.objects.all():
         if service.scheme == 'http' and not service.encryption == 'none':
             result.append({'use': 'local-service',
                            'host_name': service.hostname,
                            'service_description': _('Check HTTP on %(fqdn)s') % {'fqdn': service.hostname, },
                            'check_command': 'check_http',
-                           'notifications_enabled': 0, })
+                           'notifications_enabled': '0', })
     return result
 
 
