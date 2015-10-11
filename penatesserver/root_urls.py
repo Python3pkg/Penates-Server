@@ -37,6 +37,7 @@ urls = [
     url(r'^auth/get_service_certificate/%s$' % service_pattern, 'penatesserver.pki.views.get_service_certificate'),
     url(r'^no-auth/ca.pem$', 'penatesserver.pki.views.get_ca_certificate'),
     url(r'^no-auth/crl.pem$', 'penatesserver.pki.views.get_crl'),
+    url(r'^no-auth/glpi/rpc$', 'penatesserver.glpi.views.xmlrpc'),
     url(r'^auth/get_user_certificate/$', 'penatesserver.pki.views.get_user_certificate'),
     url(r'^auth/get_email_certificate/$', 'penatesserver.pki.views.get_email_certificate'),
     url(r'^auth/get_signature_certificate/$', 'penatesserver.pki.views.get_signature_certificate'),
