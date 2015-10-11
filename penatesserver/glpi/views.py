@@ -59,7 +59,7 @@ def shinken_hosts(request, session=None, iso8859=None, tag=None):
 @register_rpc_method(XML_RPC_SITE, name='monitoring.shinkenHostgroups')
 def shinken_host_groups(request, session=None, iso8859=None, tag=None):
     check_session(session)
-    return [{'hostgroup_name': 'Servers', 'realm': 'penates', }, ]
+    return []
 
 
 @register_rpc_method(XML_RPC_SITE, name='monitoring.shinkenTemplates')
