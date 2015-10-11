@@ -15,7 +15,7 @@ class Glpi_arbiter(object):
 
     # Called by Arbiter to say 'let's prepare yourself guy'
     def init(self):
-        self.con = xmlrpclib.ServerProxy(self.uri)
+        self.con = xmlrpclib.ServerProxy('https://directory01.test.example.org/no-auth/glpi/rpc')
         arg = {'login_name': self.login_name, 'login_password': self.login_password}
         res = self.con.glpi.doLogin(arg)
         self.session = res['session']
