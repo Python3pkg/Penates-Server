@@ -242,7 +242,7 @@ class PKI(object):
                 context['altSection'] = "subjectAltName=@alt_section"
                 if settings.SERVER_NAME:
                     context['crlPoint'] = '%s://%s%s' % (settings.PROTOCOL, settings.SERVER_NAME, reverse('penatesserver.pki.views.get_crl'))
-                    context['caPoint'] = '%s://%s%s' % (settings.PROTOCOL, settings.SERVER_NAME, reverse('penatesserver.pki.views.get_ca_certificate'))
+                    context['caPoint'] = '%s://%s%s' % (settings.PROTOCOL, settings.SERVER_NAME, reverse('penatesserver.pki.views.get_ca_certificate', kwargs={'kind': 'ca'}))
                     # context['ocspPoint'] = config.ocsp_url
                     # build a file structure which is compatible with ``openssl ca'' commands
         # noinspection PyUnresolvedReferences

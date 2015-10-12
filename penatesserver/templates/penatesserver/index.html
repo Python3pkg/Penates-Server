@@ -6,7 +6,10 @@
     <div>
         <h1>{% trans 'Root' %}</h1>
         <ul>
-            <li><a href="{% url 'penatesserver.pki.views.get_ca_certificate' %}">{% trans 'CA root certificate' %}</a></li>
+            <li><a href="{% url 'penatesserver.pki.views.get_ca_certificate' kind='ca' %}">{% trans 'CA root certificate' %}</a></li>
+            <li><a href="{% url 'penatesserver.pki.views.get_ca_certificate' kind='users' %}">{% trans 'Users CA certificate' %}</a></li>
+            <li><a href="{% url 'penatesserver.pki.views.get_ca_certificate' kind='hosts' %}">{% trans 'Hosts CA certificate' %}</a></li>
+            <li><a href="{% url 'penatesserver.pki.views.get_ca_certificate' kind='services' %}">{% trans 'Services CA certificate' %}</a></li>
         </ul>
     </div>
 

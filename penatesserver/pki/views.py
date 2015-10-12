@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, with_statement, print_function
+
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext as _
+
 from penatesserver.models import User, Service
 from penatesserver.pki.constants import SERVICE_1024, PRINTER, KERBEROS_DC, SERVICE, TIME_SERVER
 from penatesserver.pki.service import PKI, CertificateEntry
-from penatesserver.powerdns.models import Record, Domain
+from penatesserver.powerdns.models import Domain
 from penatesserver.utils import hostname_from_principal
 from penatesserver.views import entry_from_hostname, admin_entry_from_hostname
 
@@ -73,14 +76,26 @@ def get_service_certificate(request, scheme, hostname, port):
 def get_crl(request):
     pki = PKI()
     pki.ensure_crl()
+    # noinspection PyTypeChecker
     with open(pki.cacrl_path, 'rb') as fd:
         content = fd.read()
     return HttpResponse(content, content_type='text/plain')
 
 
-def get_ca_certificate(request):
+def get_ca_certificate(request, kind='ca'):
     pki = PKI()
-    with open(pki.cacrt_path, 'rb') as fd:
+    if kind == 'ca':
+        path = pki.cacrt_path
+    elif kind == 'users':
+        path = pki.users_crt_path
+    elif kind == 'hosts':
+        path = pki.hosts_crt_path
+    elif kind == 'services':
+        path = pki.services_crt_path
+    else:
+        raise PermissionDenied
+    # noinspection PyTypeChecker
+    with open(path, 'rb') as fd:
         content = fd.read()
     return HttpResponse(content, content_type='text/plain')
 
