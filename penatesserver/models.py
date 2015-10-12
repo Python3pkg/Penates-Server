@@ -4,7 +4,8 @@ import codecs
 import os
 
 from django.conf import settings
-from django.contrib.auth.models import PermissionsMixin, UserManager
+from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.models import PermissionsMixin, UserManager, Permission
 from django.contrib.auth.models import AbstractBaseUser
 from django.core import validators
 from django.core.mail import send_mail
@@ -329,6 +330,27 @@ class DjangoUser(AbstractBaseUser, PermissionsMixin):
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
 
+class AdminUser(AbstractBaseUser):
+    USERNAME_FIELD = 'username'
+    username = models.CharField(_('username'), max_length=250, unique=True,
+                                validators=[validators.RegexValidator(r'^[/\w.@+_\-]+$', _('Enter a valid username. '), 'invalid'), ])
+    user_permissions = models.ManyToManyField(Permission,
+                                              related_name="admin_user_set", related_query_name="admin_user")
+
+    class Meta(object):
+        permissions = (
+            ('administration', 'can administrate services'),
+            ('supervision', 'can get supervision configuration'),
+            ('dhcp', 'can get DHCP configuration'),
+        )
+
+    def get_full_name(self):
+        return self.username
+
+    def get_short_name(self):
+        return self.username
+
+
 class Service(models.Model):
     fqdn = models.CharField(_('Host fqdn'), db_index=True, blank=True, default=None, null=True, max_length=255)
     scheme = models.CharField(_('Scheme'), db_index=True, blank=False, default='https', max_length=40)
@@ -337,7 +359,7 @@ class Service(models.Model):
     protocol = models.CharField(_('tcp, udp or socket'), db_index=True, choices=(('tcp', 'tcp'), ('udp', 'udp'), ('socket', 'socket'),), default='tcp', max_length=10)
     encryption = models.CharField(_('encryption'), db_index=True,
                                   choices=(('none', _('No encryption')), ('tls', _('SSL/TLS')),
-                                           ('starttls', _('START TLS')), ), max_length=10, default='none')
+                                           ('starttls', _('START TLS')),), max_length=10, default='none')
     kerberos_service = models.CharField(_('Kerberos service'), blank=True, null=True, default=None, max_length=40)
     description = models.TextField(_('description'), blank=True, default=_('Service'))
     dns_srv = models.CharField(_('DNS SRV field'), blank=True, null=True, default=None, max_length=90)

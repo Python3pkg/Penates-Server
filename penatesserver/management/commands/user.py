@@ -34,7 +34,7 @@ class Command(BaseCommand):
         if options['gid']:
             user.gid = options['gid']
         if options['password']:
-            user.set_password(password=options['password'])
+            user.set_password(options['password'])
         else:
             user.save()
         for group_name in options['group']:

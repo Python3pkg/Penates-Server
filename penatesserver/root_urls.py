@@ -44,5 +44,4 @@ urls = [
     url(r'^auth/get_encipherment_certificate/$', 'penatesserver.pki.views.get_encipherment_certificate'),
     url(r'^auth/get_mobileconfig/profile.mobileconfig$', 'penatesserver.views.get_user_mobileconfig'),
     url(r'^auth/api/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^auth/shinken/$', 'penatesserver.shinken.views.get_shinken_config'),
 ]

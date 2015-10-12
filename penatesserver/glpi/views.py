@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import datetime
+from django.contrib.auth.models import Permission
+from django.core.exceptions import PermissionDenied
 from django.core.signing import Signer
 from penatesserver.glpi.xmlrpc import XMLRPCSite
 from penatesserver.glpi.xmlrpc import register_rpc_method
-from penatesserver.models import Host, Service, User
+from penatesserver.models import Host, Service, User, AdminUser
 from django.utils.translation import ugettext as _
 
 __author__ = 'Matthieu Gallet'
@@ -12,15 +14,15 @@ __author__ = 'Matthieu Gallet'
 XML_RPC_SITE = XMLRPCSite()
 signer = Signer()
 year_0 = datetime.datetime(1970, 1, 1, 0, 0, 0)
-session_duration = 3600
+session_duration_in_seconds = 600
 
 
 def xmlrpc(request):
     return XML_RPC_SITE.dispatch(request)
 
 
-def check_session(session):
-    return True
+def check_session(request, args):
+    session = args[0]['session']
     session = signer.unsign(session)
     end, sep, login_name = session.partition(':')
     end = int(end)
@@ -29,21 +31,31 @@ def check_session(session):
 
 
 @register_rpc_method(XML_RPC_SITE, name='glpi.doLogin')
-def do_login(request, login_name=None, login_password=None):
-    session = '%s:%s' % ((datetime.datetime.utcnow() - year_0).total_seconds() + session_duration, login_name)
+def do_login(request, args):
+    login_name = args[0]['login_name'].decode('utf-8')
+    login_password = args[0]['login_password'].decode('utf-8')
+    users = list(AdminUser.objects.filter(username=login_name, user_permissions__codename='supervision')[0:1])
+    if not users:
+        raise PermissionDenied
+    user = users[0]
+    if not user.check_password(login_password):
+        raise PermissionDenied
+    Permission.objects.filter()
+    end_time = (datetime.datetime.utcnow() - year_0).total_seconds() + session_duration_in_seconds
+    session = '%s:%s' % (end_time, login_name)
     session = signer.sign(session)
     return {'session': session, }
 
 
 @register_rpc_method(XML_RPC_SITE, name='monitoring.shinkenCommands')
-def shinken_commands(request, session=None, iso8859=None, tag=None):
-    check_session(session)
+def shinken_commands(request, args):
+    check_session(request, args)
     return []
 
 
 @register_rpc_method(XML_RPC_SITE, name='monitoring.shinkenHosts')
-def shinken_hosts(request, session=None, iso8859=None, tag=None):
-    check_session(session)
+def shinken_hosts(request, args):
+    check_session(request, args)
     result = []
     for host in Host.objects.all():
         # noinspection PyTypeChecker
@@ -57,20 +69,20 @@ def shinken_hosts(request, session=None, iso8859=None, tag=None):
 
 
 @register_rpc_method(XML_RPC_SITE, name='monitoring.shinkenHostgroups')
-def shinken_host_groups(request, session=None, iso8859=None, tag=None):
-    check_session(session)
+def shinken_host_groups(request, args):
+    check_session(request, args)
     return []
 
 
 @register_rpc_method(XML_RPC_SITE, name='monitoring.shinkenTemplates')
-def shinken_templates(request, session=None, iso8859=None, tag=None):
-    check_session(session)
+def shinken_templates(request, args):
+    check_session(request, args)
     return []
 
 
 @register_rpc_method(XML_RPC_SITE, name='monitoring.shinkenServices')
-def shinken_services(request, session=None, iso8859=None, tag=None):
-    check_session(session)
+def shinken_services(request, args):
+    check_session(request, args)
     result = []
     for host in Host.objects.all():
         result.append({'use': 'local-service',
@@ -119,8 +131,8 @@ def shinken_services(request, session=None, iso8859=None, tag=None):
 
 
 @register_rpc_method(XML_RPC_SITE, name='monitoring.shinkenContacts')
-def shinken_contacts(request, session=None, iso8859=None, tag=None):
-    check_session(session)
+def shinken_contacts(request, args):
+    check_session(request, args)
     result = []
     for user in User.objects.all():
         result.append({'contact_name': user.name, 'alias': user.display_name, 'use': 'generic-contact', 'password': 'toto',
@@ -130,5 +142,6 @@ def shinken_contacts(request, session=None, iso8859=None, tag=None):
 
 
 @register_rpc_method(XML_RPC_SITE, name='monitoring.shinkenTimeperiods')
-def shinken_time_periods(request, session=None, iso8859=None, tag=None):
+def shinken_time_periods(request, args):
+    check_session(request, args)
     return []
