@@ -18,7 +18,7 @@ session_duration_in_seconds = 600
 
 
 shinken_checks = {
-    'penates_dhcp': 'check_dhcp -r $ARG2$ -m $ARG1$',
+    # 'penates_dhcp': 'check_dhcp -r $ARG2$ -m $ARG1$',
     'penates_dig': 'check_dig -l $ARG1$ -a $HOSTADDRESS$',
     'penates_dig_2': 'check_dig -l $ARG1$ -a $ARG2$',
     'penates_http': 'check_http -H $ARG1$ -p $ARG2$',
@@ -58,7 +58,7 @@ def do_login(request, args):
     if not user.check_password(login_password):
         raise PermissionDenied
     Permission.objects.filter()
-    end_time = (datetime.datetime.utcnow() - year_0).total_seconds() + session_duration_in_seconds
+    end_time = int((datetime.datetime.utcnow() - year_0).total_seconds()) + session_duration_in_seconds
     session = '%s:%s' % (end_time, login_name)
     session = signer.sign(session)
     return {'session': session, }
@@ -130,63 +130,65 @@ def shinken_services(request, args):
                        'service_description': _('Swap usage on %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'check_local_swap!20!10',
                        'notifications_enabled': '0', })
-        result.append({'use': 'local-service', 'host_name': host.fqdn,
-                       'service_description': _('Check DHCP for %(fqdn)s') % {'fqdn': host.fqdn, },
-                       'check_command': 'penates_dhcp!%s!%s' % (host.main_mac_address, host.main_ip_address),
-                       'notifications_enabled': '0', })
-        if host.admin_mac_address and host.admin_ip_address != host.main_ip_address:
-            result.append({'use': 'local-service', 'host_name': host.fqdn,
-                           'service_description': _('Check DHCP for %(fqdn)s') % {'fqdn': host.admin_fqdn, },
-                           'check_command': 'penates_dhcp!%s!%s' % (host.admin_mac_address, host.admin_ip_address),
-                           'notifications_enabled': '0', })
+        # result.append({'use': 'local-service', 'host_name': host.fqdn,
+        #                'service_description': _('Check DHCP for %(fqdn)s') % {'fqdn': host.fqdn, },
+        #                'check_command': 'penates_dhcp!%s!%s' % (host.main_mac_address, host.main_ip_address),
+        #                'notifications_enabled': '0', })
+        # if host.admin_mac_address and host.admin_ip_address != host.main_ip_address:
+        #     result.append({'use': 'local-service', 'host_name': host.fqdn,
+        #                    'service_description': _('Check DHCP for %(fqdn)s') % {'fqdn': host.admin_fqdn, },
+        #                    'check_command': 'penates_dhcp!%s!%s' % (host.admin_mac_address, host.admin_ip_address),
+        #                    'notifications_enabled': '0', })
 
     for service in Service.objects.all():
         if service.scheme == 'http':
             check = 'penates_http!%s!%s' if service.encryption == 'none' else 'penates_https!%s!%s'
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Check HTTP on %(fqdn)s') % {'fqdn': service.hostname, },
+                           'service_description': _('Check HTTP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': check % (service.hostname, service.port),
                            'notifications_enabled': '0', })
-        elif service.protocol == 'imap':
+        elif service.scheme == 'imap':
             check = 'penates_imap!%s' if service.encryption == 'tls' else 'penates_imap!%s'
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Check IMAP on %(fqdn)s') % {'fqdn': service.hostname, },
+                           'service_description': _('Check IMAP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': check % service.port,
                            'notifications_enabled': '0', })
-        elif service.protocol == 'ldap':
+        elif service.scheme == 'ldap':
             check = 'penates_ldap!%s' if service.encryption == 'tls' else 'penates_ldap!%s'
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Check LDAP on %(fqdn)s') % {'fqdn': service.hostname, },
+                           'service_description': _('Check LDAP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': check % service.port,
                            'notifications_enabled': '0', })
-        elif service.protocol == 'smtp':
+        elif service.scheme == 'smtp':
             check = 'penates_smtp!%s' if service.encryption == 'tls' else 'penates_smtp!%s'
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Check smtp on %(fqdn)s') % {'fqdn': service.hostname, },
+                           'service_description': _('Check smtp on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': check % service.port,
                            'notifications_enabled': '0', })
-        elif service.protocol == 'ntp':
+        elif service.scheme == 'ntp':
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Check UDP on %(fqdn)s') % {'fqdn': service.hostname, },
+                           'service_description': _('Check UDP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': 'penates_ntp!%s' % service.hostname,
                            'notifications_enabled': '0', })
+        elif service.scheme == 'dkim':
+            pass
         elif service.protocol == 'tcp':
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Check TCP on %(fqdn)s') % {'fqdn': service.hostname, },
+                           'service_description': _('Check TCP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': 'check_tcp!%s' % service.port,
                            'notifications_enabled': '0', })
-        elif service.protocol == 'udp':
-            result.append({'use': 'local-service',
-                           'host_name': service.fqdn,
-                           'service_description': _('Check UDP on %(fqdn)s') % {'fqdn': service.hostname, },
-                           'check_command': 'penates_udp!%s' % service.port,
-                           'notifications_enabled': '0', })
+        # elif service.protocol == 'udp':
+        #     result.append({'use': 'local-service',
+        #                    'host_name': service.fqdn,
+        #                    'service_description': _('Check UDP on %(fqdn)s') % {'fqdn': service.hostname, },
+        #                    'check_command': 'penates_udp!%s' % service.port,
+        #                    'notifications_enabled': '0', })
     return result
 
 
