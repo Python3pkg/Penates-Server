@@ -300,6 +300,16 @@ def get_dhcpd_conf(request):
     return render_to_response('dhcpd/dhcpd.conf', template_values, status=200, content_type='text/plain')
 
 
+def get_dns_conf(request):
+    domains = {}
+    for domain in Domain.objects.all():
+        domains[domain.id] = (domain, [])
+    for record in Record.objects.all():
+        domains[record.domain_id][1].append(record)
+    template_values = {'domains': domains, }
+    return render_to_response('dns/dns.conf', template_values, status=200, content_type='text/plain')
+
+
 class UserList(ListCreateAPIView):
     """
     List all users, or create a new user.

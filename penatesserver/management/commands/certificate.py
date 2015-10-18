@@ -66,12 +66,14 @@ class Command(BaseCommand):
             pki.ensure_ca(entry)
         else:
             pki.ensure_certificate(entry)
-
+        ca_crt_path, ca_key_path = pki.get_subca_infos(entry)
         for key, attr in (('cert', 'crt_filename'), ('key', 'key_filename'), ('ssh', 'key_filename'),
                           ('ca', 'ca_filename'), ('pubssh', 'ssh_filename'), ('pubkey', 'pub_filename'), ):
             dst_filename = options[key]
             if not dst_filename:
                 continue
+            if key == 'ca':
+                open(dst_filename, 'ab').write(open(ca_crt_path, 'rb').read())
             src_filename = getattr(entry, attr)
             open(dst_filename, 'ab').write(open(src_filename, 'rb').read())
             self.stdout.write('File %s written' % dst_filename)

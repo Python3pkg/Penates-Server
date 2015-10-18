@@ -22,6 +22,7 @@ urls = [
     url(r'^auth/get_info/$', 'penatesserver.views.get_info'),
     url(r'^auth/set_dhcp/(?P<mac_address>([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2})/$', 'penatesserver.views.set_dhcp'),
     url(r'^auth/conf/dhcpd.conf$', 'penatesserver.views.get_dhcpd_conf'),
+    url(r'^auth/conf/dns.conf$', 'penatesserver.views.get_dns_conf'),
     url(r'^auth/set_mount_point/$', 'penatesserver.views.set_mount_point'),
     url(r'^auth/set_ssh_pub/$', 'penatesserver.views.set_ssh_pub'),
     url(r'^auth/set_service/%s$' % service_pattern, 'penatesserver.views.set_service'),

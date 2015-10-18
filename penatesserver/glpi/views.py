@@ -145,34 +145,34 @@ def shinken_services(request, args):
             check = 'penates_http!%s!%s' if service.encryption == 'none' else 'penates_https!%s!%s'
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Check HTTP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
+                           'service_description': _('HTTP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': check % (service.hostname, service.port),
                            'notifications_enabled': '0', })
         elif service.scheme == 'imap':
             check = 'penates_imap!%s' if service.encryption == 'tls' else 'penates_imap!%s'
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Check IMAP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
+                           'service_description': _('IMAP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': check % service.port,
                            'notifications_enabled': '0', })
         elif service.scheme == 'ldap':
             check = 'penates_ldap!%s' if service.encryption == 'tls' else 'penates_ldap!%s'
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Check LDAP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
+                           'service_description': _('LDAP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': check % service.port,
                            'notifications_enabled': '0', })
         elif service.scheme == 'smtp':
             check = 'penates_smtp!%s' if service.encryption == 'tls' else 'penates_smtp!%s'
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Check smtp on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
+                           'service_description': _('SMTP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': check % service.port,
                            'notifications_enabled': '0', })
         elif service.scheme == 'ntp':
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Check UDP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
+                           'service_description': _('UDP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': 'penates_ntp!%s' % service.hostname,
                            'notifications_enabled': '0', })
         elif service.scheme == 'dkim':
@@ -180,7 +180,7 @@ def shinken_services(request, args):
         elif service.protocol == 'tcp':
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Check TCP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
+                           'service_description': _('TCP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': 'check_tcp!%s' % service.port,
                            'notifications_enabled': '0', })
         # elif service.protocol == 'udp':
