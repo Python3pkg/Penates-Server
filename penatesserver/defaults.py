@@ -32,7 +32,7 @@ SESSION_REDIS_DB = 10
 ########################################################################################################################
 
 FLOOR_INSTALLED_APPS = ['penatesserver', 'rest_framework', 'penatesserver.powerdns', ]
-FLOOR_INDEX = 'penatesserver:index'
+FLOOR_INDEX = 'penatesserver.views.index'
 FLOOR_URL_CONF = 'penatesserver.root_urls.urls'
 FLOOR_PROJECT_NAME = 'Penates Server %s' % __version__
 TEST_RUNNER = 'penatesserver.tests.ManagedModelTestRunner'
