@@ -20,7 +20,7 @@ __author__ = 'flanker'
 router = routers.DefaultRouter()
 
 service_pattern = r'(?P<scheme>\w+)/(?P<hostname>[a-zA-Z0-9\.\-_]+)/(?P<port>\d+)/'
-
+app_name = 'penatesserver'
 urls = [
     url('^index$', index, name='index'),
     url(r'^', include(router.urls)),
