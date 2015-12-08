@@ -4,28 +4,28 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.test import TestCase
 
-from penatesserver.models import Computer, Principal
+from penatesserver.models import Principal
 
 __author__ = 'Matthieu Gallet'
 
 
-class TestModelComputer(TestCase):
-
-    def test_computer(self):
-        fqdn = 'test.%s' % settings.PENATES_DOMAIN
-        fqdn2 = 'test2.%s' % settings.PENATES_DOMAIN
-        Computer.objects.filter(name=fqdn).delete()
-        Computer.objects.filter(name=fqdn2).delete()
-        obj = Computer(name=fqdn, uid=40000)
-        obj.save()
-        obj = Computer(name=fqdn2)
-        obj.save()
-        self.assertEqual(1, Computer.objects.filter(name=fqdn).count())
-        self.assertEqual(1, Computer.objects.filter(name=fqdn2).count())
-        Computer.objects.filter(name=fqdn).delete()
-        obj = Computer.objects.get(name=fqdn2)
-        self.assertEqual(40001, obj.uid)
-        Computer.objects.filter(name=fqdn2).delete()
+# class TestModelComputer(TestCase):
+#
+#     def test_computer(self):
+#         fqdn = 'test.%s' % settings.PENATES_DOMAIN
+#         fqdn2 = 'test2.%s' % settings.PENATES_DOMAIN
+#         Computer.objects.filter(name=fqdn).delete()
+#         Computer.objects.filter(name=fqdn2).delete()
+#         obj = Computer(name=fqdn, uid=40000)
+#         obj.save()
+#         obj = Computer(name=fqdn2)
+#         obj.save()
+#         self.assertEqual(1, Computer.objects.filter(name=fqdn).count())
+#         self.assertEqual(1, Computer.objects.filter(name=fqdn2).count())
+#         Computer.objects.filter(name=fqdn).delete()
+#         obj = Computer.objects.get(name=fqdn2)
+#         self.assertEqual(40001, obj.uid)
+#         Computer.objects.filter(name=fqdn2).delete()
 
 
 class TestPrincipal(TestCase):

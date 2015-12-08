@@ -20,11 +20,13 @@ for line in codecs.open(os.path.join('penatesserver', '__init__.py'), 'r', encod
 with codecs.open(os.path.join(os.path.dirname(__file__), 'README.md'), encoding='utf-8') as fd:
     long_description = fd.read()
 
-entry_points = {'console_scripts': ['penatesserver-manage = djangofloor.scripts:manage', 'penatesserver-celery = djangofloor.scripts:celery', 'penatesserver-uswgi = djangofloor.scripts:uswgi',
+entry_points = {'console_scripts': ['penatesserver-manage = djangofloor.scripts:manage',
+                                    'penatesserver-celery = djangofloor.scripts:celery',
+                                    'penatesserver-uswgi = djangofloor.scripts:uswgi',
                                     'penatesserver-gunicorn = djangofloor.scripts:gunicorn']}
 
 install_requires = ['djangofloor', 'djangorestframework', 'markdown', 'django-filter', 'pygments',
-                    'django-ldapdb', 'netaddr', ]
+                    'django-ldapdb', 'netaddr', 'jinja2']
 setup(
     name='penatesserver',
     version=version,
