@@ -352,7 +352,7 @@ def change_own_password(request):
         form = PasswordForm(request.POST)
         if form.is_valid():
             ldap_user.set_password(form.cleaned_data['password_1'])
-            return HttpResponseRedirect(reverse('penatesserver:index'))
+            return HttpResponseRedirect(reverse('index'))
     else:
         form = PasswordForm()
     template_values = {'form': form, }
