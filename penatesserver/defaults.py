@@ -19,7 +19,8 @@ SESSION_REDIS_DB = 10
 ########################################################################################################################
 # CACHES = {
 #     'default': {'BACKEND': 'django_redis.cache.RedisCache', 'LOCATION': 'redis://{REDIS_HOST}:{REDIS_PORT}/11',
-#                 'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient', 'PARSER_CLASS': 'redis.connection.HiredisParser', }, },
+#                 'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+# 'PARSER_CLASS': 'redis.connection.HiredisParser', }, },
 #     }
 
 ########################################################################################################################
@@ -31,7 +32,7 @@ SESSION_REDIS_DB = 10
 ########################################################################################################################
 
 FLOOR_INSTALLED_APPS = ['penatesserver', 'rest_framework', 'penatesserver.powerdns', ]
-FLOOR_INDEX = 'penatesserver.views.index'
+FLOOR_INDEX = 'penatesserver:index'
 FLOOR_URL_CONF = 'penatesserver.root_urls.urls'
 FLOOR_PROJECT_NAME = 'Penates Server %s' % __version__
 TEST_RUNNER = 'penatesserver.tests.ManagedModelTestRunner'

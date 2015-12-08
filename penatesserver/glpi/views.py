@@ -27,7 +27,7 @@ shinken_checks = {
     'penates_imaps': 'check_imap -H $HOSTNAME$ -p $ARG1$ -S -D 15',
     'penates_ldap': 'check_ldap -H $HOSTADDRESS$ -p $ARG1$ -3',
     'penates_ldaps': 'check_ldaps -H $HOSTADDRESS$ -p $ARG1$ -3',
-    'penates_ntp': 'check_ntp -H $HOSTADDRESS$',
+    'penates_ntp': 'check_ntp_peer -H $HOSTADDRESS$',
     'penates_smtp': 'check_smtp -H $HOSTADDRESS$ -p $ARG1$',
     'penates_smtps': 'check_smtp -H $HOSTADDRESS$ -p $ARG1$ -S -D 15',
     'penates_udp': 'check_udp -H $HOSTADDRESS$ -p $ARG1$'
@@ -102,6 +102,7 @@ def shinken_services(request, args):
     check_session(request, args)
     result = []
     for host in Host.objects.all():
+        # TODO remplacer des check_nrpe
         result.append({'use': 'local-service', 'host_name': host.fqdn,
                        'service_description': _('Check SSH %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'check_ssh',
@@ -172,7 +173,7 @@ def shinken_services(request, args):
         elif service.scheme == 'ntp':
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('UDP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
+                           'service_description': _('NTP on %(fqdn)s:%(port)s') % {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': 'penates_ntp!%s' % service.hostname,
                            'notifications_enabled': '0', })
         elif service.scheme == 'dkim':
