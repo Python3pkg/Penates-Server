@@ -23,12 +23,12 @@ shinken_checks = {
     'penates_http': 'check_http -H $ARG1$ -p $ARG2$',
     'penates_https': 'check_http -S --sni -H $ARG1$ -p $ARG2$ -C 15 -e 401',
     'penates_imap': 'check_imap -H $HOSTNAME$ -p $ARG1$',
-    'penates_imaps': 'check_imap -H $HOSTNAME$ -p $ARG1$ -S -D 15',
+    'penates_imaps': 'check_simap -H $HOSTNAME$ -p $ARG1$ -D 15',
     'penates_ldap': 'check_ldap -H $HOSTADDRESS$ -p $ARG1$ -3',
     'penates_ldaps': 'check_ldaps -H $HOSTADDRESS$ -p $ARG1$ -3',
     'penates_ntp': 'check_ntp_peer -H $HOSTADDRESS$',
     'penates_smtp': 'check_smtp -H $HOSTADDRESS$ -p $ARG1$',
-    'penates_smtps': 'check_smtp -H $HOSTADDRESS$ -p $ARG1$ -S -D 15',
+    'penates_smtps': 'check_ssmtp -H $HOSTADDRESS$ -p $ARG1$ -D 15',
     'penates_udp': 'check_udp -H $HOSTADDRESS$ -p $ARG1$'
 }
 
