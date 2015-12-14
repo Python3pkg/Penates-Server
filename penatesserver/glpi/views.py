@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import datetime
+import json
+
 from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
-from django.core.signing import Signer
+from django.http import HttpResponse
+from penatesserver.glpi.models import ShinkenService
+
+from penatesserver.glpi.services import get_shinken_services, year_0, session_duration_in_seconds, signer, check_session
+
 from penatesserver.glpi.xmlrpc import XMLRPCSite
 from penatesserver.glpi.xmlrpc import register_rpc_method
-from penatesserver.models import Host, Service, User, AdminUser
-from django.utils.translation import ugettext as _
+from penatesserver.models import Host, User, AdminUser
+from penatesserver.utils import hostname_from_principal
+
 
 __author__ = 'Matthieu Gallet'
 
 XML_RPC_SITE = XMLRPCSite()
-signer = Signer()
-year_0 = datetime.datetime(1970, 1, 1, 0, 0, 0)
-session_duration_in_seconds = 600
 
 shinken_checks = {
     # 'penates_dhcp': 'check_dhcp -r $ARG2$ -m $ARG1$',
@@ -37,13 +41,29 @@ def xmlrpc(request):
     return XML_RPC_SITE.dispatch(request)
 
 
-def check_session(request, args):
-    session = args[0]['session']
-    session = signer.unsign(session)
-    end, sep, login_name = session.partition(':')
-    end = int(end)
-    if (datetime.datetime.utcnow() - year_0).total_seconds() > end:
-        raise ValueError
+def register_service(request, check_command):
+    service_description = request.GET.get('description', '')
+    fqdn = hostname_from_principal(request.user.username)
+    status = 204
+    if request.method == 'POST':
+        if request.body:
+            content = json.loads(request.body.decode('utf-8'))
+            s = ShinkenService(**content)
+            s.host_name = fqdn
+            values = s.to_dict()
+        else:
+            values = {'service_description': service_description}
+        for key in ('host_name', 'check_command'):
+            if key in values:
+                del values[key]
+        if ShinkenService.objects.filter(host_name=fqdn, check_command=check_command)\
+                .update(**values) == 0:
+            ShinkenService(host_name=fqdn, check_command=check_command, **values).save()
+            return HttpResponse(status=201)
+    elif request.method == 'DELETE':
+        ShinkenService.objects.filter(host_name=fqdn, check_command=check_command).delete()
+        status = 202
+    return HttpResponse(status=status)
 
 
 @register_rpc_method(XML_RPC_SITE, name='glpi.doLogin')
@@ -95,110 +115,10 @@ def shinken_templates(request, args):
     check_session(request, args)
     return []
 
-
 @register_rpc_method(XML_RPC_SITE, name='monitoring.shinkenServices')
 def shinken_services(request, args):
     check_session(request, args)
-    result = []
-    for host in Host.objects.all():
-        result.append({'use': 'local-service', 'host_name': host.fqdn,
-                       'service_description': _('Check SSH %(fqdn)s') % {'fqdn': host.fqdn, },
-                       'check_command': 'check_ssh',
-                       'notifications_enabled': '0', })
-        result.append({'use': 'local-service', 'host_name': host.fqdn,
-                       'service_description': _('Ping %(fqdn)s') % {'fqdn': host.fqdn, },
-                       'check_command': 'check_ping!100.0,20%!500.0,60%',
-                       'notifications_enabled': '0', })
-        result.append({'use': 'generic-service', 'host_name': host.fqdn,
-                       'service_description': _('Check all disks on %(fqdn)s') % {'fqdn': host.fqdn, },
-                       'check_command': 'check_nrpe!check_all_disk',
-                       'notifications_enabled': '0', })
-        result.append({'use': 'generic-service', 'host_name': host.fqdn,
-                       'service_description': _('Check swap on %(fqdn)s') % {'fqdn': host.fqdn, },
-                       'check_command': 'check_nrpe!check_swap',
-                       'notifications_enabled': '0', })
-        result.append({'use': 'generic-service', 'host_name': host.fqdn,
-                       'service_description': _('Check number of processes on %(fqdn)s') % {'fqdn': host.fqdn, },
-                       'check_command': 'check_nrpe!check_total_procs',
-                       'notifications_enabled': '0', })
-        result.append({'use': 'generic-service', 'host_name': host.fqdn,
-                       'service_description': _('Check number of zombie processes on %(fqdn)s') % {'fqdn': host.fqdn, },
-                       'check_command': 'check_nrpe!check_zombie_procs',
-                       'notifications_enabled': '0', })
-        result.append({'use': 'generic-service', 'host_name': host.fqdn,
-                       'service_description': _('Check load on %(fqdn)s') % {'fqdn': host.fqdn, },
-                       'check_command': 'check_nrpe!check_load',
-                       'notifications_enabled': '0', })
-        result.append({'use': 'local-service', 'host_name': host.fqdn,
-                       'service_description': _('Check DNS %(fqdn)s') % {'fqdn': host.fqdn, },
-                       'check_command': 'penates_dig_2!%s!%s' % (host.fqdn, host.main_ip_address),
-                       'notifications_enabled': '0', })
-        result.append({'use': 'local-service', 'host_name': host.fqdn,
-                       'service_description': _('Check DNS %(fqdn)s') % {'fqdn': host.fqdn, },
-                       'check_command': 'penates_dig_2!%s!%s' % (host.admin_fqdn, host.admin_ip_address),
-                       'notifications_enabled': '0', })
-
-    for service in Service.objects.all():
-        if service.scheme == 'http':
-            check = 'penates_http!%s!%s' if service.encryption == 'none' else 'penates_https!%s!%s'
-            result.append({'use': 'local-service',
-                           'host_name': service.fqdn,
-                           'service_description': _('HTTP on %(fqdn)s:%(port)s') %
-                           {'fqdn': service.hostname, 'port': service.port, },
-                           'check_command': check % (service.hostname, service.port),
-                           'notifications_enabled': '0', })
-        elif service.scheme == 'ssh':
-            result.append({'use': 'local-service',
-                           'host_name': service.fqdn,
-                           'service_description': _('SSH TCP on %(fqdn)s:%(port)s') %
-                           {'fqdn': service.hostname, 'port': service.port, },
-                           'check_command': 'check_tcp!%s' % service.port,
-                           'notifications_enabled': '0', })
-            result.append({'use': 'generic-service', 'host_name': service.fqdn,
-                           'service_description': _('SSH process on %(fqdn)s:%(port)s') %
-                           {'fqdn': service.hostname, 'port': service.port, },
-                           'check_command': 'check_nrpe!check_sshd', 'notifications_enabled': '0', })
-        elif service.scheme == 'imap':
-            check = 'penates_imaps!%s' if service.encryption == 'tls' else 'penates_imap!%s'
-            result.append({'use': 'local-service',
-                           'host_name': service.fqdn,
-                           'service_description': _('IMAP on %(fqdn)s:%(port)s') %
-                           {'fqdn': service.hostname, 'port': service.port, },
-                           'check_command': check % service.port,
-                           'notifications_enabled': '0', })
-        elif service.scheme == 'ldap':
-            check = 'penates_ldaps!%s' if service.encryption == 'tls' else 'penates_ldap!%s'
-            result.append({'use': 'local-service',
-                           'host_name': service.fqdn,
-                           'service_description': _('LDAP on %(fqdn)s:%(port)s') %
-                           {'fqdn': service.hostname, 'port': service.port, },
-                           'check_command': check % service.port,
-                           'notifications_enabled': '0', })
-        elif service.scheme == 'smtp':
-            check = 'penates_smtps!%s' if service.encryption == 'tls' else 'penates_smtp!%s'
-            result.append({'use': 'local-service',
-                           'host_name': service.fqdn,
-                           'service_description': _('SMTP on %(fqdn)s:%(port)s') %
-                           {'fqdn': service.hostname, 'port': service.port, },
-                           'check_command': check % service.port,
-                           'notifications_enabled': '0', })
-        elif service.scheme == 'ntp':
-            result.append({'use': 'local-service',
-                           'host_name': service.fqdn,
-                           'service_description': _('NTP on %(fqdn)s:%(port)s') %
-                           {'fqdn': service.hostname, 'port': service.port, },
-                           'check_command': 'penates_ntp!%s' % service.hostname,
-                           'notifications_enabled': '0', })
-        elif service.scheme == 'dkim':
-            pass
-        elif service.protocol == 'tcp':
-            result.append({'use': 'local-service',
-                           'host_name': service.fqdn,
-                           'service_description': _('TCP on %(fqdn)s:%(port)s') %
-                           {'fqdn': service.hostname, 'port': service.port, },
-                           'check_command': 'check_tcp!%s' % service.port,
-                           'notifications_enabled': '0', })
-    return result
+    return get_shinken_services()
 
 
 @register_rpc_method(XML_RPC_SITE, name='monitoring.shinkenContacts')

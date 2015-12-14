@@ -266,7 +266,8 @@ def get_service_keytab(request, scheme, hostname, port):
     host = hosts[0]
     if scheme == 'ssh' and host.admin_ip_address != host.main_ip_address:
         fqdn = '%s.%s%s' % (fqdn.partition('.')[0], settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
-    services = list(Service.objects.filter(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)[0:1])
+    services = list(Service.objects.filter(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port,
+                                           protocol=protocol)[0:1])
     if not services:
         return HttpResponse(status=404, content='%s://%s:%s/ unknown' % (scheme, hostname, port))
     service = services[0]

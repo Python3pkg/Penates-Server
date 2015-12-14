@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from django.conf.urls import include, url
 
 from rest_framework import routers
-from penatesserver.glpi.views import xmlrpc
+from penatesserver.glpi.views import xmlrpc, register_service
 
 from penatesserver.models import name_pattern
 from penatesserver.pki.views import get_host_certificate, get_ca_certificate, get_admin_certificate, \
@@ -41,7 +41,9 @@ urls = [
     url(r'^auth/change_password/$', change_own_password, name='change_own_password'),
     url(r'^auth/get_host_certificate/$', get_host_certificate, name='get_host_certificate'),
     url(r'^auth/get_admin_certificate/$', get_admin_certificate, name='get_admin_certificate'),
-    url(r'^auth/get_service_certificate/%s$' % service_pattern, get_service_certificate, name='get_service_certificate'),
+    url(r'^auth/get_service_certificate/%s$' % service_pattern, get_service_certificate,
+        name='get_service_certificate'),
+    url(r'^auth/glpi/register_service/(?P<check_command>.*)$', register_service, name='register_service'),
     url(r'^no-auth/(?P<kind>ca|users|hosts|services).pem$', get_ca_certificate, name='get_ca_certificate'),
     url(r'^no-auth/crl.pem$', get_crl, name='get_crl'),
     url(r'^no-auth/glpi/rpc$', xmlrpc, name='xmlrpc'),

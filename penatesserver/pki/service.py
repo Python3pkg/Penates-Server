@@ -23,7 +23,8 @@ from django.template.loader import render_to_string
 from django.utils.text import slugify
 from django.utils.timezone import utc
 
-from penatesserver.pki.constants import ROLES, RSA, RESOURCE, USER, ENCIPHERMENT, SIGNATURE, EMAIL, COMPUTER_TEST, COMPUTER, CA
+from penatesserver.pki.constants import ROLES, RSA, RESOURCE, USER, ENCIPHERMENT, SIGNATURE, EMAIL, COMPUTER_TEST,\
+    COMPUTER, CA
 from penatesserver.utils import t61_to_time, ensure_location
 
 
@@ -216,8 +217,9 @@ class PKI(object):
             ca_crt_path, ca_key_path = self.cacrt_path, self.cakey_path
         else:
             ca_crt_path, ca_key_path = ca_infos
-        context = {'dirname': self.dirname, 'policy_details': [], 'crlPoint': '', 'caPoint': '', 'altSection': '', 'altNamesString': '',
-                   'krbRealm': '', 'krbClientName': '', 'ca_key_path': ca_key_path, 'ca_crt_path': ca_crt_path, }  # contain all template values
+        context = {'dirname': self.dirname, 'policy_details': [], 'crlPoint': '', 'caPoint': '', 'altSection': '',
+                   'altNamesString': '', 'krbRealm': '', 'krbClientName': '', 'ca_key_path': ca_key_path,
+                   'ca_crt_path': ca_crt_path, }  # contain all template values
         if entry is not None:
             assert isinstance(entry, CertificateEntry)
             role = ROLES[entry.role]
@@ -242,7 +244,8 @@ class PKI(object):
                 context['altSection'] = "subjectAltName=@alt_section"
                 if settings.SERVER_NAME:
                     context['crlPoint'] = '%s://%s%s' % (settings.PROTOCOL, settings.SERVER_NAME, reverse('get_crl'))
-                    context['caPoint'] = '%s://%s%s' % (settings.PROTOCOL, settings.SERVER_NAME, reverse('get_ca_certificate', kwargs={'kind': 'ca'}))
+                    context['caPoint'] = '%s://%s%s' % (settings.PROTOCOL, settings.SERVER_NAME,
+                                                        reverse('get_ca_certificate', kwargs={'kind': 'ca'}))
                     # context['ocspPoint'] = config.ocsp_url
                     # build a file structure which is compatible with ``openssl ca'' commands
         # noinspection PyUnresolvedReferences
@@ -336,7 +339,8 @@ class PKI(object):
         serial = self.__get_certificate_serial(entry.crt_filename)
         with codecs.open(self.crt_sources_path, 'a', encoding='utf-8') as fd:
             fd.write('%s\t%s\t%s\t%s\n' % (serial, os.path.relpath(entry.key_filename, self.dirname),
-                                           os.path.relpath(entry.req_filename, self.dirname), os.path.relpath(entry.crt_filename, self.dirname)))
+                                           os.path.relpath(entry.req_filename, self.dirname),
+                                           os.path.relpath(entry.crt_filename, self.dirname)))
 
     def __gen_ca_key(self, entry):
         """
@@ -497,7 +501,8 @@ class PKI(object):
         end_date = t61_to_time(stdout.partition('=')[2].strip())
         after_now = datetime.datetime.now(tz=utc) + datetime.timedelta(30)
         if end_date is None or end_date < after_now:
-            # logging.warning(_('Certificate %(path)s for %(cn)s is about to expire') % {'cn': common_name, 'path': path})
+            # logging.warning(_('Certificate %(path)s for %(cn)s is about to expire') %
+            # {'cn': common_name, 'path': path})
             return False
         serial = self.__get_certificate_serial(path)
         if serial is None:
@@ -515,8 +520,8 @@ class PKI(object):
             if infos[1] != 'V':
                 return
             conf_path = self.__gen_openssl_conf()
-            local('"{openssl}" ca -config "{cfg}" -revoke {filename}'.format(openssl=settings.OPENSSL_PATH, cfg=conf_path,
-                                                                             filename=fd.name))
+            local('"{openssl}" ca -config "{cfg}" -revoke {filename}'.format(openssl=settings.OPENSSL_PATH,
+                                                                             cfg=conf_path, filename=fd.name))
         key_filename = os.path.join(self.dirname, infos[5])
         if os.path.isfile(key_filename):
             with open(key_filename, 'rb') as fd:
@@ -548,7 +553,8 @@ class PKI(object):
 
     def __check_crl(self):
         try:
-            content = subprocess.check_output([settings.OPENSSL_PATH, 'crl', '-noout', '-nextupdate', '-in', self.cacrl_path], stderr=subprocess.PIPE)
+            content = subprocess.check_output([settings.OPENSSL_PATH, 'crl', '-noout', '-nextupdate', '-in',
+                                               self.cacrl_path], stderr=subprocess.PIPE)
         except CalledProcessError:
             return False
         key, sep, value = content.decode('utf-8').partition('=')
@@ -558,13 +564,15 @@ class PKI(object):
 
     def __gen_crl(self, crldays):
         config = self.__gen_openssl_conf()
-        content = subprocess.check_output([settings.OPENSSL_PATH, 'ca', '-gencrl', '-utf8', '-config', config, '-keyfile', self.cakey_path,
-                                           '-cert', self.cacrt_path, '-crldays', str(crldays)], stderr=subprocess.PIPE)
+        content = subprocess.check_output([settings.OPENSSL_PATH, 'ca', '-gencrl', '-utf8', '-config', config,
+                                           '-keyfile', self.cakey_path, '-cert', self.cacrt_path, '-crldays',
+                                           str(crldays)], stderr=subprocess.PIPE)
         with open(self.cacrl_path, 'wb') as fd:
             fd.write(content)
 
     def __get_index_file(self):
-        """Return a dict ["serial"] = ["serial", "V|R", "valid_date", "revoke_date", "cn", "key filename", "req filename", "crt filename"]
+        """Return a dict ["serial"] = ["serial", "V|R", "valid_date", "revoke_date", "cn", "key filename",
+        "req filename", "crt filename"]
         :return:
         :rtype:
         """
@@ -592,6 +600,7 @@ class PKI(object):
         with tempfile.NamedTemporaryFile() as fd:
             fd.write(password.encode('utf-8'))
             fd.flush()
-            p = subprocess.Popen([settings.OPENSSL_PATH, 'pkcs12', '-export', '-out', filename, '-passout', 'file:%s' % fd.name, '-aes256', '-in', entry.crt_filename, '-inkey', entry.key_filename,
-                                  '-certfile', self.cacrt_path, '-name', entry.filename, ])
+            p = subprocess.Popen([settings.OPENSSL_PATH, 'pkcs12', '-export', '-out', filename, '-passout',
+                                  'file:%s' % fd.name, '-aes256', '-in', entry.crt_filename, '-inkey',
+                                  entry.key_filename, '-certfile', self.cacrt_path, '-name', entry.filename, ])
             p.communicate()
