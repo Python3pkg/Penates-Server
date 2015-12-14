@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.utils.decorators import classproperty
 from django.utils.six import text_type
 
 __author__ = 'Matthieu Gallet'
@@ -99,6 +100,11 @@ class ShinkenService(models.Model):
                                                        blank=True, choices=[(0, '0'), (1, '1')])
 
     def to_dict(self):
-        values = {k: text_type(v) for (k, v) in self.__dict__.items() if v is not None}
+        values = {k: getattr(self, k) for k in self.get_field_list() if getattr(self, k) is not None}
         values['use'] = 'generic-service'
         return values
+
+    @classmethod
+    def get_field_list(cls):
+        # noinspection PyProtectedMember
+        return [x.name for x in cls._meta.get_fields() if x.name != 'id']

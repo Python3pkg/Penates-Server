@@ -75,7 +75,7 @@ class Command(BaseCommand):
         parser.add_argument('--trigger_broker_raise_enabled', default=None, choices=['0', '1'])
 
     def handle(self, *args, **options):
-        values = {k: options[k] for k in ShinkenService().__dict__ if options[k] is not None}
+        values = {k: options[k] for k in ShinkenService.get_field_list() if options[k] is not None}
         check_command = options['check_command']
         host_name = options['host_name']
         if ShinkenService.objects.filter(host_name=host_name, check_command=check_command)\
