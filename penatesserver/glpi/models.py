@@ -100,7 +100,7 @@ class ShinkenService(models.Model):
                                                        blank=True, choices=[(0, '0'), (1, '1')])
 
     def to_dict(self):
-        values = {k: getattr(self, k) for k in self.get_field_list() if getattr(self, k) is not None}
+        values = {k: text_type(getattr(self, k)) for k in self.get_field_list() if getattr(self, k) is not None}
         values['use'] = 'generic-service'
         return values
 
