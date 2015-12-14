@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 import datetime
 from django.core.signing import Signer
+from django.utils.six import text_type
 from django.utils.translation import ugettext as _
 from penatesserver.glpi.models import ShinkenService
 from penatesserver.models import Host, Service
@@ -56,19 +57,19 @@ def get_shinken_services():
         result.append({'use': 'local-service', 'host_name': host.fqdn, 'icon_set': 'server',
                        'service_description': _('Check DNS %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'penates_dig_2!%s!%s' % (host.fqdn, host.main_ip_address),
-                       'notifications_enabled': '0', 'check_interval': 4 * 60, })
+                       'notifications_enabled': '0', 'check_interval': text_type(4 * 60), })
         result.append({'use': 'local-service', 'host_name': host.fqdn, 'icon_set': 'server',
                        'service_description': _('Check DNS %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'penates_dig_2!%s!%s' % (host.admin_fqdn, host.admin_ip_address),
-                       'notifications_enabled': '0', 'check_interval': 4 * 60, })
+                       'notifications_enabled': '0', 'check_interval': text_type(4 * 60), })
         result.append({'use': 'generic-service', 'host_name': host.fqdn, 'icon_set': 'server',
                        'service_description': _('Check certificate admin on %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'check_nrpe!check_cert_admin',
-                       'notifications_enabled': '0', 'check_interval': 24 * 60, })
+                       'notifications_enabled': '0', 'check_interval': text_type(24 * 60), })
         result.append({'use': 'generic-service', 'host_name': host.fqdn, 'icon_set': 'server',
                        'service_description': _('Check certificate admin on %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'check_nrpe!check_cert_host',
-                       'notifications_enabled': '0', 'check_interval': 24 * 60, })
+                       'notifications_enabled': '0', 'check_interval': text_type(24 * 60), })
     for service in Service.objects.all():
         if service.scheme == 'http':
             check = 'penates_http!%s!%s' if service.encryption == 'none' else 'penates_https!%s!%s'
