@@ -291,7 +291,7 @@ class Host(models.Model):
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
         self.fqdn = '%s.%s' % (self.fqdn.partition('.')[0], settings.PENATES_DOMAIN)
-        super(models.Model, self).save(force_insert=force_insert, force_update=force_update, using=using,
+        super(Host, self).save(force_insert=force_insert, force_update=force_update, using=using,
                                        update_fields=update_fields)
 
 
