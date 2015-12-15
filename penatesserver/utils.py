@@ -14,6 +14,21 @@ from django.utils.timezone import utc
 T61_RE = re.compile(r'^([A-Z][a-z]{2}) {1,2}(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2}) (\d{4}).*$')
 
 
+def is_admin(username):
+    """
+    >>> is_admin('myuser')
+    False
+
+    >>> is_admin('myuser_admin')
+    True
+    :param username:
+    :type username:
+    :return:
+    :rtype:
+    """
+    return username.endswith('_admin')
+
+
 def force_bytestrings(unicode_list):
     """
      >>> force_bytestrings(['test']) == [b'test']

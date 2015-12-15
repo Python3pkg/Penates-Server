@@ -79,6 +79,7 @@ class Migration(migrations.Migration):
                 ('model_name', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Model name', db_index=True)),
                 ('location', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Emplacement', db_index=True)),
                 ('os_name', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='OS Name', db_index=True)),
+                ('bootp_filename', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='BootP filename')),
                 ('proc_model', models.CharField(default=None, max_length=255, blank=True, null=True, verbose_name='Proc model', db_index=True)),
                 ('proc_count', models.IntegerField(default=None, null=True, verbose_name='Proc count', db_index=True, blank=True)),
                 ('core_count', models.IntegerField(default=None, null=True, verbose_name='Core count', db_index=True, blank=True)),

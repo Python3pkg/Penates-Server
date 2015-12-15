@@ -120,3 +120,8 @@ DATABASE_ROUTERS = ['ldapdb.router.Router', 'penatesserver.routers.PowerdnsManag
 AUTH_USER_MODEL = 'penatesserver.DjangoUser'
 
 DEBUG = True
+AUTHENTICATION_BACKENDS = [
+    'penatesserver.backends.DefaultGroupRemoteUserBackend',
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]

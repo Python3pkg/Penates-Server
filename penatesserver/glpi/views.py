@@ -6,6 +6,7 @@ import json
 from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
+from django.utils.crypto import get_random_string
 from penatesserver.glpi.models import ShinkenService
 
 from penatesserver.glpi.services import get_shinken_services, year_0, session_duration_in_seconds, signer, check_session
@@ -13,7 +14,7 @@ from penatesserver.glpi.services import get_shinken_services, year_0, session_du
 from penatesserver.glpi.xmlrpc import XMLRPCSite
 from penatesserver.glpi.xmlrpc import register_rpc_method
 from penatesserver.models import Host, User, AdminUser
-from penatesserver.utils import hostname_from_principal
+from penatesserver.utils import hostname_from_principal, is_admin
 
 
 __author__ = 'Matthieu Gallet'
@@ -127,8 +128,8 @@ def shinken_contacts(request, args):
     result = []
     for user in User.objects.all():
         result.append({'contact_name': user.name, 'alias': user.display_name, 'use': 'generic-contact',
-                       'password': 'toto', 'email': user.mail, 'is_admin': '1' if user.name.endswith('_admin') else '0',
-                       })
+                       'password': get_random_string(), 'email': user.mail,
+                       'is_admin': '1' if is_admin(user.name) else '0', })
     return result
 
 

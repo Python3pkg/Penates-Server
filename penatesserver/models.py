@@ -4,24 +4,29 @@ import codecs
 import os
 
 from django.conf import settings
-from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import PermissionsMixin, UserManager, Permission
 from django.contrib.auth.models import AbstractBaseUser
 from django.core import validators
 from django.core.mail import send_mail
 from django.core.validators import RegexValidator
+from django.db.models import Q
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.lru_cache import lru_cache
 from django.utils.translation import ugettext as _
 from django.db import models
+from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField as ImageField_
+import ldapdb.models
+from penatesserver.glpi.models import ShinkenService
 
 from penatesserver.kerb import change_password, delete_principal, add_principal
 from penatesserver.pki.constants import USER, EMAIL, SIGNATURE, ENCIPHERMENT
 from penatesserver.pki.service import CertificateEntry
 from penatesserver.powerdns.models import Record
-from penatesserver.utils import force_bytestrings, force_bytestring, password_hash, ensure_location
-from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField as ImageField_
-import ldapdb.models
+from penatesserver.utils import force_bytestrings, force_bytestring, password_hash, ensure_location, \
+    principal_from_hostname
+
 
 __author__ = 'flanker'
 name_pattern = r'[a-zA-Z][\w_\-]{0,199}'
@@ -74,7 +79,8 @@ class Group(BaseLdapModel):
     base_dn = 'ou=Groups,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['posixGroup', 'sambaGroupMapping'])
     # posixGroup attributes
-    name = CharField(db_column=force_bytestring('cn'), max_length=200, primary_key=True, validators=list(name_validators))
+    name = CharField(db_column=force_bytestring('cn'), max_length=200, primary_key=True,
+                     validators=list(name_validators))
     gid = IntegerField(db_column=force_bytestring('gidNumber'), unique=True)
     members = ListField(db_column=force_bytestring('memberUid'))
     description = CharField(db_column=force_bytestring('description'), max_length=500, blank=True, default='')
@@ -101,14 +107,17 @@ class Group(BaseLdapModel):
 class GroupOfNames(BaseLdapModel):
     base_dn = 'ou=CoreGroups,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['groupOfNames'])
-    name = CharField(db_column=force_bytestring('cn'), max_length=200, primary_key=True, validators=list(name_validators))
+    name = CharField(db_column=force_bytestring('cn'), max_length=200, primary_key=True,
+                     validators=list(name_validators))
     members = ListField(db_column=force_bytestring('member'))
 
 
 class User(BaseLdapModel):
     base_dn = 'ou=Users,' + settings.LDAP_BASE_DN
-    object_classes = force_bytestrings(['posixAccount', 'shadowAccount', 'inetOrgPerson', 'sambaSamAccount', 'person', 'AsteriskSIPUser'])
-    name = CharField(db_column=force_bytestring('uid'), max_length=200, primary_key=True, validators=list(name_validators))
+    object_classes = force_bytestrings(['posixAccount', 'shadowAccount', 'inetOrgPerson', 'sambaSamAccount', 'person',
+                                        'AsteriskSIPUser'])
+    name = CharField(db_column=force_bytestring('uid'), max_length=200, primary_key=True,
+                     validators=list(name_validators))
     display_name = CharField(db_column=force_bytestring('displayName'), max_length=200)
     uid_number = IntegerField(db_column=force_bytestring('uidNumber'), default=None, unique=True)
     gid_number = IntegerField(db_column=force_bytestring('gidNumber'), default=None)
@@ -204,26 +213,30 @@ class User(BaseLdapModel):
 
     @property
     def user_certificate_entry(self):
-        return CertificateEntry(self.name, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Users'),
-                                emailAddress=self.mail, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+        return CertificateEntry(self.name, organizationName=settings.PENATES_ORGANIZATION,
+                                organizationalUnitName=_('Users'), emailAddress=self.mail,
+                                localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                                 stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=USER)
 
     @property
     def email_certificate_entry(self):
-        return CertificateEntry(self.name, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Users'),
-                                emailAddress=self.mail, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+        return CertificateEntry(self.name, organizationName=settings.PENATES_ORGANIZATION,
+                                organizationalUnitName=_('Users'), emailAddress=self.mail,
+                                localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                                 stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=EMAIL)
 
     @property
     def signature_certificate_entry(self):
-        return CertificateEntry(self.name, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Users'),
-                                emailAddress=self.mail, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+        return CertificateEntry(self.name, organizationName=settings.PENATES_ORGANIZATION,
+                                organizationalUnitName=_('Users'), emailAddress=self.mail,
+                                localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                                 stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=SIGNATURE)
 
     @property
     def encipherment_certificate_entry(self):
-        return CertificateEntry(self.name, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Users'),
-                                emailAddress=self.mail, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+        return CertificateEntry(self.name, organizationName=settings.PENATES_ORGANIZATION,
+                                organizationalUnitName=_('Users'), emailAddress=self.mail,
+                                localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                                 stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=ENCIPHERMENT)
 
 
@@ -239,6 +252,8 @@ class Principal(BaseLdapModel):
 
 
 class PrincipalTest(models.Model):
+    """Only used for testing
+    """
     name = models.CharField(max_length=255, primary_key=True, db_index=True)
     flags = models.IntegerField(db_index=True, default=None, blank=True, null=True)
 
@@ -246,14 +261,19 @@ class PrincipalTest(models.Model):
 class Host(models.Model):
     fqdn = models.CharField(_('Host fqdn'), db_index=True, blank=True, default=None, null=True, max_length=255)
     owner = models.CharField(_('Owner username'), db_index=True, blank=True, default=None, null=True, max_length=255)
-    main_ip_address = models.GenericIPAddressField(_('Main IP address'), db_index=True, blank=True, default=None, null=True)
-    main_mac_address = models.CharField(_('Main MAC address'), db_index=True, blank=True, default=None, null=True, max_length=255)
-    admin_ip_address = models.GenericIPAddressField(_('Admin IP address'), db_index=True, blank=True, default=None, null=True)
-    admin_mac_address = models.CharField(_('Admin MAC address'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    main_ip_address = models.GenericIPAddressField(_('Main IP address'), db_index=True, blank=True, default=None,
+                                                   null=True)
+    main_mac_address = models.CharField(_('Main MAC address'), db_index=True, blank=True, default=None, null=True,
+                                        max_length=255)
+    admin_ip_address = models.GenericIPAddressField(_('Admin IP address'), db_index=True, blank=True, default=None,
+                                                    null=True)
+    admin_mac_address = models.CharField(_('Admin MAC address'), db_index=True, blank=True, default=None, null=True,
+                                         max_length=255)
     serial = models.CharField(_('Serial number'), db_index=True, blank=True, default=None, null=True, max_length=255)
     model_name = models.CharField(_('Model name'), db_index=True, blank=True, default=None, null=True, max_length=255)
     location = models.CharField(_('Location'), db_index=True, blank=True, default=None, null=True, max_length=255)
     os_name = models.CharField(_('OS Name'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    bootp_filename = models.CharField(_('BootP filename'), blank=True, default=None, null=True, max_length=255)
     proc_model = models.CharField(_('Proc model'), db_index=True, blank=True, default=None, null=True, max_length=255)
     proc_count = models.IntegerField(_('Proc count'), db_index=True, blank=True, default=None, null=True)
     core_count = models.IntegerField(_('Core count'), db_index=True, blank=True, default=None, null=True)
@@ -268,8 +288,25 @@ class Host(models.Model):
         # noinspection PyTypeChecker
         return self.fqdn.partition('.')[0]
 
-    def bootp_filename(self):
-        return self.os_name
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        self.fqdn = '%s.%s' % (self.fqdn.partition('.')[0], settings.PENATES_DOMAIN)
+        super(models.Model, self).save(force_insert=force_insert, force_update=force_update, using=using,
+                                       update_fields=update_fields)
+
+
+@receiver(post_delete, sender=Host)
+def delete_host(sender, instance=None, **kwargs):
+    if sender != Host:
+        return
+    assert isinstance(instance, Host)
+    # noinspection PyUnusedLocal
+    kwargs = kwargs
+    fqdn = instance.fqdn
+    Service.objects.filter(fqdn=fqdn).delete()
+    ShinkenService.objects.filter(host_name=fqdn).delete()
+    delete_principal(principal_from_hostname(fqdn, settings.PENATES_REALM))
+    Record.objects.filter(Q(name=fqdn) | Q(content=fqdn)).delete()
 
 
 class MountPoint(models.Model):
@@ -290,8 +327,9 @@ class Netgroup(BaseLdapModel):
 
 class DjangoUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(_('username'), max_length=250, unique=True,
-                                help_text=_('Required. 30 characters or fewer. Letters, digits and "/"/@/./+/-/_ only.'),
-                                validators=[validators.RegexValidator(r'^[/\w.@+_\-]+$', _('Enter a valid username. '), 'invalid'), ])
+                                help_text=_('Required. Letters, digits and "/"/@/./+/-/_ only.'),
+                                validators=[validators.RegexValidator(r'^[/\w.@+_\-]+$', _('Enter a valid username. '),
+                                                                      'invalid'), ])
     first_name = models.CharField(_('first name'), max_length=30, blank=True)
     last_name = models.CharField(_('last name'), max_length=30, blank=True)
     email = models.EmailField(_('email address'), blank=True)
@@ -331,9 +369,11 @@ class DjangoUser(AbstractBaseUser, PermissionsMixin):
 
 
 class AdminUser(AbstractBaseUser):
+    """Functionnal admin users, for example to retrieve configuration"""
     USERNAME_FIELD = 'username'
     username = models.CharField(_('username'), max_length=250, unique=True,
-                                validators=[validators.RegexValidator(r'^[/\w.@+_\-]+$', _('Enter a valid username. '), 'invalid'), ])
+                                validators=[validators.RegexValidator(r'^[/\w.@+_\-]+$', _('Enter a valid username. '),
+                                                                      'invalid'), ])
     user_permissions = models.ManyToManyField(Permission,
                                               related_name="admin_user_set", related_query_name="admin_user")
 
@@ -356,7 +396,9 @@ class Service(models.Model):
     scheme = models.CharField(_('Scheme'), db_index=True, blank=False, default='https', max_length=40)
     hostname = models.CharField(_('Service hostname'), db_index=True, blank=False, default='localhost', max_length=255)
     port = models.IntegerField(_('Port'), db_index=True, blank=False, default=443)
-    protocol = models.CharField(_('tcp, udp or socket'), db_index=True, choices=(('tcp', 'tcp'), ('udp', 'udp'), ('socket', 'socket'),), default='tcp', max_length=10)
+    protocol = models.CharField(_('tcp, udp or socket'), db_index=True,
+                                choices=(('tcp', 'tcp'), ('udp', 'udp'), ('socket', 'socket'),), default='tcp',
+                                max_length=10)
     encryption = models.CharField(_('encryption'), db_index=True,
                                   choices=(('none', _('No encryption')), ('tls', _('SSL/TLS')),
                                            ('starttls', _('START TLS')),), max_length=10, default='none')
@@ -364,7 +406,8 @@ class Service(models.Model):
     description = models.TextField(_('description'), blank=True, default=_('Service'))
     dns_srv = models.CharField(_('DNS SRV field'), blank=True, null=True, default=None, max_length=90)
     status = models.IntegerField(_('Status'), default=None, null=True, blank=True, db_index=True)
-    status_last_update = models.DateTimeField(_('Status last update'), default=None, null=True, blank=True, db_index=True)
+    status_last_update = models.DateTimeField(_('Status last update'), default=None, null=True, blank=True,
+                                              db_index=True)
 
     def __str__(self):
         return '%s://%s:%s/' % (self.scheme, self.hostname, self.port)
