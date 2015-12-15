@@ -292,7 +292,7 @@ class Host(models.Model):
              update_fields=None):
         self.fqdn = '%s.%s' % (self.fqdn.partition('.')[0], settings.PENATES_DOMAIN)
         super(Host, self).save(force_insert=force_insert, force_update=force_update, using=using,
-                                       update_fields=update_fields)
+                               update_fields=update_fields)
 
 
 @receiver(post_delete, sender=Host)
