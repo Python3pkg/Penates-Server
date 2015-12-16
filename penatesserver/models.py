@@ -260,7 +260,7 @@ class PrincipalTest(models.Model):
 
 class Host(models.Model):
     fqdn = models.CharField(_('Host fqdn'), db_index=True, blank=True, default=None, null=True, max_length=255,
-                            help_text=_('Example: hostname.%(p)s%(s)s') %
+                            help_text='hostname.%(p)s%(s)s' %
                             {'p': settings.PDNS_ADMIN_PREFIX, 's': settings.PENATES_DOMAIN})
     owner = models.CharField(_('Owner username'), db_index=True, blank=True, default=None, null=True, max_length=255)
     main_ip_address = models.GenericIPAddressField(_('Main IP address'), db_index=True, blank=True, default=None,
