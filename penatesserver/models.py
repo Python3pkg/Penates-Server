@@ -259,7 +259,9 @@ class PrincipalTest(models.Model):
 
 
 class Host(models.Model):
-    fqdn = models.CharField(_('Host fqdn'), db_index=True, blank=True, default=None, null=True, max_length=255)
+    fqdn = models.CharField(_('Host fqdn'), db_index=True, blank=True, default=None, null=True, max_length=255,
+                            help_text=_('Example: hostname.%(p)s%(s)s') %
+                            {'p': settings.PDNS_ADMIN_PREFIX, 's': settings.PENATES_DOMAIN})
     owner = models.CharField(_('Owner username'), db_index=True, blank=True, default=None, null=True, max_length=255)
     main_ip_address = models.GenericIPAddressField(_('Main IP address'), db_index=True, blank=True, default=None,
                                                    null=True)
@@ -287,12 +289,6 @@ class Host(models.Model):
     def hostname(self):
         # noinspection PyTypeChecker
         return self.fqdn.partition('.')[0]
-
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
-        self.fqdn = '%s.%s' % (self.fqdn.partition('.')[0], settings.PENATES_DOMAIN)
-        super(Host, self).save(force_insert=force_insert, force_update=force_update, using=using,
-                               update_fields=update_fields)
 
 
 @receiver(post_delete, sender=Host)
