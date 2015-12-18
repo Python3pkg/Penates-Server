@@ -20,6 +20,7 @@ INI_MAPPING = [
     OptionParser('PDNS_HOST', 'powerdns.host'),
     OptionParser('PDNS_PORT', 'powerdns.port'),
 
+    OptionParser('LDAP_BASE_DN', 'ldap.base_dn'),
     OptionParser('LDAP_NAME', 'ldap.name'),
     OptionParser('LDAP_USER', 'ldap.user'),
     OptionParser('LDAP_PASSWORD', 'ldap.password'),
