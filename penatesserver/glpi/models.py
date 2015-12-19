@@ -2,6 +2,8 @@
 from django.db import models
 from django.utils.decorators import classproperty
 from django.utils.six import text_type
+from django.utils.text import slugify
+from penatesserver.utils import clean_string
 
 __author__ = 'Matthieu Gallet'
 
@@ -103,6 +105,7 @@ class ShinkenService(models.Model):
         values = {k: text_type(getattr(self, k)) for k in self.get_field_list() if getattr(self, k) is not None}
         values['use'] = 'generic-service'
         values.setdefault('service_description', '%s on %s' % (self.check_command, self.host_name))
+        values['service_description'] = clean_string(values['service_description'])
         return values
 
     @classmethod

@@ -8,8 +8,10 @@ import os
 import random
 import re
 import string
+from django.utils.encoding import force_text
 
 from django.utils.timezone import utc
+import unicodedata
 
 T61_RE = re.compile(r'^([A-Z][a-z]{2}) {1,2}(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2}) (\d{4}).*$')
 
@@ -172,6 +174,17 @@ def check_password(hashed_password, plain_password):
     hr = hashlib.sha1(plain_password.encode('utf-8'))
     hr.update(salt)
     return digest == hr.digest()
+
+
+def clean_string(value, allow_unicode=False):
+    value = force_text(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+        value = re.sub(r'[^\w\s\-_]', '', value, flags=re.U).strip().lower()
+        return value
+    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^\w\s\-_]', '', value).strip().lower()
+    return value
 
 
 if __name__ == '__main__':
