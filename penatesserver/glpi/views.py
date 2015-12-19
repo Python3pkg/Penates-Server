@@ -7,6 +7,7 @@ from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.utils.crypto import get_random_string
+from penatesserver.glpi.forms import ShinkenServiceForm
 from penatesserver.glpi.models import ShinkenService
 
 from penatesserver.glpi.services import get_shinken_services, year_0, session_duration_in_seconds, signer, check_session
@@ -43,7 +44,6 @@ def xmlrpc(request):
 
 
 def register_service(request, check_command):
-    service_description = request.GET.get('description', '')
     fqdn = hostname_from_principal(request.user.username)
     status = 204
     if request.method == 'POST':
@@ -52,11 +52,18 @@ def register_service(request, check_command):
             s = ShinkenService(**content)
             s.host_name = fqdn
             values = s.to_dict()
-        else:
-            values = {'service_description': service_description}
         for key in ('host_name', 'check_command'):
             if key in values:
                 del values[key]
+        if ShinkenService.objects.filter(host_name=fqdn, check_command=check_command)\
+                .update(**values) == 0:
+            ShinkenService(host_name=fqdn, check_command=check_command, **values).save()
+            return HttpResponse(status=201)
+    elif request.method == 'GET':
+        form = ShinkenServiceForm(request.GET)
+        if not form.is_valid():
+            return HttpResponse(status=400)
+        values = {key: value for key, value in form.cleaned_data.items() if value is not None}
         if ShinkenService.objects.filter(host_name=fqdn, check_command=check_command)\
                 .update(**values) == 0:
             ShinkenService(host_name=fqdn, check_command=check_command, **values).save()
