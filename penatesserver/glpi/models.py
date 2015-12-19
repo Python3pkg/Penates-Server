@@ -102,6 +102,7 @@ class ShinkenService(models.Model):
     def to_dict(self):
         values = {k: text_type(getattr(self, k)) for k in self.get_field_list() if getattr(self, k) is not None}
         values['use'] = 'generic-service'
+        values.setdefault('service_description', '%s on %s' % (self.check_command, self.host_name))
         return values
 
     @classmethod
