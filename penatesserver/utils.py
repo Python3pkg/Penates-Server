@@ -180,10 +180,10 @@ def clean_string(value, allow_unicode=False):
     value = force_text(value)
     if allow_unicode:
         value = unicodedata.normalize('NFKC', value)
-        value = re.sub(r'[^\w\s\-_]', '', value, flags=re.U).strip().lower()
+        value = re.sub(r'[^\w\s\-_]', '-', value, flags=re.U).strip().lower()
         return value
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
-    value = re.sub(r'[^\w\s\-_]', '', value).strip().lower()
+    value = re.sub(r'[^\w\s\-_]', '-', value).strip().lower()
     return value
 
 
