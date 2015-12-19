@@ -45,4 +45,6 @@ INI_MAPPING = [
     OptionParser('OFFER_HOST_KEYTABS', 'global.offer_host_keytabs'),
     OptionParser('FLOOR_AUTHENTICATION_HEADER', 'global.remote_user_header'),
     OptionParser('SECRET_KEY', 'global.secret_key'),
-]
+    OptionParser('FLOOR_DEFAULT_GROUP_NAME', 'global.default_group'),
+
+    ]
