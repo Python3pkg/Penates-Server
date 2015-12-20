@@ -91,9 +91,9 @@ class Domain(models.Model):
             if Record.objects.filter(domain=self, type='TXT', name=name, content=content).count() == 0:
                 Record(domain=self, type='TXT', name=name, content=content).save()
         if srv_field:
-            matcher_full = re.match(r'^(\w+)/(\w+):(\d+):(\d+)$', srv_field)
-            matcher_protocol = re.match(r'^(\w+)/(\w+)$', srv_field)
-            matcher_service = re.match(r'^(\w+)$', srv_field)
+            matcher_full = re.match(r'^(\w+)/([\-\w]+):(\d+):(\d+)$', srv_field)
+            matcher_protocol = re.match(r'^([\-\w]+)/(\w+)$', srv_field)
+            matcher_service = re.match(r'^([\-\w]+)$', srv_field)
             if matcher_full:
                 self.ensure_srv_record(matcher_full.group(1), matcher_full.group(2), port, int(matcher_full.group(3)), int(matcher_full.group(4)), fqdn)
             elif matcher_protocol:

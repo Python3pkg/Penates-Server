@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from djangofloor.iniconf import OptionParser
+from djangofloor.iniconf import OptionParser, bool_setting
 
 __author__ = 'Matthieu Gallet'
 # noinspection PyTypeChecker
@@ -46,5 +46,6 @@ INI_MAPPING = [
     OptionParser('FLOOR_AUTHENTICATION_HEADER', 'global.remote_user_header'),
     OptionParser('SECRET_KEY', 'global.secret_key'),
     OptionParser('FLOOR_DEFAULT_GROUP_NAME', 'global.default_group'),
+    OptionParser('DEBUG', 'global.debug', bool_setting),
 
     ]

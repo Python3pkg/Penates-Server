@@ -233,8 +233,10 @@ def set_service(request, scheme, hostname, port):
         fqdn = '%s.%s%s' % (fqdn.partition('.')[0], settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
 
     # Penates service
-    service, created = Service.objects.get_or_create(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)
-    Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=description, dns_srv=srv_field, encryption=encryption)
+    service, created = Service.objects.get_or_create(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port,
+                                                     protocol=protocol)
+    Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=description,
+                                                 dns_srv=srv_field, encryption=encryption)
     # certificates
     entry = CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
                              organizationalUnitName=_('Services'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
