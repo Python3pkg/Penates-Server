@@ -63,7 +63,7 @@ def register_service(request, check_command):
         form = ShinkenServiceForm(request.GET)
         if not form.is_valid():
             return HttpResponse(status=400)
-        values = {key: value for key, value in form.cleaned_data.items() if value is not None}
+        values = {key: value for key, value in form.cleaned_data.items() if value}
         if ShinkenService.objects.filter(host_name=fqdn, check_command=check_command)\
                 .update(**values) == 0:
             ShinkenService(host_name=fqdn, check_command=check_command, **values).save()
