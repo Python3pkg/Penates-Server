@@ -178,12 +178,13 @@ def check_password(hashed_password, plain_password):
 
 def clean_string(value, allow_unicode=False):
     value = force_text(value)
+    allowed_pattern = r'[^\w\s\-_\.]'
     if allow_unicode:
         value = unicodedata.normalize('NFKC', value)
-        value = re.sub(r'[^\w\s\-_]', '-', value, flags=re.U).strip().lower()
+        value = re.sub(allowed_pattern, '-', value, flags=re.U).strip()
         return value
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
-    value = re.sub(r'[^\w\s\-_]', '-', value).strip().lower()
+    value = re.sub(allowed_pattern, '-', value).strip()
     return value
 
 
