@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.utils import six
 from django.utils.decorators import classproperty
 from django.utils.six import text_type
 from django.utils.text import slugify
@@ -100,6 +101,15 @@ class ShinkenService(models.Model):
     trigger_name = models.CharField('trigger_name', max_length=255, default=None, null=True, blank=True)
     trigger_broker_raise_enabled = models.IntegerField('trigger_broker_raise_enabled', default=None, null=True,
                                                        blank=True, choices=[(0, '0'), (1, '1')])
+
+    def __str__(self):
+        if six.PY3:
+            return self.__unicode__()
+        return self.__unicode__().encode('utf-8')
+
+    def __unicode__(self):
+        if six.PY3:
+            return '%s on %s' % (self.check_command, self.host_name)
 
     def to_dict(self):
         values = {k: text_type(getattr(self, k)) for k in self.get_field_list() if getattr(self, k) is not None}
