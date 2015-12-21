@@ -213,11 +213,11 @@
                     <key>PayloadContent</key>
                     <data>{{ certificate.0|base64_file }}</data>
                     <key>PayloadDescription</key>
-                    <string>{{ certificate.1 }}</string>
+                    <string>User certificate {{ certificate.1 }}</string>
                     <key>PayloadDisplayName</key>
-                    <string>{{ certificate.1 }}.p12</string>
+                    <string>{% trans 'Personal certificate' %} {{ username }}@{{ domain }}</string>
                     <key>PayloadIdentifier</key>
-                    <string>{{ inverted_domain }}.certificate.{{ certificate.1 }}</string>
+                    <string>{{ inverted_domain }}.reference.{{ certificate.1 }}</string>
                     <key>PayloadOrganization</key>
                     <string>{{ organization }}</string>
                     <key>PayloadType</key>

@@ -71,7 +71,7 @@ def get_shinken_services():
                        'check_command': 'check_nrpe!check_cert_host',
                        'notifications_enabled': '0', 'check_interval': text_type(24 * 60), })
     for service in Service.objects.all():
-        if service.scheme == 'http':
+        if service.scheme in ('http', 'carddav', 'caldav'):
             check = 'penates_http!%s!%s' if service.encryption == 'none' else 'penates_https!%s!%s'
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,

@@ -42,14 +42,16 @@ class KeytabResponse(HttpResponse):
 
 
 def entry_from_hostname(hostname):
-    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Computers'),
-                            emailAddress=settings.PENATES_EMAIL_ADDRESS, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
+                            organizationalUnitName=_('Computers'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
+                            localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                             stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
 
 
 def admin_entry_from_hostname(hostname):
-    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION, organizationalUnitName=_('Computers'),
-                            emailAddress=settings.PENATES_EMAIL_ADDRESS, localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
+                            organizationalUnitName=_('Computers'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
+                            localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
                             stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
 
 
@@ -131,7 +133,8 @@ def set_dhcp(request, mac_address):
     if admin_ip_address and admin_mac_address:
         domain_name = '%s%s' % (settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
         long_admin_hostname = '%s.%s' % (hostname.partition('.')[0], domain_name)
-        Host.objects.filter(fqdn=hostname).update(admin_ip_address=admin_ip_address, admin_mac_address=admin_mac_address)
+        Host.objects.filter(fqdn=hostname)\
+            .update(admin_ip_address=admin_ip_address, admin_mac_address=admin_mac_address)
         Domain.ensure_auto_record(admin_ip_address, long_admin_hostname, unique=True, override_reverse=False)
     return HttpResponse(status=201)
 
@@ -154,7 +157,8 @@ def set_mount_point(request):
     options = request.GET.get('options')
     if not options:
         return HttpResponse('options GET argument not provided', status=400)
-    if MountPoint.objects.filter(host=host, mount_point=mount_point).update(fs_type=fs_type, device=device, options=options) == 1:
+    if MountPoint.objects.filter(host=host, mount_point=mount_point)\
+            .update(fs_type=fs_type, device=device, options=options) == 1:
         return HttpResponse('', status=204)
     MountPoint(host=host, mount_point=mount_point, fs_type=fs_type, device=device, options=options).save()
     return HttpResponse('', status=201)
@@ -183,7 +187,8 @@ def set_ssh_pub(request):
         if Record.objects.filter(domain=domain, name=fqdn, type='SSHFP', content__startswith=value[:4]).count() == 0:
             Record(domain=domain, name=fqdn, type='SSHFP', content=value, ttl=86400).save()
         else:
-            Record.objects.filter(domain=domain, name=fqdn, type='SSHFP', content__startswith=value[:4]).update(content=value)
+            Record.objects.filter(domain=domain, name=fqdn, type='SSHFP', content__startswith=value[:4])\
+                .update(content=value)
     return HttpResponse(status=201)
 
 
@@ -223,7 +228,8 @@ def set_service(request, scheme, hostname, port):
         return HttpResponse(status=401, content='%s is already registered' % hostname)
     if role not in (SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER, SERVICE_1024):
         return HttpResponse(status=401, content='Role %s is not allowed' % role)
-    if kerberos_service and kerberos_service not in ('HTTP', 'XMPP', 'smtp', 'IPP', 'ldap', 'cifs', 'imap', 'postgres', 'host'):
+    if kerberos_service and kerberos_service not in ('HTTP', 'XMPP', 'smtp', 'IPP', 'ldap', 'cifs',
+                                                     'imap', 'postgres', 'host'):
         return HttpResponse(status=401, content='Kerberos service %s is not allowed' % role)
     hosts = list(Host.objects.filter(fqdn=fqdn)[0:1])
     if not hosts:
@@ -382,8 +388,13 @@ def get_user_mobileconfig(request):
         pki.gen_pkcs12(entry, filename, password=password)
         p12_certificates.append((filename, title))
 
-    kerberos_prefixes = ['%s%s://%s/' % (x[0], 's' if x[2] == 'tls' else '', x[1]) for x in
-                         Service.objects.filter(scheme__in=['http', 'smtp', 'imap', 'ldap'])
+    def f_scheme(y):
+        if y in ('caldav', 'carddav'):
+            return 'http'
+        return y
+
+    kerberos_prefixes = ['%s%s://%s/' % (f_scheme(x[0]), 's' if x[2] == 'tls' else '', x[1]) for x in
+                         Service.objects.filter(scheme__in=['http', 'smtp', 'imap', 'ldap', 'caldav', 'carddav'])
                          .exclude(kerberos_service=None).values_list('scheme', 'hostname', 'encryption')]
     domain_components = settings.PENATES_DOMAIN.split('.')
     domain_components.reverse()
@@ -416,9 +427,9 @@ def get_user_mobileconfig(request):
             template_values['carddav_servers'].append(service)
         elif service.scheme == 'caldav':
             template_values['caldav_servers'].append(service)
-        elif service.scheme == 'imaps':
+        elif service.scheme == 'imap':
             mail_services.setdefault(service.hostname)['imap'] = service
-        elif service.scheme == 'smtps':
+        elif service.scheme == 'smtp':
             mail_services.setdefault(service.hostname)['smtp'] = service
 
     template_values['email_servers'] = list(mail_services.values())

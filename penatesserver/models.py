@@ -406,12 +406,29 @@ class Service(models.Model):
     status = models.IntegerField(_('Status'), default=None, null=True, blank=True, db_index=True)
     status_last_update = models.DateTimeField(_('Status last update'), default=None, null=True, blank=True,
                                               db_index=True)
+    default_tls_ports = {'http': 443, 'smtp': 465, 'ldap': 636, 'imap': 993, 'pop3': 995,
+                         'xmpp': 5223, 'irc': 6697}
+    default_ports = {'ssh': 22, 'smtp': 25, 'tftp': 69, 'http': 80, 'kerberos': 88,
+                     'pop3': 110, 'nntp': 119, 'ntp': 123, 'imap': 143, 'snmp': 161, 'irc': 6667,
+                     'ldap': 389, 'syslog': 514, 'xmpp': 5222, 'pgsql': 5432, }
+
+    @property
+    def smart_scheme(self):
+        return '%ss' % self.scheme if self.encryption == 'tls' else self.scheme
+
+    @property
+    def smart_port(self):
+        if self.encryption == 'tls' and self.port == self.default_tls_ports.get(self.scheme):
+            return ''
+        elif self.encryption != 'tls' and self.port == self.default_ports.get(self.scheme):
+            return ''
+        return ':%d' % self.port
 
     def __str__(self):
-        return '%s://%s:%s/' % (self.scheme, self.hostname, self.port)
+        return '%s://%s%s/' % (self.smart_scheme, self.hostname, self.smart_port)
 
     def __unicode__(self):
-        return '%s://%s:%s/' % (self.scheme, self.hostname, self.port)
+        return '%s://%s%s/' % (self.smart_scheme, self.hostname, self.smart_port)
 
     def __repr__(self):
-        return 'Service("%s://%s:%s/")' % (self.scheme, self.hostname, self.port)
+        return '%s://%s%s/' % (self.smart_scheme, self.hostname, self.smart_port)
