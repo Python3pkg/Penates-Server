@@ -408,9 +408,10 @@ class Service(models.Model):
                                               db_index=True)
     default_tls_ports = {'http': 443, 'smtp': 465, 'ldap': 636, 'imap': 993, 'pop3': 995,
                          'xmpp': 5223, 'irc': 6697}
-    default_ports = {'ssh': 22, 'smtp': 25, 'tftp': 69, 'http': 80, 'kerberos': 88,
+    default_ports = {'ssh': 22, 'smtp': 25, 'tftp': 69, 'http': 80, 'krb': 88,
                      'pop3': 110, 'nntp': 119, 'ntp': 123, 'imap': 143, 'snmp': 161, 'irc': 6667,
-                     'ldap': 389, 'syslog': 514, 'xmpp': 5222, 'pgsql': 5432, }
+                     'ldap': 389, 'syslog': 514, 'mysql': 3306, 'rdp': 3389,
+                     'xmpp': 5222, 'pgsql': 5432, 'vnc': 5900, }
 
     @property
     def smart_scheme(self):
