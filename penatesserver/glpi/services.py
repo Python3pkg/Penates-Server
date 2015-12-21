@@ -116,7 +116,7 @@ def get_shinken_services():
         elif service.scheme == 'dns':
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
-                           'service_description': _('Kerberos on %(fqdn)s:%(port)s') %
+                           'service_description': _('DNS on %(fqdn)s:%(port)s') %
                            {'fqdn': service.hostname, 'port': service.port, },
                            'check_command': 'check_tcp!%s' % service.port,
                            'notifications_enabled': '0', })

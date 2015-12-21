@@ -236,7 +236,7 @@
             {% for service in email_servers %}
                 <dict>
                     <key>EmailAccountDescription</key>
-                    <string>{% trans 'e-mail account' %}</string>
+                    <string>{{ username }}@{{ domain }}</string>
                     <key>EmailAccountName</key>
                     <string>{% trans 'base e-mail account' %}</string>
                     <key>EmailAccountType</key>
