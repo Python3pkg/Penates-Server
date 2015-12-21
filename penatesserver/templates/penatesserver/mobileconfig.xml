@@ -144,6 +144,66 @@
                 <key>PayloadVersion</key>
                 <integer>1</integer>
             </dict>
+            <dict>
+                <key>PayloadCertificateFileName</key>
+                <string>hosts_cert.cer</string>
+                <key>PayloadContent</key>
+                <data>{{ hosts_crt_path|base64_file }}</data>
+                <key>PayloadDescription</key>
+                <string>{% trans 'Root certificate for hosts' %}</string>
+                <key>PayloadDisplayName</key>
+                <string>{{ domain }}.hosts</string>
+                <key>PayloadIdentifier</key>
+                <string>{{ inverted_domain }}.reference.hosts</string>
+                <key>PayloadOrganization</key>
+                <string>{{ organization }}</string>
+                <key>PayloadType</key>
+                <string>com.apple.security.root</string>
+                <key>PayloadUUID</key>
+                <string>{% generate_uuid %}</string>
+                <key>PayloadVersion</key>
+                <integer>1</integer>
+            </dict>
+            <dict>
+                <key>PayloadCertificateFileName</key>
+                <string>users_cert.cer</string>
+                <key>PayloadContent</key>
+                <data>{{ users_crt_path|base64_file }}</data>
+                <key>PayloadDescription</key>
+                <string>{% trans 'Root certificate for users' %}</string>
+                <key>PayloadDisplayName</key>
+                <string>{{ domain }}.users</string>
+                <key>PayloadIdentifier</key>
+                <string>{{ inverted_domain }}.reference.users</string>
+                <key>PayloadOrganization</key>
+                <string>{{ organization }}</string>
+                <key>PayloadType</key>
+                <string>com.apple.security.root</string>
+                <key>PayloadUUID</key>
+                <string>{% generate_uuid %}</string>
+                <key>PayloadVersion</key>
+                <integer>1</integer>
+            </dict>
+            <dict>
+                <key>PayloadCertificateFileName</key>
+                <string>services_cert.cer</string>
+                <key>PayloadContent</key>
+                <data>{{ services_crt_path|base64_file }}</data>
+                <key>PayloadDescription</key>
+                <string>{% trans 'Root certificate for services' %}</string>
+                <key>PayloadDisplayName</key>
+                <string>{{ domain }}.services</string>
+                <key>PayloadIdentifier</key>
+                <string>{{ inverted_domain }}.reference.services</string>
+                <key>PayloadOrganization</key>
+                <string>{{ organization }}</string>
+                <key>PayloadType</key>
+                <string>com.apple.security.root</string>
+                <key>PayloadUUID</key>
+                <string>{% generate_uuid %}</string>
+                <key>PayloadVersion</key>
+                <integer>1</integer>
+            </dict>
             {% for certificate in p12_certificates %}
                 <dict>
                     <key>Password</key>

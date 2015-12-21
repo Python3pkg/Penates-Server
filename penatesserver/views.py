@@ -403,6 +403,9 @@ def get_user_mobileconfig(request):
         'username': user.name,
         'ldap_base_dn': settings.LDAP_BASE_DN,
         'ca_cert_path': pki.cacrt_path,
+        'hosts_crt_path': pki.hosts_crt_path,
+        'users_crt_path': pki.users_crt_path,
+        'services_crt_path': pki.services_crt_path,
         'p12_certificates': p12_certificates,
     }
     mail_services = {}
