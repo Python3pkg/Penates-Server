@@ -417,8 +417,9 @@ def get_user_mobileconfig(request):
             mail_services.setdefault(service.hostname)['smtp'] = service
 
     template_values['email_servers'] = list(mail_services.values())
-    rep = render_to_response('penatesserver/mobileconfig.xml', template_values,
+    response = render_to_response('penatesserver/mobileconfig.xml', template_values,
                              content_type='application/xml')
     for filename, title in p12_certificates:
         os.remove(filename)
-    return rep
+    response['Content-Disposition'] = 'attachment; filename=%s.mobileconfig' % request.user.username
+    return response
