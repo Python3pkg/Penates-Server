@@ -382,12 +382,20 @@ def get_user_mobileconfig(request):
         pki.gen_pkcs12(entry, filename, password=password)
         p12_certificates.append((filename, title))
 
+    all_domains = {x[0] for x in Record.objects.filter(type__in=['A', 'AAAA', 'CNAME']).values_list('name')}
+    domain_components = settings.PENATES_DOMAIN.split('.')
+    domain_components.reverse()
+    inverted_domain = '.'.join(domain_components)
     template_values = {
-        'domain': settings.PENATES_DOMAIN, 'organization': settings.PENATES_ORGANIZATION,
+        'domain': settings.PENATES_DOMAIN,
+        'inverted_domain': inverted_domain,
+        'organization': settings.PENATES_ORGANIZATION,
+        'realm': settings.PENATES_REALM,
         'ldap_servers': [],
         'carddav_servers': [],
         'caldav_servers': [],
         'email_servers': [],
+        'all_domains': all_domains,
         'vpn_servers': [],
         'password': password,
         'username': user.name,
