@@ -274,7 +274,7 @@
                     <key>PayloadDescription</key>
                     <string>{% trans 'Configure an email account' %}</string>
                     <key>PayloadDisplayName</key>
-                    <string>{% trans 'IMAP account' %}</string>
+                    <string>{% trans 'Mail account' %}</string>
                     <key>PayloadIdentifier</key>
                     <string>{{ inverted_domain }}.email{{ forloop.counter }}</string>
                     <key>PayloadOrganization</key>

@@ -428,9 +428,9 @@ def get_user_mobileconfig(request):
         elif service.scheme == 'caldav':
             template_values['caldav_servers'].append(service)
         elif service.scheme == 'imap':
-            mail_services.setdefault(service.hostname)['imap'] = service
+            mail_services.setdefault(service.hostname, {})['imap'] = service
         elif service.scheme == 'smtp':
-            mail_services.setdefault(service.hostname)['smtp'] = service
+            mail_services.setdefault(service.hostname, {})['smtp'] = service
 
     template_values['email_servers'] = list(mail_services.values())
     response = render_to_response('penatesserver/mobileconfig.xml', template_values, content_type='application/xml')
