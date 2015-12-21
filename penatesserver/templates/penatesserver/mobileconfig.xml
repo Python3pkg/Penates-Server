@@ -29,6 +29,10 @@
                     <string>{% trans 'LDAP account' %} {{ server.hostname }}</string>
                     <key>LDAPAccountHostName</key>
                     <string>{{ server.hostname }}:{{ server.port }}</string>
+                    <key>LDAPAccountUserName</key>
+                    <string>uid={{ username }},ou=Users,{{ ldap_base_dn }}</string>
+                    <key>LDAPAccountPassword</key>
+                    <string>{{ password }}</string>
                     <key>LDAPAccountUseSSL</key>
                     {% if server.encryption == 'tls' %}
                         <true/>{% else %}<false/>{% endif %}
