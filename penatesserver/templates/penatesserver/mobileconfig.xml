@@ -328,8 +328,7 @@
                     <string>{{ realm }}</string>
                     <key>URLPrefixMatches</key>
                     <array>
-                        {% for record in all_domains %}<string>http://{{ record }}</string>
-                        <string>https://{{ record }}</string>
+                        {% for kerberos_prefix in kerberos_prefixes %}<string>{{ kerberos_prefix }}</string>
                         {% endfor %}
                     </array>
                     <key>AppIdentifierMatches</key>

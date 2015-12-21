@@ -382,7 +382,9 @@ def get_user_mobileconfig(request):
         pki.gen_pkcs12(entry, filename, password=password)
         p12_certificates.append((filename, title))
 
-    all_domains = {x[0] for x in Record.objects.filter(type__in=['A', 'AAAA', 'CNAME']).values_list('name')}
+    kerberos_prefixes = ['%s%s://%s/' % (x[0], 's' if x[2] == 'tls' else '', x[1]) for x in
+                         Service.objects.filter(scheme__in=['http', 'smtp', 'imap', 'ldap'])
+                         .exclude(kerberos_service=None).values_list('scheme', 'hostname', 'encryption')]
     domain_components = settings.PENATES_DOMAIN.split('.')
     domain_components.reverse()
     inverted_domain = '.'.join(domain_components)
@@ -395,7 +397,7 @@ def get_user_mobileconfig(request):
         'carddav_servers': [],
         'caldav_servers': [],
         'email_servers': [],
-        'all_domains': all_domains,
+        'kerberos_prefixes': kerberos_prefixes,
         'vpn_servers': [],
         'password': password,
         'username': user.name,
@@ -417,8 +419,7 @@ def get_user_mobileconfig(request):
             mail_services.setdefault(service.hostname)['smtp'] = service
 
     template_values['email_servers'] = list(mail_services.values())
-    response = render_to_response('penatesserver/mobileconfig.xml', template_values,
-                             content_type='application/xml')
+    response = render_to_response('penatesserver/mobileconfig.xml', template_values, content_type='application/xml')
     for filename, title in p12_certificates:
         os.remove(filename)
     response['Content-Disposition'] = 'attachment; filename=%s.mobileconfig' % request.user.username
