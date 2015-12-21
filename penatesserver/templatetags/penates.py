@@ -17,7 +17,7 @@ def subnet_mask(subnet):
     '255.255.255.0'
     """
     network = netaddr.IPNetwork(subnet)
-    return str(network.netmask)
+    return text_type(network.netmask)
 
 
 @register.filter
@@ -27,7 +27,7 @@ def subnet_mask_len(subnet):
     '24'
     """
     network = netaddr.IPNetwork(subnet)
-    return str(network.prefixlen)
+    return text_type(network.prefixlen)
 
 
 @register.filter
@@ -37,7 +37,7 @@ def subnet_address(subnet):
     '192.168.56.0'
     """
     network = netaddr.IPNetwork(subnet)
-    return str(network.network)
+    return text_type(network.network)
 
 
 @register.filter
@@ -47,7 +47,7 @@ def subnet_broadcast(subnet):
     '192.168.56.255'
     """
     network = netaddr.IPNetwork(subnet)
-    return str(network.broadcast)
+    return text_type(network.broadcast)
 
 
 @register.filter
@@ -58,7 +58,7 @@ def subnet_start(subnet):
     """
     network = netaddr.IPNetwork(subnet)
     size = 32 if network.version == 4 else 128
-    return str(network.network + 2 ** max(size - network.prefixlen - 3, 0))
+    return text_type(network.network + 2 ** max(size - network.prefixlen - 3, 0))
 
 
 @register.filter
@@ -69,12 +69,12 @@ def subnet_end(subnet):
     """
     network = netaddr.IPNetwork(subnet)
     size = 32 if network.version == 4 else 128
-    return str(network.network - 2 + 2 ** (size - network.prefixlen))
+    return text_type(network.network - 2 + 2 ** (size - network.prefixlen))
 
 
 @register.simple_tag
 def generate_uuid():
-    return str(uuid.uuid4()).upper()
+    return text_type(uuid.uuid4()).upper()
 
 
 def base64_encode(binary_content):

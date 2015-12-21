@@ -16,7 +16,7 @@
                 <key>PayloadType</key>
                 <string>com.apple.profileRemovalPassword</string>
                 <key>PayloadUUID</key>
-                <string>{{ uuid }}</string>
+                <string>{% generate_uuid %}</string>
                 <key>PayloadVersion</key>
                 <integer>1</integer>
                 <key>RemovalPassword</key>
@@ -341,7 +341,7 @@
         <key>PayloadDescription</key>
         <string>{% trans 'Default profile' %}</string>
         <key>PayloadDisplayName</key>
-        <string>{{ domain }}</string>
+        <string>{% trans 'Profile' %} {{ username }}@{{ domain }}</string>
         <key>PayloadIdentifier</key>
         <string>{{ domain }}</string>
         <key>PayloadOrganization</key>
