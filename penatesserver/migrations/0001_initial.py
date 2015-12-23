@@ -177,7 +177,6 @@ class Migration(migrations.Migration):
                 ('home_directory', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'homeDirectory')),
                 ('mail', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'mail')),
                 ('samba_domain_name', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'sambaDomainName')),
-                ('sam_account_name', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'sAMAccountName')),
                 ('gecos', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'gecos')),
                 ('cn', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'cn', validators=[django.core.validators.RegexValidator('^[a-zA-Z][\\w_]{0,199}$')])),
                 ('sn', ldapdb.models.fields.CharField(default=None, max_length=200, db_column=b'sn', validators=[django.core.validators.RegexValidator('^[a-zA-Z][\\w_]{0,199}$')])),

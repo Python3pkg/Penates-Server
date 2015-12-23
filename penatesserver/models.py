@@ -134,7 +134,6 @@ class User(BaseLdapModel):
     home_directory = CharField(db_column=force_bytestring('homeDirectory'), default=None)
     mail = CharField(db_column=force_bytestring('mail'), default=None)
     samba_domain_name = CharField(db_column=force_bytestring('sambaDomainName'), default=None)
-    sam_account_name = CharField(db_column=force_bytestring('sAMAccountName'), max_length=200)
     gecos = CharField(db_column=force_bytestring('gecos'), max_length=200, default=None)
     cn = CharField(db_column=force_bytestring('cn'), max_length=200, default=None, validators=list(name_validators))
     sn = CharField(db_column=force_bytestring('sn'), max_length=200, default=None, validators=list(name_validators))
