@@ -155,7 +155,6 @@ class User(BaseLdapModel):
         group = self.set_gid_number()
         self.cn = self.name
         self.sn = self.name
-        self.sam_account_name = self.name
         self.gecos = self.display_name
         self.ast_account_caller_id = self.display_name
         self.samba_domain_name = settings.PENATES_REALM
