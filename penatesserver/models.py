@@ -291,6 +291,24 @@ class Host(models.Model):
         return self.fqdn.partition('.')[0]
 
 
+class WifiNetwork(models.Model):
+    ssid = models.CharField(verbose_name='SSID', db_index=True, max_length=255)
+    hidden_network = models.BooleanField(verbose_name='hidden?', default=False)
+    encryption_type = models.CharField(verbose_name='encryption type', max_length=30,
+                                       choices=(('WEP', 'WEP'), ('WPA', 'WPA'), ('Any', _('Any'))),
+                                       default=None, blank=True, null=True)
+    is_hotspot = models.BooleanField(verbose_name='hidden?', default=False)
+    password = models.CharField(verbose_name='Password', db_index=True, max_length=255, blank=True,
+                                default=None, null=True)
+
+
+class RecoveryKey(models.Model):
+    kind = models.CharField(verbose_name=_('kind'), max_length=255, db_index=True, default='filevault2',
+                            choices=(('filevault2', _('Filevault 2')), ))
+    serial_number = models.CharField(verbose_name=_('serial number'), db_index=True, max_length=255, default=None)
+    recovery_key = models.TextField(verbose_name=_('recovery key'), default='', blank=True)
+
+
 @receiver(post_delete, sender=Host)
 def delete_host(sender, instance=None, **kwargs):
     if sender != Host:

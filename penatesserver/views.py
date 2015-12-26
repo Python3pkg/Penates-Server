@@ -410,8 +410,10 @@ def get_user_mobileconfig(request):
         'email_servers': [],
         'kerberos_prefixes': kerberos_prefixes,
         'vpn_servers': [],
+        'http_proxies': [],
         'password': password,
         'username': user.name,
+        'user': user,
         'ldap_base_dn': settings.LDAP_BASE_DN,
         'ca_cert_path': pki.cacrt_path,
         'hosts_crt_path': pki.hosts_crt_path,
@@ -431,6 +433,8 @@ def get_user_mobileconfig(request):
             mail_services.setdefault(service.hostname, {})['imap'] = service
         elif service.scheme == 'smtp':
             mail_services.setdefault(service.hostname, {})['smtp'] = service
+        elif service.scheme == 'proxy_http':
+            template_values['http_proxies'].append(service)
 
     template_values['email_servers'] = list(mail_services.values())
     response = render_to_response('penatesserver/mobileconfig.xml', template_values, content_type='application/xml')

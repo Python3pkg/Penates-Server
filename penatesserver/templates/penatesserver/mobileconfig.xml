@@ -1,5 +1,6 @@
 {% load i18n penates %}<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
         "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+{#https://developer.apple.com/library/ios/featuredarticles/iPhoneConfigurationProfileRef/Introduction/Introduction.html#}
 <plist version="1.0">
     <dict>
         <key>PayloadContent</key>
@@ -128,9 +129,38 @@
                 </dict>
             {% endfor %}
 
+            {% for server in http_proxies %}
+                <dict>
+                    <key>ProxyType</key>
+                    <string>manual</string>
+                    <key>ProxyServer</key>
+                    <string>{{ server.hostname }}</string>
+                    <key>ProxyPort</key>
+                    <string>{{ server.port }}</string>
+                    <key>ProxyPassword</key>
+                    <string>{{ password }}</string>
+                    <key>ProxyUsername</key>
+                    <string>{{ username }}</string>
+                    <key>PayloadDescription</key>
+                    <string>{% trans 'Configure a HTTP proxy' %}</string>
+                    <key>PayloadDisplayName</key>
+                    <string>HTTP Proxy ({{ server.hostname }})</string>
+                    <key>PayloadIdentifier</key>
+                    <string>{{ inverted_domain }}.proxy{{ forloop.counter }}</string>
+                    <key>PayloadOrganization</key>
+                    <string>{{ organization }}</string>
+                    <key>PayloadType</key>
+                    <string>com.apple.proxy.http.global</string>
+                    <key>PayloadUUID</key>
+                    <string>{% generate_uuid %}</string>
+                    <key>PayloadVersion</key>
+                    <integer>1</integer>
+                </dict>
+            {% endfor %}
+
             <dict>
                 <key>PayloadCertificateFileName</key>
-                <string>cacert.cer</string>
+                <string>CA_cert.cer</string>
                 <key>PayloadContent</key>
                 <data>{{ ca_cert_path|base64_file }}</data>
                 <key>PayloadDescription</key>
@@ -232,6 +262,30 @@
                     <integer>1</integer>
                 </dict>
             {% endfor %}
+            <dict>
+                <key>FullName</key>
+                <string>{{ user.display_name }}</string>
+                <key>EmailAddress</key>
+                <string>{{ user.mail }}</string>
+                <key>UserName</key>
+                <string>{{ username }}</string>
+                <key>Password</key>
+                <string>{{ password }}</string>
+                <key>PayloadDescription</key>
+                <string>User identification</string>
+                <key>PayloadDisplayName</key>
+                <string>{% trans 'Personal identification' %} {{ username }}@{{ domain }}</string>
+                <key>PayloadIdentifier</key>
+                <string>{{ inverted_domain }}.identification</string>
+                <key>PayloadOrganization</key>
+                <string>{{ organization }}</string>
+                <key>PayloadType</key>
+                <string>com.apple.configurationprofile.identification</string>
+                <key>PayloadUUID</key>
+                <string>{% generate_uuid %}</string>
+                <key>PayloadVersion</key>
+                <integer>1</integer>
+            </dict>
 
             {% for service in email_servers %}
                 <dict>
@@ -297,6 +351,39 @@
                     <true/>
                 </dict>
             {% endfor %}
+            <dict>
+                <key>Enable</key>
+                <string>On</string>
+                <key>Defer</key>
+                <true/>
+                <key>UserEntersMissingInfo</key>
+                <true/>
+                <key>UseRecoveryKey</key>
+                <true/>
+                <key>ShowRecoveryKey</key>
+                <true/>
+                <key>Certificate</key>
+                <string>{{ hosts_crt_path|base64_file }}</string>
+                <key>Username</key>
+                <string>{{ username }}</string>
+                <key>Password</key>
+                <string>{{ password }}</string>
+
+                <key>PayloadDescription</key>
+                <string>{% trans 'Filevault 2 settings' %}</string>
+                <key>PayloadDisplayName</key>
+                <string>Filevault 2 on {{ domain }}</string>
+                <key>PayloadIdentifier</key>
+                <string>{{ inverted_domain }}.filevault2</string>
+                <key>PayloadOrganization</key>
+                <string>{{ organization }}</string>
+                <key>PayloadType</key>
+                <string>com.apple.MCX.FileVault2</string>
+                <key>PayloadUUID</key>
+                <string>{% generate_uuid %}</string>
+                <key>PayloadVersion</key>
+                <integer>1</integer>
+            </dict>
 
 {#            <dict>#}
 {#                <key>PayloadDescription</key>#}
