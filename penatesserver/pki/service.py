@@ -22,6 +22,7 @@ from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.utils.text import slugify
 from django.utils.timezone import utc
+from penatesserver.filelocks import Lock
 
 from penatesserver.pki.constants import ROLES, RSA, RESOURCE, USER, ENCIPHERMENT, SIGNATURE, EMAIL, COMPUTER_TEST,\
     COMPUTER, CA
@@ -162,30 +163,34 @@ class PKI(object):
         return self.services_crt_path, self.services_key_path
 
     def initialize(self):
-        serial = os.path.join(self.dirname, 'serial.txt')
-        index = os.path.join(self.dirname, 'index.txt')
-        ensure_location(serial)
-        if not os.path.isfile(serial):
-            with codecs.open(serial, 'w', encoding='utf-8') as fd:
-                fd.write("01\n")
-        if not os.path.isfile(index):
-            with codecs.open(index, 'w', encoding='utf-8') as fd:
-                fd.write("")
-        ensure_location(os.path.join(self.dirname, 'new_certs', '0'))
+        with Lock(settings.PENATES_LOCKFILE):
+            serial = os.path.join(self.dirname, 'serial.txt')
+            index = os.path.join(self.dirname, 'index.txt')
+            ensure_location(serial)
+            if not os.path.isfile(serial):
+                with codecs.open(serial, 'w', encoding='utf-8') as fd:
+                    fd.write("01\n")
+            if not os.path.isfile(index):
+                with codecs.open(index, 'w', encoding='utf-8') as fd:
+                    fd.write("")
+            ensure_location(os.path.join(self.dirname, 'new_certs', '0'))
 
     def ensure_key(self, entry):
         """
         :type entry: :class:`penatesserver.pki.service.CertificateEntry`
         """
         if not self.__check_key(entry, entry.key_filename):
-            self.__gen_key(entry)
-            self.__gen_pub(entry)
-            self.__gen_ssh(entry)
+            with Lock(settings.PENATES_LOCKFILE):
+                self.__gen_key(entry)
+                self.__gen_pub(entry)
+                self.__gen_ssh(entry)
         elif not self.__check_pub(entry, entry.pub_filename):
-            self.__gen_pub(entry)
-            self.__gen_ssh(entry)
+            with Lock(settings.PENATES_LOCKFILE):
+                self.__gen_pub(entry)
+                self.__gen_ssh(entry)
         elif not self.__check_ssh(entry, entry.ssh_filename):
-            self.__gen_ssh(entry)
+            with Lock(settings.PENATES_LOCKFILE):
+                self.__gen_ssh(entry)
 
     def ensure_certificate(self, entry):
         """
@@ -193,14 +198,16 @@ class PKI(object):
         :type entry: :class:`penatesserver.pki.service.CertificateEntry`
         """
         if not self.__check_key(entry, entry.key_filename):
-            self.__gen_key(entry)
-            self.__gen_pub(entry)
-            self.__gen_ssh(entry)
-            self.__gen_request(entry)
-            self.__gen_certificate(entry)
+            with Lock(settings.PENATES_LOCKFILE):
+                self.__gen_key(entry)
+                self.__gen_pub(entry)
+                self.__gen_ssh(entry)
+                self.__gen_request(entry)
+                self.__gen_certificate(entry)
         elif not self.__check_certificate(entry, entry.crt_filename):
-            self.__gen_request(entry)
-            self.__gen_certificate(entry)
+            with Lock(settings.PENATES_LOCKFILE):
+                self.__gen_request(entry)
+                self.__gen_certificate(entry)
 
     def __gen_openssl_conf(self, entry=None, ca_infos=None):
         """
@@ -394,9 +401,10 @@ class PKI(object):
         :type entry: :class:`penatesserver.pki.service.CertificateEntry`
         """
         if not self.__check_key(entry, self.cakey_path):
-            self.__gen_ca_key(entry)
-            self.__gen_ca_req(entry)
-            self.__gen_ca_crt(entry)
+            with Lock(settings.PENATES_LOCKFILE):
+                self.__gen_ca_key(entry)
+                self.__gen_ca_req(entry)
+                self.__gen_ca_crt(entry)
             for sub_name in ('users', 'services', 'hosts'):
                 sub_entry = CertificateEntry('%s.%s' % (sub_name, entry.commonName),
                                              organizationName=entry.organizationName,
@@ -512,16 +520,17 @@ class PKI(object):
         return True
 
     def revoke_certificate(self, crt_content, regen_crl=True):
-        with tempfile.NamedTemporaryFile() as fd:
-            fd.write(crt_content.encode('utf-8'))
-            fd.flush()
-            serial = self.__get_certificate_serial(fd.name)
-            infos = self.__get_index_file()[serial]
-            if infos[1] != 'V':
-                return
-            conf_path = self.__gen_openssl_conf()
-            local('"{openssl}" ca -config "{cfg}" -revoke {filename}'.format(openssl=settings.OPENSSL_PATH,
-                                                                             cfg=conf_path, filename=fd.name))
+        with Lock(settings.PENATES_LOCKFILE):
+            with tempfile.NamedTemporaryFile() as fd:
+                fd.write(crt_content.encode('utf-8'))
+                fd.flush()
+                serial = self.__get_certificate_serial(fd.name)
+                infos = self.__get_index_file()[serial]
+                if infos[1] != 'V':
+                    return
+                conf_path = self.__gen_openssl_conf()
+                local('"{openssl}" ca -config "{cfg}" -revoke {filename}'.format(openssl=settings.OPENSSL_PATH,
+                                                                                 cfg=conf_path, filename=fd.name))
         key_filename = os.path.join(self.dirname, infos[5])
         if os.path.isfile(key_filename):
             with open(key_filename, 'rb') as fd:
@@ -536,7 +545,8 @@ class PKI(object):
         if os.path.isfile(crt_filename):
             os.remove(crt_filename)
         if regen_crl:
-            self.__gen_crl(20)
+            with Lock(settings.PENATES_LOCKFILE):
+                self.__gen_crl(20)
 
     @staticmethod
     def __get_certificate_serial(filename):
@@ -549,7 +559,8 @@ class PKI(object):
 
     def ensure_crl(self):
         if not self.__check_crl():
-            self.__gen_crl(20)
+            with Lock(settings.PENATES_LOCKFILE):
+                self.__gen_crl(20)
 
     def __check_crl(self):
         try:
