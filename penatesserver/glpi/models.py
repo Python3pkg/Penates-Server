@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.utils import six
-from django.utils.decorators import classproperty
 from django.utils.six import text_type
-from django.utils.text import slugify
+
 from penatesserver.utils import clean_string
 
 __author__ = 'Matthieu Gallet'

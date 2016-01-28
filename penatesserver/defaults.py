@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from djangofloor.utils import FilePath
+from djangofloor.utils import FilePath, DirectoryPath
 from penatesserver import __version__
 
 __author__ = 'flanker'
@@ -58,7 +58,7 @@ REST_FRAMEWORK = {
 }
 
 OPENSSL_PATH = 'openssl'
-PKI_PATH = '{LOCAL_PATH}/pki'
+PKI_PATH = DirectoryPath('{LOCAL_PATH}/pki')
 SSH_KEYGEN_PATH = 'ssh-keygen'
 LDAP_BASE_DN = 'dc=test,dc=example,dc=org'
 
@@ -69,7 +69,8 @@ PENATES_STATE = 'Ile-de-France'
 PENATES_LOCALITY = 'Paris'
 PENATES_EMAIL_ADDRESS = 'admin@{PENATES_DOMAIN}'
 PENATES_REALM = 'EXAMPLE.ORG'
-PENATES_KEYTAB = '{LOCAL_PATH}/pki/private/kadmin.keytab'
+PENATES_KEYTAB = FilePath('{PKI_PATH}/private/kadmin.keytab')
+PENATES_LOCKFILE = FilePath('{PKI_PATH}/pki/lockfile')
 PENATES_PRINCIPAL = 'penatesserver/admin@{PENATES_REALM}'
 RUNNING_TESTS = False
 PENATES_SUBNETS = """10.19.1.0/24,10.19.1.1
