@@ -1,32 +1,34 @@
-.. PenatesServer documentation master file, created by
-   sphinx-quickstart on Wed Feb 13 11:51:12 2013.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. Penates Server 0.5 documentation master file, created by
 
-Welcome to PenatesServer's documentation!
-=========================================
+Welcome to Penates Server 0.5's documentation!
+==============================================
 
-Overview:
+
 
 :doc:`installation`
     Instruction on how to get the distribution
 
-:doc:`tutorial`
-    Start here for a quick overview
+:doc:`configuration`
+    All configuration options
 
-:doc:`api/index`
-    The complete API documentation, organized by modules
+:doc:`debian`
+    Packaging Penates Server 0.5 for Debian or Ubuntu servers
+
+
+
+
 
 
 Full table of contents
 ======================
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
 
    installation
-   tutorial
-   api/index
+   configuration
+   debian
+
 
 Indices and tables
 ==================
@@ -34,3 +36,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
