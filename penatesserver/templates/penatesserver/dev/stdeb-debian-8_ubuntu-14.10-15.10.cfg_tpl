@@ -1,5 +1,9 @@
 {% extends "djangofloor/dev/stdeb-debian-8_ubuntu-14.10-15.10.cfg_tpl" %}
 
-{% block multideb_extra_exclude %}    python-gnupg
-    PyYAML
+{% block multideb_extra_exclude %}    djangorestframework
+    Markdown
+    django-filter
+    Pygments
+    netaddr
+    Jinja2
 {% endblock %}
