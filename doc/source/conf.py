@@ -55,7 +55,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Penates Server 0.5'
+project = 'Penates Server'
 # noinspection PyShadowingBuiltins
 copyright = '2016, %s' % author
 
@@ -179,7 +179,7 @@ html_static_path = ['_static']
 # html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Penates Server 0.5 doc'
+htmlhelp_basename = 'Penates Server doc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -193,7 +193,7 @@ htmlhelp_basename = 'Penates Server 0.5 doc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'penatesserver.tex', 'Penates Server 0.5\'s Documentation',
+    ('index', 'penatesserver.tex', 'Penates Server\'s Documentation',
      author, 'manual'),
 ]
 
@@ -226,7 +226,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'penatesserver', 'Penates Server 0.5\'s documentation',
+    ('index', 'penatesserver', 'Penates Server\'s documentation',
      [author], 1)
 ]
 
@@ -234,7 +234,7 @@ man_pages = [
 # -- Options for Epub output ---------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = "Penates Server 0.5"
+epub_title = "Penates Server"
 epub_author = author
 epub_publisher = "19pouces.net"
 epub_copyright = '2016, %s' % author

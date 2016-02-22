@@ -47,7 +47,8 @@ sudo sed -i "s/localhost/$IP/g" /etc/penatesserver/settings.ini
 sudo a2ensite penatesserver.conf
 sudo a2dissite 000-default.conf
 sudo -u penatesserver penatesserver-manage migrate
-sudo service moneta-gunicorn start
+sudo service penatesserver-gunicorn start
 sudo service apache2 restart
 
+wget http://$IP/
 set -e

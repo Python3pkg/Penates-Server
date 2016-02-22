@@ -4,12 +4,9 @@ Debian Installation
 By default, Penates Server 0.5 is only packaged as a standard Python project, downloadable from `Pypi <https://pypi.python.org>`_.
 However, you can create pure Debian packages with `DjangoFloor <http://django-floor.readthedocs.org/en/latest/packaging.html#debian-ubuntu>`_.
 
-The source code provides several Bash scripts:
+The source code provides one Bash scripts,  `deb-debian-8_ubuntu-14.10-150.10.sh`.
 
-    * `deb-debian-8-python3.sh`,
-    * `deb-ubuntu-14.04-15.10.sh`.
-
-These scripts are designed to run on basic installation and are split in five steps:
+This script is designed to run on basic installation and are split in five steps:
 
     * update system and install missing packages,
     * create a virtualenv and install all dependencies,
@@ -59,7 +56,7 @@ If you want Penates Server 0.5 to be started at startup, you have to enable it i
 
 .. code-block:: bash
 
-    systemctl enable moneta-gunicorn.service
+    systemctl enable penatesserver-gunicorn.service
 
 
 
@@ -125,7 +122,7 @@ If you have a lot of files to backup, beware of the available disk place!
   touch /var/backups/penatesserver/backup_media.tar.gz
   crontab -e
   MAILTO=admin@localhost
-  0 3 * * * rsync -arltDE ./django_data/data/media/ /var/backups/penatesserver/media/
+  0 3 * * * rsync -arltDE /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/media/ /var/backups/penatesserver/media/
   0 5 0 * * logrotate -f /etc/penatesserver/backup_media.conf
 
 Restoring a backup
@@ -134,7 +131,7 @@ Restoring a backup
 .. code-block:: bash
 
   cat /var/backups/penatesserver/backup_db.sql.gz | gunzip | /usr/local/bin/penatesserver-manage dbshell
-  tar -C ./django_data/data/media/ -xf /var/backups/penatesserver/backup_media.tar.gz
+  tar -C /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/media/ -xf /var/backups/penatesserver/backup_media.tar.gz
 
 
 

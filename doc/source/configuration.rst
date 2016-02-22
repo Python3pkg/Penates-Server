@@ -21,7 +21,7 @@ Here is the complete list of settings:
   # SQL database engine, can be 'django.db.backends.[postgresql_psycopg2|mysql|sqlite3|oracle]'.
   host = 
   # Empty for localhost through domain sockets or "127.0.0.1" for localhost + TCP
-  name = ./django_data/data/database.sqlite3
+  name = /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/database.sqlite3
   # Name of your database, or path to database file if using sqlite3.
   password = 
   # Database password (not used with sqlite3)
@@ -34,13 +34,13 @@ Here is the complete list of settings:
   # error logs are sent to this e-mail address
   bind_address = 127.0.0.1:9000
   # The socket (IP address:port) to bind to.
-  data_path = ./django_data
+  data_path = /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver
   # Base path for all data
   debug = True
   # A boolean that turns on/off debug mode.
   default_group = Users
   # Name of the default group for newly-created users.
-  keytab = ./django_data/pki/private/kadmin.keytab
+  keytab = /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/pki/private/kadmin.keytab
   language_code = fr-fr
   # A string representing the language code for this installation.
   offer_host_keytabs = True
@@ -72,7 +72,7 @@ Here is the complete list of settings:
   [powerdns]
   engine = django.db.backends.sqlite3
   host = localhost
-  name = ./django_data/data/pdns.sqlite3
+  name = /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/pdns.sqlite3
   password = toto
   port = 5432
   user = powerdns
@@ -163,7 +163,7 @@ If you have a lot of files to backup, beware of the available disk place!
   touch /var/backups/penatesserver/backup_media.tar.gz
   crontab -e
   MAILTO=admin@localhost
-  0 3 * * * rsync -arltDE ./django_data/data/media/ /var/backups/penatesserver/media/
+  0 3 * * * rsync -arltDE /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/media/ /var/backups/penatesserver/media/
   0 5 0 * * logrotate -f /home/penatesserver/.virtualenvs/penatesserver/etc/penatesserver/backup_media.conf
 
 Restoring a backup
@@ -172,7 +172,7 @@ Restoring a backup
 .. code-block:: bash
 
   cat /var/backups/penatesserver/backup_db.sql.gz | gunzip | /home/penatesserver/.virtualenvs/penatesserver/bin/penatesserver-manage dbshell
-  tar -C ./django_data/data/media/ -xf /var/backups/penatesserver/backup_media.tar.gz
+  tar -C /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/media/ -xf /var/backups/penatesserver/backup_media.tar.gz
 
 
 

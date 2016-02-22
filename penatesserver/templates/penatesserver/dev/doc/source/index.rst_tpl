@@ -1,0 +1,12 @@
+{% extends 'djangofloor/dev/doc/source/index.rst_tpl' %}
+
+{% block description %}
+Inventory server for small networks with the following functions:
+
+  * database for PowerDNS,
+  * API for registering services and machines,
+  * PKI for generating certificates for machines, services and users,
+  * API for creating and managing users,
+  * generating mobile configs
+  * API for generating a valid Shinken configuration.
+{% endblock %}
