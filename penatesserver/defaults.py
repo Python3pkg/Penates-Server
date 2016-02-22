@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from djangofloor.utils import FilePath, DirectoryPath
-from penatesserver import __version__
 
 __author__ = 'flanker'
 
@@ -34,7 +33,7 @@ SESSION_REDIS_DB = 10
 FLOOR_INSTALLED_APPS = ['penatesserver', 'rest_framework', 'penatesserver.powerdns', ]
 FLOOR_INDEX = 'penatesserver.views.index'
 FLOOR_URL_CONF = 'penatesserver.root_urls.urls'
-FLOOR_PROJECT_NAME = 'Penates Server %s' % __version__
+FLOOR_PROJECT_NAME = 'Penates Server'
 TEST_RUNNER = 'penatesserver.tests.ManagedModelTestRunner'
 
 # Make this unique, and don't share it with anybody.

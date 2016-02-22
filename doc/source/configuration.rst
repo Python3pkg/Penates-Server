@@ -105,7 +105,7 @@ or try to run the server interactively:
 Backup
 ------
 
-A complete Penates Server 0.5 installation is made a different kinds of files:
+A complete Penates Server installation is made a different kinds of files:
 
     * the code of your application and its dependencies (you should not have to backup them),
     * static files (as they are provided by the code, you can lost them),

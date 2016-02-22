@@ -1,9 +1,16 @@
-.. Penates Server 0.5 documentation master file, created by
+.. Penates Server documentation master file, created by
 
-Welcome to Penates Server 0.5's documentation!
-==============================================
+Welcome to Penates Server's documentation!
+==========================================
 
+Inventory server for small networks with the following functions:
 
+  * database for PowerDNS,
+  * API for registering services and machines,
+  * PKI for generating certificates for machines, services and users,
+  * API for creating and managing users,
+  * generating mobile configs
+  * API for generating a valid Shinken configuration.
 
 :doc:`installation`
     Instruction on how to get the distribution
@@ -12,7 +19,7 @@ Welcome to Penates Server 0.5's documentation!
     All configuration options
 
 :doc:`debian`
-    Packaging Penates Server 0.5 for Debian or Ubuntu servers
+    Packaging Penates Server for Debian or Ubuntu servers
 
 
 

@@ -1,12 +1,16 @@
 Installation
 ============
 
-Like many Python packages, you can use several methods to install Penates Server 0.5.
-Penates Server 0.5 designed to run with python2.7.x.
+Like many Python packages, you can use several methods to install Penates Server.
+Penates Server designed to run with python2.7.x.
 The following packages are also required:
 
   * setuptools >= 3.0
   * djangofloor >= 0.18.0
+  * python-gnupg
+  * rubymarshal
+  * pyyaml
+
 
 
 Of course you can install it from the source, but the preferred way is to install it as a standard Python package, via pip.
@@ -15,8 +19,17 @@ Of course you can install it from the source, but the preferred way is to instal
 Installing or Upgrading
 -----------------------
 
-Here is a simple tutorial to install Penates Server 0.5 on a basic Debian/Linux installation.
+Here is a simple tutorial to install Penates Server on a basic Debian/Linux installation.
 You should easily adapt it on a different Linux or Unix flavor.
+
+Ruby
+----
+
+If you want to use the Ruby mirror functionnality, Ruby is required on the server:
+
+.. code-block:: bash
+
+   sudo apt-get install ruby
 
 
 Database
@@ -55,13 +68,6 @@ in the configuration, you cannot use its IP address to access the website.
         Alias /static/ /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/static/
         ProxyPass /static/ !
         <Location /static/>
-            Order deny,allow
-            Allow from all
-            Satisfy any
-        </Location>
-        Alias /media/ /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/media/
-        ProxyPass /media/ !
-        <Location /media/>
             Order deny,allow
             Allow from all
             Satisfy any
@@ -123,13 +129,6 @@ If you want to use SSL:
             Allow from all
             Satisfy any
         </Location>
-        Alias /media/ /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/media/
-        ProxyPass /media/ !
-        <Location /media/>
-            Order deny,allow
-            Allow from all
-            Satisfy any
-        </Location>
         ProxyPass / http://127.0.0.1:9000/
         ProxyPassReverse / http://127.0.0.1:9000/
         DocumentRoot /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/static
@@ -137,7 +136,7 @@ If you want to use SSL:
         RequestHeader set X_FORWARDED_PROTO https
         <Location />
             AuthType Kerberos
-            AuthName "Penates Server 0.5"
+            AuthName "Penates Server"
             KrbAuthRealms EXAMPLE.ORG example.org
             Krb5Keytab $KEYTAB
             KrbLocalUserMapping On
@@ -151,6 +150,16 @@ If you want to use SSL:
         XSendFile on
         XSendFilePath /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/media
         # in older versions of XSendFile (<= 0.9), use XSendFileAllowAbove On
+        <Location /core/p/>
+            Order deny,allow
+            Allow from all
+            Satisfy any
+        </Location>
+        <Location /repo/p/>
+            Order deny,allow
+            Allow from all
+            Satisfy any
+        </Location>
     </VirtualHost>
     EOF
     sudo mkdir /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver
@@ -165,7 +174,7 @@ If you want to use SSL:
 Application
 -----------
 
-Now, it's time to install Penates Server 0.5:
+Now, it's time to install Penates Server:
 
 .. code-block:: bash
 
@@ -230,7 +239,19 @@ Now, it's time to install Penates Server 0.5:
     # required since there are password in this file
     penatesserver-manage migrate
     penatesserver-manage collectstatic --noinput
-    penatesserver-manage createsuperuser
+    moneta-manage createsuperuser
+    chmod 0700 /var/moneta/gpg
+    moneta-manage gpg_gen generate --no-existing-keys
+    KEY_ID=`moneta-manage gpg_gen show --only-id | tail -n 1`
+    sed -i "s//$KEY_ID/" $VIRTUAL_ENV/etc/moneta/settings.ini
+
+On VirtualBox, you may need to install rng-tools to generate enough entropy for GPG keys:
+
+.. code-block:: bash
+
+    sudo apt-get install rng-tools
+    echo "HRNGDEVICE=/dev/urandom" | sudo tee -a /etc/default/rng-tools
+    sudo /etc/init.d/rng-tools restart
 
 
 
@@ -263,7 +284,7 @@ You can also use systemd to launch penatesserver:
 
     cat << EOF | sudo tee /etc/systemd/system/penatesserver-gunicorn.service
     [Unit]
-    Description=Penates Server 0.5 Gunicorn process
+    Description=Penates Server Gunicorn process
     After=network.target
     [Service]
     User=penatesserver

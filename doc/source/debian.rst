@@ -1,7 +1,7 @@
 Debian Installation
 ===================
 
-By default, Penates Server 0.5 is only packaged as a standard Python project, downloadable from `Pypi <https://pypi.python.org>`_.
+By default, Penates Server is only packaged as a standard Python project, downloadable from `Pypi <https://pypi.python.org>`_.
 However, you can create pure Debian packages with `DjangoFloor <http://django-floor.readthedocs.org/en/latest/packaging.html#debian-ubuntu>`_.
 
 The source code provides one Bash scripts,  `deb-debian-8_ubuntu-14.10-150.10.sh`.
@@ -11,11 +11,11 @@ This script is designed to run on basic installation and are split in five steps
     * update system and install missing packages,
     * create a virtualenv and install all dependencies,
     * package all dependencies,
-    * package Penates Server 0.5,
-    * install all packages and Penates Server 0.5, prepare a simple configuration to test.
+    * package Penates Server,
+    * install all packages and Penates Server, prepare a simple configuration to test.
 
 If everything is ok, you can copy all the .deb packages to your private mirror or to the destination server.
-By default, Penates Server 0.5 is installed with Apache 2.4 and systemd.
+By default, Penates Server is installed with Apache 2.4 and systemd.
 You can switch to Nginx or supervisor by tweaking the right `stdeb-XXX.cfg` file.
 
 
@@ -45,14 +45,14 @@ After installation and configuration, do not forget to create a superuser:
 Launch the service
 ------------------
 
-The service can be stopped or started via the `service` command. By default, Penates Server 0.5 is not started.
+The service can be stopped or started via the `service` command. By default, Penates Server is not started.
 
 .. code-block:: bash
 
     sudo service penatesserver-gunicorn start
 
 
-If you want Penates Server 0.5 to be started at startup, you have to enable it in systemd:
+If you want Penates Server to be started at startup, you have to enable it in systemd:
 
 .. code-block:: bash
 
@@ -64,7 +64,7 @@ If you want Penates Server 0.5 to be started at startup, you have to enable it i
 Backup
 ------
 
-A complete Penates Server 0.5 installation is made a different kinds of files:
+A complete Penates Server installation is made a different kinds of files:
 
     * the code of your application and its dependencies (you should not have to backup them),
     * static files (as they are provided by the code, you can lost them),
