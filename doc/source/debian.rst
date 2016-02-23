@@ -122,7 +122,7 @@ If you have a lot of files to backup, beware of the available disk place!
   touch /var/backups/penatesserver/backup_media.tar.gz
   crontab -e
   MAILTO=admin@localhost
-  0 3 * * * rsync -arltDE /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/media/ /var/backups/penatesserver/media/
+  0 3 * * * rsync -arltDE ./django_data/data/media/ /var/backups/penatesserver/media/
   0 5 0 * * logrotate -f /etc/penatesserver/backup_media.conf
 
 Restoring a backup
@@ -131,7 +131,7 @@ Restoring a backup
 .. code-block:: bash
 
   cat /var/backups/penatesserver/backup_db.sql.gz | gunzip | /usr/local/bin/penatesserver-manage dbshell
-  tar -C /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/media/ -xf /var/backups/penatesserver/backup_media.tar.gz
+  tar -C ./django_data/data/media/ -xf /var/backups/penatesserver/backup_media.tar.gz
 
 
 

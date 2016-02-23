@@ -65,7 +65,7 @@ in the configuration, you cannot use its IP address to access the website.
     cat << EOF | sudo tee /etc/apache2/sites-available/penatesserver.conf
     <VirtualHost *:80>
         ServerName $SERVICE_NAME
-        Alias /static/ /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/static/
+        Alias /static/ ./django_data/static/
         ProxyPass /static/ !
         <Location /static/>
             Order deny,allow
@@ -74,15 +74,15 @@ in the configuration, you cannot use its IP address to access the website.
         </Location>
         ProxyPass / http://127.0.0.1:9000/
         ProxyPassReverse / http://127.0.0.1:9000/
-        DocumentRoot /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/static
+        DocumentRoot ./django_data/static
         ServerSignature off
         XSendFile on
-        XSendFilePath /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/media
+        XSendFilePath ./django_data/data/media
         # in older versions of XSendFile (<= 0.9), use XSendFileAllowAbove On
     </VirtualHost>
     EOF
-    sudo mkdir /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver
-    sudo chown -R www-data:www-data /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver
+    sudo mkdir ./django_data
+    sudo chown -R www-data:www-data ./django_data
     sudo a2ensite penatesserver.conf
     sudo apachectl -t
     sudo apachectl restart
@@ -122,7 +122,7 @@ If you want to use SSL:
         ServerName $SERVICE_NAME
         SSLCertificateFile $PEM
         SSLEngine on
-        Alias /static/ /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/static/
+        Alias /static/ ./django_data/static/
         ProxyPass /static/ !
         <Location /static/>
             Order deny,allow
@@ -131,7 +131,7 @@ If you want to use SSL:
         </Location>
         ProxyPass / http://127.0.0.1:9000/
         ProxyPassReverse / http://127.0.0.1:9000/
-        DocumentRoot /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/static
+        DocumentRoot ./django_data/static
         ServerSignature off
         RequestHeader set X_FORWARDED_PROTO https
         <Location />
@@ -148,7 +148,7 @@ If you want to use SSL:
             RequestHeader set REMOTE_USER %{REMOTE_USER}s
         </Location>
         XSendFile on
-        XSendFilePath /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/media
+        XSendFilePath ./django_data/data/media
         # in older versions of XSendFile (<= 0.9), use XSendFileAllowAbove On
         <Location /core/p/>
             Order deny,allow
@@ -162,8 +162,8 @@ If you want to use SSL:
         </Location>
     </VirtualHost>
     EOF
-    sudo mkdir /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver
-    sudo chown -R www-data:www-data /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver
+    sudo mkdir ./django_data
+    sudo chown -R www-data:www-data ./django_data
     sudo a2ensite penatesserver.conf
     sudo apachectl -t
     sudo apachectl restart
@@ -178,9 +178,9 @@ Now, it's time to install Penates Server:
 
 .. code-block:: bash
 
-    sudo mkdir -p /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver
+    sudo mkdir -p ./django_data
     sudo adduser --disabled-password penatesserver
-    sudo chown penatesserver:www-data /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver
+    sudo chown penatesserver:www-data ./django_data
     sudo apt-get install virtualenvwrapper python2.7 python2.7-dev build-essential postgresql-client libpq-dev
     # application
     sudo -u penatesserver -i
@@ -194,17 +194,17 @@ Now, it's time to install Penates Server:
     [database]
     engine = django.db.backends.sqlite3
     host = 
-    name = /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/database.sqlite3
+    name = ./django_data/data/database.sqlite3
     password = 
     port = 
     user = 
     [global]
     admin_email = admin@localhost
     bind_address = 127.0.0.1:9000
-    data_path = /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver
+    data_path = ./django_data
     debug = True
     default_group = Users
-    keytab = /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/pki/private/kadmin.keytab
+    keytab = ./django_data/pki/private/kadmin.keytab
     language_code = fr-fr
     offer_host_keytabs = True
     protocol = http
@@ -230,7 +230,7 @@ Now, it's time to install Penates Server:
     [powerdns]
     engine = django.db.backends.sqlite3
     host = localhost
-    name = /home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/data/pdns.sqlite3
+    name = ./django_data/data/pdns.sqlite3
     password = toto
     port = 5432
     user = powerdns
@@ -289,7 +289,7 @@ You can also use systemd to launch penatesserver:
     [Service]
     User=penatesserver
     Group=penatesserver
-    WorkingDirectory=/home/mgallet/.virtualenvs/penatesserver27/local/var/penatesserver/
+    WorkingDirectory=./django_data/
     ExecStart=/home/penatesserver/.virtualenvs/penatesserver/bin/penatesserver-gunicorn
     ExecReload=/bin/kill -s HUP $MAINPID
     ExecStop=/bin/kill -s TERM $MAINPID
