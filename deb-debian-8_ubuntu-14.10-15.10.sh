@@ -39,7 +39,8 @@ mv deb_dist/*deb deb
 
 
 
-sudo apt-get install python-django-filter
+sudo dpkg -i deb/python-django_*.deb
+sudo apt-get install --yes python-django-filter
 
 # install all packages
 sudo dpkg -i deb/python-*.deb
