@@ -1,11 +1,12 @@
 {% extends "djangofloor/dev/stdeb-debian-8_ubuntu-14.10-15.10.cfg_tpl" %}
 
-{% block multideb_extra_exclude %}    djangorestframework
-    Markdown
-    django-filter
+{% block multideb_extra_exclude %}    Markdown
     Pygments
     netaddr
     Jinja2
     python-ldap
     gunicorn
+
+[django-pipeline]
+Depends = python (>= 2.7), python (<< 2.8), python-concurrent.futures (>= 3.0.0)
 {% endblock %}
