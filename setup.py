@@ -36,7 +36,7 @@ setup(
     author='flanker',
     author_email='flanker@19pouces.net',
     license='CeCILL-B',
-    url='',
+    url='https://github.com/d9pouces/Penates-Server',
     entry_points=entry_points,
     packages=find_packages(),
     include_package_data=True,

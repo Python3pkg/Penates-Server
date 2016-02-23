@@ -44,13 +44,13 @@ sudo dpkg -i deb/python-*.deb
 
 # package configuration
 IP=`/sbin/ifconfig | grep -Eo 'inet (addr:|adr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1`
-sudo sed -i "s/localhost/${IP}/g" /etc/apache2/sites-available/penatesserver.conf
-sudo sed -i "s/localhost/${IP}/g" /etc/penatesserver/settings.ini
+sudo sed -i "s/localhost/$IP/g" /etc/apache2/sites-available/penatesserver.conf
+sudo sed -i "s/localhost/$IP/g" /etc/penatesserver/settings.ini
 sudo a2ensite penatesserver.conf
 sudo a2dissite 000-default.conf
 sudo -u penatesserver penatesserver-manage migrate
 sudo service penatesserver-gunicorn start
 sudo service apache2 restart
 
-wget http://${IP}/
+wget http://$IP/
 set -e

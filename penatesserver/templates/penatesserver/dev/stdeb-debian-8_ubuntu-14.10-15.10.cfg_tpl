@@ -1,5 +1,11 @@
 {% extends "djangofloor/dev/stdeb-debian-8_ubuntu-14.10-15.10.cfg_tpl" %}
 
+{% block project %}[{{ PROJECT_NAME }}]
+frontend = apache2.4
+process_manager = systemd
+Depends = python (>= 2.7), python (<< 2.8), python-jinja2, systemd, python-netaddr, python-django-filter, python-markdown, apache2 (>= 2.4), python-djangofloor, python-djangorestframework, python-django-ldapdb, python-pygments
+{% endblock %}
+
 {% block multideb_extra_exclude %}    Markdown
     Pygments
     netaddr
