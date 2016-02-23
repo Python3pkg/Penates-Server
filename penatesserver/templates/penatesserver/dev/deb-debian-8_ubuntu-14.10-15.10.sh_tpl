@@ -6,6 +6,6 @@
 
 {% block installation %}
 sudo dpkg -i deb/python-django_*.deb
-sudo apt-get install --yes python-django-filter
+sudo apt-get install --yes django-filter python-django-filter
 {{ block.super }}
 {% endblock %}
