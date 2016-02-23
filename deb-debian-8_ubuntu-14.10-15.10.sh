@@ -39,6 +39,8 @@ mv deb_dist/*deb deb
 
 
 
+sudo apt-get install python-django-filter
+
 # install all packages
 sudo dpkg -i deb/python-*.deb
 
@@ -51,6 +53,7 @@ sudo a2dissite 000-default.conf
 sudo -u penatesserver penatesserver-manage migrate
 sudo service penatesserver-gunicorn start
 sudo service apache2 restart
+
 
 wget http://$IP/
 set -e

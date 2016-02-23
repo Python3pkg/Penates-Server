@@ -2,3 +2,9 @@
 {% block extra_dependencies %}sudo apt-get install --yes python-ldap libldap2-dev libsasl2-dev python-markdown\
  python-pygments python-netaddr python-jinja2 gunicorn python-futures python-gunicorn
 {% endblock %}
+
+
+{% block installation %}
+sudo apt-get install python-django-filter
+{{ block.super }}
+{% endblock %}
