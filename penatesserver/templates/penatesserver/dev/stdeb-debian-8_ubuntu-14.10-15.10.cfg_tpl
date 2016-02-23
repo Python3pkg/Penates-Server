@@ -6,4 +6,6 @@
     Pygments
     netaddr
     Jinja2
+    python-ldap
+    gunicorn
 {% endblock %}

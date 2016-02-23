@@ -10,7 +10,8 @@ sudo apt-get install --yes python-all-dev virtualenvwrapper \
     python-oauthlib \
     apache2 libapr1 libaprutil1 libaprutil1-dbd-sqlite3 libaprutil1-ldap \
     python-medusa python-meld3 ssl-cert python-msgpack
-sudo apt-get install --yes python-ldap libldap2-dev libsasl2-dev
+sudo apt-get install --yes python-ldap libldap2-dev libsasl2-dev python-markdown\
+ django-filter python-pygments python-netaddr python-jinja2
 source /etc/bash_completion.d/virtualenvwrapper
 
 

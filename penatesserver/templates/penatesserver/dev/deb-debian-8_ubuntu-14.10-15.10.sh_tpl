@@ -1,3 +1,4 @@
 {% extends "djangofloor/dev/deb-debian-8_ubuntu-14.10-15.10.sh_tpl" %}
-{% block extra_dependencies %}sudo apt-get install --yes python-ldap libldap2-dev libsasl2-dev
+{% block extra_dependencies %}sudo apt-get install --yes python-ldap libldap2-dev libsasl2-dev python-markdown\
+ django-filter python-pygments python-netaddr python-jinja2
 {% endblock %}
