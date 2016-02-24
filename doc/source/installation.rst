@@ -202,7 +202,7 @@ Now, it's time to install Penates Server:
     admin_email = admin@localhost
     bind_address = 127.0.0.1:9000
     data_path = ./django_data
-    debug = True
+    debug = False
     default_group = Users
     keytab = ./django_data/pki/private/kadmin.keytab
     language_code = fr-fr

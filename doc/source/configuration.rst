@@ -36,7 +36,7 @@ Here is the complete list of settings:
   # The socket (IP address:port) to bind to.
   data_path = ./django_data
   # Base path for all data
-  debug = True
+  debug = False
   # A boolean that turns on/off debug mode.
   default_group = Users
   # Name of the default group for newly-created users.
