@@ -20,7 +20,8 @@ class Command(BaseCommand):
         parser.add_argument('hostname', help='Service hostname (e.g. my_service.test.example.org')
         parser.add_argument('port', help='Service port (e.g. 443)')
         parser.add_argument('--fqdn', default=None, help='Host fqdn (e.g. vm01.test.example.org)')
-        parser.add_argument('--kerberos_service', default=None, help='Service name for Kerberos (e.g. HTTP, require --fqdn)')
+        parser.add_argument('--kerberos_service', default=None,
+                            help='Service name for Kerberos (e.g. HTTP, require --fqdn)')
         parser.add_argument('--srv', default=None, help='SRV DNS field (e.g. tcp/sip:priority:weight, or tcp/sip)')
         parser.add_argument('--protocol', default='tcp', help='Protocol (tcp, udp or socket')
         parser.add_argument('--description', default='', help='Description')
@@ -53,8 +54,11 @@ class Command(BaseCommand):
             return
 
         # create service object
-        service, created = Service.objects.get_or_create(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)
-        Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=options['description'], dns_srv=srv_field, encryption=encryption)
+        service, created = Service.objects.get_or_create(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port,
+                                                         protocol=protocol)
+        Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service,
+                                                     description=options['description'], dns_srv=srv_field,
+                                                     encryption=encryption)
 
         # certificate part
         if options['role']:
