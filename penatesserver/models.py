@@ -259,9 +259,14 @@ class PrincipalTest(models.Model):
 
 
 class Host(models.Model):
+    """
+    host.fqdn = "machineX.test.example.org"
+    host.hostname = host.sqdn = "machineX"
+    host.admin_fqdn = "machineX.admin.test.example.org"
+    host.principal = computer/machineX.test.example.org@TEST.EXAMPLE.ORG
+    """
     fqdn = models.CharField(_('Host fqdn'), db_index=True, blank=True, default=None, null=True, max_length=255,
-                            help_text='hostname.%(p)s%(s)s' %
-                            {'p': settings.PDNS_ADMIN_PREFIX, 's': settings.PENATES_DOMAIN})
+                            help_text='hostname.%(s)s' % {'s': settings.PENATES_DOMAIN})
     owner = models.CharField(_('Owner username'), db_index=True, blank=True, default=None, null=True, max_length=255)
     main_ip_address = models.GenericIPAddressField(_('Main IP address'), db_index=True, blank=True, default=None,
                                                    null=True)
@@ -290,6 +295,29 @@ class Host(models.Model):
         # noinspection PyTypeChecker
         return self.fqdn.partition('.')[0]
 
+    @property
+    def sqdn(self):
+        # noinspection PyTypeChecker
+        return self.hostname()
+
+    @property
+    def principal(self):
+        return principal_from_hostname(self.fqdn)
+
+
+@receiver(post_delete, sender=Host)
+def delete_host(sender, instance=None, **kwargs):
+    if sender != Host:
+        return
+    assert isinstance(instance, Host)
+    # noinspection PyUnusedLocal
+    kwargs = kwargs  # kwargs is required by Django
+    fqdn = instance.fqdn
+    Service.objects.filter(fqdn=fqdn).delete()
+    ShinkenService.objects.filter(host_name=fqdn).delete()
+    delete_principal(principal_from_hostname(fqdn, settings.PENATES_REALM))
+    Record.objects.filter(Q(name=fqdn) | Q(content=fqdn)).delete()
+
 
 class WifiNetwork(models.Model):
     ssid = models.CharField(verbose_name='SSID', db_index=True, max_length=255)
@@ -307,20 +335,6 @@ class RecoveryKey(models.Model):
                             choices=(('filevault2', _('Filevault 2')), ))
     serial_number = models.CharField(verbose_name=_('serial number'), db_index=True, max_length=255, default=None)
     recovery_key = models.TextField(verbose_name=_('recovery key'), default='', blank=True)
-
-
-@receiver(post_delete, sender=Host)
-def delete_host(sender, instance=None, **kwargs):
-    if sender != Host:
-        return
-    assert isinstance(instance, Host)
-    # noinspection PyUnusedLocal
-    kwargs = kwargs
-    fqdn = instance.fqdn
-    Service.objects.filter(fqdn=fqdn).delete()
-    ShinkenService.objects.filter(host_name=fqdn).delete()
-    delete_principal(principal_from_hostname(fqdn, settings.PENATES_REALM))
-    Record.objects.filter(Q(name=fqdn) | Q(content=fqdn)).delete()
 
 
 class MountPoint(models.Model):
