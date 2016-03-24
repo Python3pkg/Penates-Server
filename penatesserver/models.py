@@ -260,13 +260,13 @@ class PrincipalTest(models.Model):
 
 class Host(models.Model):
     """
-    host.fqdn = "machineX.test.example.org"
+    host.fqdn = "machineX.infra.test.example.org"
     host.hostname = host.sqdn = "machineX"
     host.admin_fqdn = "machineX.admin.test.example.org"
-    host.principal = computer/machineX.test.example.org@TEST.EXAMPLE.ORG
+    host.principal = "computer/machineX.test.example.org@TEST.EXAMPLE.ORG"
     """
     fqdn = models.CharField(_('Host fqdn'), db_index=True, blank=True, default=None, null=True, max_length=255,
-                            help_text='hostname.%(s)s' % {'s': settings.PENATES_DOMAIN})
+                            help_text='hostname.infra.domain')
     owner = models.CharField(_('Owner username'), db_index=True, blank=True, default=None, null=True, max_length=255)
     main_ip_address = models.GenericIPAddressField(_('Main IP address'), db_index=True, blank=True, default=None,
                                                    null=True)
@@ -287,6 +287,12 @@ class Host(models.Model):
     memory_size = models.IntegerField(_('Memory size'), db_index=True, blank=True, default=None, null=True)
     disk_size = models.IntegerField(_('Disk size'), db_index=True, blank=True, default=None, null=True)
 
+    def __str__(self):
+        return self.fqdn
+
+    def __unicode__(self):
+        return self.fqdn
+
     @property
     def admin_fqdn(self):
         return '%s.%s%s' % (self.hostname(), settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
@@ -302,7 +308,7 @@ class Host(models.Model):
 
     @property
     def principal(self):
-        return principal_from_hostname(self.fqdn)
+        return principal_from_hostname(self.fqdn, settings.PENATES_REALM)
 
 
 @receiver(post_delete, sender=Host)
