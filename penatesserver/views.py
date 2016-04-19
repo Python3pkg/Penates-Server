@@ -7,6 +7,7 @@ import re
 import tempfile
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.http.response import HttpResponseRedirect
@@ -55,6 +56,7 @@ def admin_entry_from_hostname(hostname):
                             stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
 
 
+@login_required
 def index(request):
     template_values = {'protocol': settings.PROTOCOL,
                        'server_name': settings.SERVER_NAME,
@@ -62,6 +64,7 @@ def index(request):
     return render_to_response('penatesserver/index.html', template_values, RequestContext(request))
 
 
+@login_required
 def get_info(request):
     content = ''
     content += 'METHOD:%s\n' % request.method
@@ -120,6 +123,7 @@ def get_host_keytab(request, hostname):
     return HttpResponse('', content_type='text/plain', status=201)
 
 
+@login_required
 def set_dhcp(request, mac_address):
     hostname = hostname_from_principal(request.user.username)
     mac_address = mac_address.replace('-', ':').upper()
@@ -139,6 +143,7 @@ def set_dhcp(request, mac_address):
     return HttpResponse(status=201)
 
 
+@login_required
 def set_mount_point(request):
     hostname = hostname_from_principal(request.user.username)
     hosts = list(Host.objects.filter(fqdn=hostname)[0:1])
@@ -164,6 +169,7 @@ def set_mount_point(request):
     return HttpResponse('', status=201)
 
 
+@login_required
 def set_ssh_pub(request):
     fqdn = hostname_from_principal(request.user.username)
     if Host.objects.filter(fqdn=fqdn).count() == 0:
@@ -192,6 +198,7 @@ def set_ssh_pub(request):
     return HttpResponse(status=201)
 
 
+@login_required
 def set_extra_service(request, hostname):
     ip_address = request.GET.get('ip', '')
     try:
@@ -207,6 +214,7 @@ def set_extra_service(request, hostname):
     return HttpResponse(status=201)
 
 
+@login_required
 def set_service(request, scheme, hostname, port):
     encryption = request.GET.get('encryption', 'none')
     srv_field = request.GET.get('srv', None)
@@ -265,6 +273,7 @@ def set_service(request, scheme, hostname, port):
     return HttpResponse(status=201, content='%s://%s:%s/ created' % (scheme, hostname, port))
 
 
+@login_required
 def get_service_keytab(request, scheme, hostname, port):
     fqdn = hostname_from_principal(request.user.username)
     protocol = request.GET.get('protocol', 'tcp')
@@ -355,6 +364,7 @@ class GroupDetail(RetrieveUpdateDestroyAPIView):
     lookup_field = 'name'
 
 
+@login_required
 def change_own_password(request):
     ldap_user = get_object_or_404(User, name=request.user.username)
     if request.method == 'POST':
@@ -368,6 +378,7 @@ def change_own_password(request):
     return render_to_response('penatesserver/change_password.html', template_values, RequestContext(request))
 
 
+@login_required
 def get_user_mobileconfig(request):
     user = get_object_or_404(User, name=request.user.username)
     password = request.GET.get('password', '')

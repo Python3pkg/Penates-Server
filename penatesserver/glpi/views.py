@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 import datetime
 import json
+from django.contrib.auth.decorators import login_required
 
 from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
@@ -43,6 +44,7 @@ def xmlrpc(request):
     return XML_RPC_SITE.dispatch(request)
 
 
+@login_required
 def register_service(request, check_command):
     fqdn = hostname_from_principal(request.user.username)
     status = 204
@@ -122,6 +124,7 @@ def shinken_host_groups(request, args):
 def shinken_templates(request, args):
     check_session(request, args)
     return []
+
 
 @register_rpc_method(XML_RPC_SITE, name='monitoring.shinkenServices')
 def shinken_services(request, args):

@@ -2,6 +2,7 @@
 from __future__ import unicode_literals, with_statement, print_function
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -39,11 +40,13 @@ class CertificateEntryResponse(HttpResponse):
         super(CertificateEntryResponse, self).__init__(content=content, content_type='text/plain', **kwargs)
 
 
+@login_required
 def get_host_certificate(request):
     entry = entry_from_hostname(hostname_from_principal(request.user.username))
     return CertificateEntryResponse(entry)
 
 
+@login_required
 def get_admin_certificate(request):
     hostname = hostname_from_principal(request.user.username)
     hostname = '%s.%s%s' % (hostname.partition('.')[0], settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
@@ -51,6 +54,7 @@ def get_admin_certificate(request):
     return CertificateEntryResponse(entry)
 
 
+@login_required
 def get_service_certificate(request, scheme, hostname, port):
     fqdn = hostname_from_principal(request.user.username)
     role = request.GET.get('role', SERVICE)
@@ -100,21 +104,25 @@ def get_ca_certificate(request, kind='ca'):
     return HttpResponse(content, content_type='text/plain')
 
 
+@login_required
 def get_user_certificate(request):
     ldap_user = get_object_or_404(User, name=request.user.username)
     return CertificateEntryResponse(ldap_user.user_certificate_entry)
 
 
+@login_required
 def get_email_certificate(request):
     ldap_user = get_object_or_404(User, name=request.user.username)
     return CertificateEntryResponse(ldap_user.email_certificate_entry)
 
 
+@login_required
 def get_signature_certificate(request):
     ldap_user = get_object_or_404(User, name=request.user.username)
     return CertificateEntryResponse(ldap_user.signature_certificate_entry)
 
 
+@login_required
 def get_encipherment_certificate(request):
     ldap_user = get_object_or_404(User, name=request.user.username)
     return CertificateEntryResponse(ldap_user.encipherment_certificate_entry)
