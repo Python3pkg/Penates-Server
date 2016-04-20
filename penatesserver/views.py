@@ -248,7 +248,10 @@ def set_service(request, scheme, hostname, port):
 
     # Penates service
     service, created = Service.objects.get_or_create(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port,
-                                                     protocol=protocol)
+                                                     protocol=protocol,
+                                                     defaults={'kerberos_service': kerberos_service,
+                                                               'dns_srv': srv_field, 'encryption': encryption,
+                                                               'description': description})
     Service.objects.filter(pk=service.pk).update(kerberos_service=kerberos_service, description=description,
                                                  dns_srv=srv_field, encryption=encryption)
     # certificates
@@ -259,8 +262,7 @@ def set_service(request, scheme, hostname, port):
     pki = PKI()
     pki.ensure_certificate(entry)
     if kerberos_service:
-        principal_name = '%s/%s@%s' % (kerberos_service, fqdn, settings.PENATES_REALM)
-        add_principal(principal_name)
+        add_principal(service.principal_name)
     # DNS part
     record_name, sep, domain_name = hostname.partition('.')
     if sep == '.':
@@ -288,10 +290,9 @@ def get_service_keytab(request, scheme, hostname, port):
     if not services:
         return HttpResponse(status=404, content='%s://%s:%s/ unknown' % (scheme, hostname, port))
     service = services[0]
-    principal_name = '%s/%s@%s' % (service.kerberos_service, fqdn, settings.PENATES_REALM)
-    if not principal_exists(principal_name):
+    if not principal_exists(service.principal_name):
         return HttpResponse(status=404, content='Principal for %s://%s:%s/ undefined' % (scheme, hostname, port))
-    return KeytabResponse(principal_name)
+    return KeytabResponse(service.principal_name)
 
 
 def get_dhcpd_conf(request):

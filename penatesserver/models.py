@@ -318,11 +318,13 @@ def delete_host(sender, instance=None, **kwargs):
     assert isinstance(instance, Host)
     # noinspection PyUnusedLocal
     kwargs = kwargs  # kwargs is required by Django
-    fqdn = instance.fqdn
-    Service.objects.filter(fqdn=fqdn).delete()
-    ShinkenService.objects.filter(host_name=fqdn).delete()
-    delete_principal(principal_from_hostname(fqdn, settings.PENATES_REALM))
-    Record.objects.filter(Q(name=fqdn) | Q(content=fqdn)).delete()
+    principals = [principal_from_hostname(instance.fqdn, settings.PENATES_REALM)]
+    for fqdn in instance.fqdn, instance.admin_fqdn:
+        principals += [service.principal_name for service in Service.objects.filter(fqdn=fqdn)]
+        Service.objects.filter(fqdn=fqdn).delete()
+        Record.objects.filter(Q(name=fqdn) | Q(content=fqdn)).delete()
+    for principal in principals:
+        delete_principal(principal)
 
 
 class WifiNetwork(models.Model):
@@ -461,6 +463,13 @@ class Service(models.Model):
             return ''
         return ':%d' % self.port
 
+    @property
+    def principal_name(self):
+        fqdn = self.fqdn
+        if self.kerberos_service == 'cifs':
+            fqdn = self.hostname
+        return '%s/%s@%s' % (self.kerberos_service, fqdn, settings.PENATES_REALM)
+
     def __str__(self):
         return '%s://%s%s/' % (self.smart_scheme, self.hostname, self.smart_port)
 
@@ -469,3 +478,16 @@ class Service(models.Model):
 
     def __repr__(self):
         return '%s://%s%s/' % (self.smart_scheme, self.hostname, self.smart_port)
+
+
+@receiver(post_delete, sender=Service)
+def delete_service(sender, instance=None, **kwargs):
+    if sender != Service:
+        return
+    assert isinstance(instance, Service)
+    # noinspection PyUnusedLocal
+    kwargs = kwargs  # kwargs is required by Django
+    hostname = instance.hostname
+    ShinkenService.objects.filter(host_name=hostname).delete()
+    delete_principal(instance.principal_name)
+    Record.objects.filter(Q(name=hostname) | Q(content=hostname)).delete()
