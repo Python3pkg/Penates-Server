@@ -449,7 +449,7 @@ class Service(models.Model):
     default_ports = {'ssh': 22, 'smtp': 25, 'tftp': 69, 'http': 80, 'krb': 88,
                      'pop3': 110, 'nntp': 119, 'ntp': 123, 'imap': 143, 'snmp': 161, 'irc': 6667,
                      'ldap': 389, 'syslog': 514, 'mysql': 3306, 'rdp': 3389,
-                     'xmpp': 5222, 'pgsql': 5432, 'vnc': 5900, }
+                     'xmpp': 5222, 'pgsql': 5432, 'vnc': 5900, 'nfs': 2049, }
 
     @property
     def smart_scheme(self):

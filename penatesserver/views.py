@@ -236,8 +236,7 @@ def set_service(request, scheme, hostname, port):
         return HttpResponse(status=401, content='%s is already registered' % hostname)
     if role not in (SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER, SERVICE_1024):
         return HttpResponse(status=401, content='Role %s is not allowed' % role)
-    if kerberos_service and kerberos_service not in ('HTTP', 'XMPP', 'smtp', 'IPP', 'ldap', 'cifs',
-                                                     'imap', 'postgres', 'host'):
+    if kerberos_service and kerberos_service not in settings.KERBEROS_SERVICES:
         return HttpResponse(status=401, content='Kerberos service %s is not allowed' % role)
     hosts = list(Host.objects.filter(fqdn=fqdn)[0:1])
     if not hosts:

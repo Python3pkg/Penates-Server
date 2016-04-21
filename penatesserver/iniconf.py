@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from djangofloor.iniconf import OptionParser, bool_setting
+from djangofloor.iniconf import OptionParser, bool_setting, strip_split
 
 __author__ = 'Matthieu Gallet'
 # noinspection PyTypeChecker
@@ -36,6 +36,7 @@ INI_MAPPING = [
 
     OptionParser('SERVER_NAME', 'global.server_name'),
     OptionParser('PENATES_KEYTAB', 'global.keytab'),
+    OptionParser('KERBEROS_SERVICES', 'global.kerberos_services', converter=strip_split),
     OptionParser('PROTOCOL', 'global.protocol'),
     OptionParser('BIND_ADDRESS', 'global.bind_address'),
     OptionParser('LOCAL_PATH', 'global.data_path'),
