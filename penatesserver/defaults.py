@@ -118,7 +118,8 @@ STORE_CLEARTEXT_PASSWORDS = False
 OFFER_HOST_KEYTABS = True
 DATABASE_ROUTERS = ['ldapdb.router.Router', 'penatesserver.routers.PowerdnsManagerDbRouter', ]
 AUTH_USER_MODEL = 'penatesserver.DjangoUser'
-KERBEROS_SERVICES = {'HTTP', 'XMPP', 'smtp', 'IPP', 'ldap', 'cifs', 'imap', 'postgres', 'host', 'afs', 'ftp', }
+KERBEROS_SERVICES = {'HTTP', 'XMPP', 'smtp', 'IPP', 'ldap', 'cifs', 'imap', 'postgres', 'host', 'afs', 'ftp',
+                     'afpserver'}
 DEBUG = False
 AUTHENTICATION_BACKENDS = [
     'penatesserver.backends.DefaultGroupRemoteUserBackend',
