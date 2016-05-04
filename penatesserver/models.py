@@ -105,6 +105,8 @@ class Group(BaseLdapModel):
 
 
 class GroupOfNames(BaseLdapModel):
+    # a copy of Group, but based on different object classes.
+    # required by nslcd!
     base_dn = 'ou=CoreGroups,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['groupOfNames'])
     name = CharField(db_column=force_bytestring('cn'), max_length=200, primary_key=True,
@@ -113,6 +115,8 @@ class GroupOfNames(BaseLdapModel):
 
 
 class User(BaseLdapModel):
+    PRIMARY_GROUPS_DESCRIPTION = 'auto'
+    # description used as description for primary groups of users
     base_dn = 'ou=Users,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['posixAccount', 'shadowAccount', 'inetOrgPerson', 'sambaSamAccount', 'person',
                                         'AsteriskSIPUser'])
@@ -162,10 +166,11 @@ class User(BaseLdapModel):
         self.ast_account_mailbox = self.mail
         self.home_directory = '/home/%s' % self.name
         self.set_next_free_value('uid_number')
-        self.samba_sid = '%s-%d' % (get_samba_sid(), self.uid_number)
-        self.primary_group_samba_sid = '%s-%d' % (get_samba_sid(), self.gid_number)
+        self.samba_sid = '%s-%s' % (get_samba_sid(), self.uid_number)
+        self.primary_group_samba_sid = '%s-%s' % (get_samba_sid(), self.gid_number)
         super(User, self).save(using=using)
         if group and self.name not in group.members:
+            # noinspection PyUnresolvedReferences
             group.members.append(self.name)
             group.save()
         add_principal(self.principal_name)
@@ -180,7 +185,7 @@ class User(BaseLdapModel):
         else:
             groups = list(Group.objects.filter(name=self.name)[0:1])
         if not groups:
-            group = Group(name=self.name, gid=self.gid_number)
+            group = Group(name=self.name, gid=self.gid_number, description=self.PRIMARY_GROUPS_DESCRIPTION)
             group.save()
         else:
             group = groups[0]
@@ -199,7 +204,7 @@ class User(BaseLdapModel):
 
     @property
     def password_filename(self):
-        return os.path.join(settings.PKI_PATH, 'private', 'passwords', self.name + '.txt')
+        return os.path.join(settings.PKI_PATH, 'private', 'passwords', '%s.txt' % self.name)
 
     def read_password(self):
         if settings.STORE_CLEARTEXT_PASSWORDS:
