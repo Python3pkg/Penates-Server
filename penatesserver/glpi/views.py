@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import datetime
 import json
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
@@ -25,8 +26,8 @@ XML_RPC_SITE = XMLRPCSite()
 
 shinken_checks = {
     # 'penates_dhcp': 'check_dhcp -r $ARG2$ -m $ARG1$',
-    'penates_dig': 'check_dig -l $ARG1$ -a $HOSTADDRESS$',
-    'penates_dig_2': 'check_dig -l $ARG1$ -a $ARG2$',
+    'penates_dig': 'check_dig -l $ARG1$ -a $HOSTADDRESS$ -H %s' % settings.SERVER_NAME,
+    'penates_dig_2': 'check_dig -l $ARG1$ -a $ARG2$ -H %s' % settings.SERVER_NAME,
     'penates_http': 'check_http -H $ARG1$ -p $ARG2$',
     'penates_https': 'check_http -S --sni -H $ARG1$ -p $ARG2$ -C 15 -e 401',
     'penates_imap': 'check_imap -H $HOSTNAME$ -p $ARG1$',
