@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 import datetime
 import json
-from django.contrib.auth.decorators import login_required
 
-from django.contrib.auth.models import Permission
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.utils.crypto import get_random_string
+
 from penatesserver.glpi.forms import ShinkenServiceForm
 from penatesserver.glpi.models import ShinkenService
-
 from penatesserver.glpi.services import get_shinken_services, year_0, session_duration_in_seconds, signer, check_session
-
 from penatesserver.glpi.xmlrpc import XMLRPCSite
 from penatesserver.glpi.xmlrpc import register_rpc_method
 from penatesserver.models import Host, User, AdminUser
@@ -76,6 +75,7 @@ def register_service(request, check_command):
     return HttpResponse(status=status)
 
 
+# noinspection PyUnusedLocal
 @register_rpc_method(XML_RPC_SITE, name='glpi.doLogin')
 def do_login(request, args):
     login_name = args[0]['login_name'].decode('utf-8')
@@ -86,7 +86,6 @@ def do_login(request, args):
     user = users[0]
     if not user.check_password(login_password):
         raise PermissionDenied
-    Permission.objects.filter()
     end_time = int((datetime.datetime.utcnow() - year_0).total_seconds()) + session_duration_in_seconds
     session = '%s:%s' % (end_time, login_name)
     session = signer.sign(session)

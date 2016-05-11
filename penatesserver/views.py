@@ -13,8 +13,10 @@ from django.http import HttpResponse
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
+from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext as _
 import netaddr
+from django.views.decorators.csrf import csrf_protect
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
 from penatesserver.forms import PasswordForm
@@ -328,6 +330,7 @@ def get_dns_conf(request):
     return render_to_response('dns/dns.conf', template_values, status=200, content_type='text/plain')
 
 
+@method_decorator(csrf_protect, name='post')
 class UserList(ListCreateAPIView):
     """
     List all users, or create a new user.
@@ -337,6 +340,9 @@ class UserList(ListCreateAPIView):
     lookup_field = 'name'
 
 
+@method_decorator(csrf_protect, name='put')
+@method_decorator(csrf_protect, name='patch')
+@method_decorator(csrf_protect, name='delete')
 class UserDetail(RetrieveUpdateDestroyAPIView):
     """
     Retrieve, update or delete a user instance.
@@ -346,6 +352,7 @@ class UserDetail(RetrieveUpdateDestroyAPIView):
     lookup_field = 'name'
 
 
+@method_decorator(csrf_protect, name='post')
 class GroupList(ListCreateAPIView):
     """
     List all groups, or create a new group.
@@ -355,6 +362,9 @@ class GroupList(ListCreateAPIView):
     lookup_field = 'name'
 
 
+@method_decorator(csrf_protect, name='put')
+@method_decorator(csrf_protect, name='patch')
+@method_decorator(csrf_protect, name='delete')
 class GroupDetail(RetrieveUpdateDestroyAPIView):
     """
     Retrieve, update or delete a group instance.
