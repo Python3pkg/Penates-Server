@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.utils.crypto import get_random_string
+from django.views.decorators.csrf import csrf_exempt
 
 from penatesserver.glpi.forms import ShinkenServiceForm
 from penatesserver.glpi.models import ShinkenService
@@ -39,6 +40,7 @@ shinken_checks = {
 }
 
 
+@csrf_exempt
 def xmlrpc(request):
     return XML_RPC_SITE.dispatch(request)
 
