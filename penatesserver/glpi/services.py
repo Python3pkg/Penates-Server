@@ -118,7 +118,7 @@ def get_shinken_services():
                            'host_name': service.fqdn,
                            'service_description': _('DNS on %(fqdn)s:%(port)s') %
                            {'fqdn': service.hostname, 'port': service.port, },
-                           'check_command': 'check_tcp!%s' % service.port,
+                           'check_command': 'penates_dns',
                            'notifications_enabled': '0', })
         elif service.scheme == 'smtp':
             check = 'penates_smtps!%s' if service.encryption == 'tls' else 'penates_smtp!%s'

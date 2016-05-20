@@ -37,7 +37,8 @@ shinken_checks = {
     'penates_ntp': 'check_ntp_peer -H $HOSTADDRESS$',
     'penates_smtp': 'check_smtp -H $HOSTADDRESS$ -p $ARG1$',
     'penates_smtps': 'check_ssmtp -H $HOSTADDRESS$ -p $ARG1$ -D 15',
-    'penates_udp': 'check_udp -H $HOSTADDRESS$ -p $ARG1$'
+    'penates_udp': 'check_udp -H $HOSTADDRESS$ -p $ARG1$',
+    'penates_dns': 'check_dns -H $HOSTADDRESS$',
 }
 
 
