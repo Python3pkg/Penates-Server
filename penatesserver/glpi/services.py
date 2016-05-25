@@ -99,12 +99,12 @@ def get_shinken_services():
                            'check_command': check % service.port,
                            'notifications_enabled': '0', })
         elif service.scheme == 'ldap':
-            check = 'penates_ldaps!%s' if service.encryption == 'tls' else 'penates_ldap!%s'
+            check = 'penates_ldaps!%s!%s' if service.encryption == 'tls' else 'penates_ldap!%s'
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
                            'service_description': _('LDAP on %(fqdn)s:%(port)s') %
                            {'fqdn': service.hostname, 'port': service.port, },
-                           'check_command': check % service.port,
+                           'check_command': check % (service.hostname, service.port),
                            'notifications_enabled': '0', })
         elif service.scheme == 'krb':
             result.append({'use': 'local-service',
