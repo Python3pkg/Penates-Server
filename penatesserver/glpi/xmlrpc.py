@@ -13,10 +13,11 @@ class XMLRPCSite(object):
         self.methods[name] = func
 
     def dispatch(self, request, *args, **kwargs):
-        rpc_call = loads(request.body.decode('utf-8'))
-        rpc_args = rpc_call[0]
-        method_name = rpc_call[1]
+        method_name = 'invalid'
         try:
+            rpc_call = loads(request.body.decode('utf-8'))
+            rpc_args = rpc_call[0]
+            method_name = rpc_call[1]
             # noinspection PyCallingNonCallable
             src_result = self.methods[method_name](request, rpc_args, *args, **kwargs)
             result = src_result,
