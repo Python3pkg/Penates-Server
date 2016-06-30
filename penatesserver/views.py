@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import tempfile
 
 from django.conf import settings
@@ -140,7 +141,7 @@ def set_dhcp(request, mac_address):
     if admin_ip_address and admin_mac_address:
         domain_name = '%s%s' % (settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
         long_admin_hostname = '%s.%s' % (hostname.partition('.')[0], domain_name)
-        Host.objects.filter(fqdn=hostname)\
+        Host.objects.filter(fqdn=hostname) \
             .update(admin_ip_address=admin_ip_address, admin_mac_address=admin_mac_address)
         Domain.ensure_auto_record(admin_ip_address, long_admin_hostname, unique=True, override_reverse=False)
     return HttpResponse(status=201)
@@ -165,7 +166,7 @@ def set_mount_point(request):
     options = request.GET.get('options')
     if not options:
         return HttpResponse('options GET argument not provided', status=400)
-    if MountPoint.objects.filter(host=host, mount_point=mount_point)\
+    if MountPoint.objects.filter(host=host, mount_point=mount_point) \
             .update(fs_type=fs_type, device=device, options=options) == 1:
         return HttpResponse('', status=204)
     MountPoint(host=host, mount_point=mount_point, fs_type=fs_type, device=device, options=options).save()
@@ -196,7 +197,7 @@ def set_ssh_pub(request):
         if Record.objects.filter(domain=domain, name=fqdn, type='SSHFP', content__startswith=value[:4]).count() == 0:
             Record(domain=domain, name=fqdn, type='SSHFP', content=value, ttl=86400).save()
         else:
-            Record.objects.filter(domain=domain, name=fqdn, type='SSHFP', content__startswith=value[:4])\
+            Record.objects.filter(domain=domain, name=fqdn, type='SSHFP', content__startswith=value[:4]) \
                 .update(content=value)
     return HttpResponse(status=201)
 
@@ -298,6 +299,9 @@ def get_service_keytab(request, scheme, hostname, port):
 
 
 def get_dhcpd_conf(request):
+    # noinspection PyUnusedLocal
+    request = request
+
     def get_ip_or_none(scheme):
         values = list(Service.objects.filter(scheme=scheme)[0:1])
         if not values:
@@ -322,13 +326,16 @@ def get_dhcpd_conf(request):
 
 
 def get_dns_conf(request):
-    domains = {}
-    for domain in Domain.objects.all():
-        domains[domain.id] = (domain, [])
-    for record in Record.objects.all():
-        domains[record.domain_id][1].append(record)
-    template_values = {'domains': domains, }
-    return render_to_response('dns/dns.conf', template_values, status=200, content_type='text/plain')
+    # noinspection PyUnusedLocal
+    request = request
+    db_name = settings.DATABASES['powerdns']['NAME']
+    db_user = settings.DATABASES['powerdns']['USER']
+    db_password = settings.DATABASES['powerdns']['PASSWORD']
+    db_host = settings.DATABASES['powerdns']['HOST']
+    db_port = settings.DATABASES['powerdns']['PORT']
+    db_content = subprocess.check_output(['pg_dump', '--username=%s' % db_user, '--host=%s' % db_host,
+                                          '--port=%s' % db_port, db_name], env={'PGPASSWORD': db_password})
+    return HttpResponse(db_content, content_type='application/sql')
 
 
 @login_required
