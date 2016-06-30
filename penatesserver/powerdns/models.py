@@ -74,17 +74,21 @@ class Domain(models.Model):
                     content = '%s %s %s 10800 3600 604800 3600' % (hostname, settings.PENATES_EMAIL_ADDRESS, soa_serial)
                     Record.objects.get_or_create(domain=domain, type='SOA', name=domain.name, content=content)
         elif scheme == 'smtp' and port == 25:
-            Record.objects.get_or_create(defaults={'prio': 10}, domain=self, type='MX', name=self.name, content=hostname)
+            Record.objects.get_or_create(defaults={'prio': 10}, domain=self, type='MX', name=self.name,
+                                         content=hostname)
             content = 'v=spf1 mx mx:%s -all' % self.name
-            if Record.objects.filter(domain=self, type='TXT', name=self.name, content__startswith='v=spf1').update(content=content) == 0:
+            if Record.objects.filter(domain=self, type='TXT', name=self.name, content__startswith='v=spf1')\
+                    .update(content=content) == 0:
                 Record(domain=self, type='TXT', name=self.name, content=content).save()
         elif scheme == 'dkim' and entry is not None:
             assert isinstance(entry, CertificateEntry)
             with codecs.open(entry.pub_filename, 'r', encoding='utf-8') as fd:
                 content = fd.read()
-            content = 'v=DKIM1; k=rsa; p=' + content.replace('-----END PUBLIC KEY-----', '').replace('-----BEGIN PUBLIC KEY-----', '').strip()
+            content = 'v=DKIM1; k=rsa; p=' + content.replace('-----END PUBLIC KEY-----', '')\
+                .replace('-----BEGIN PUBLIC KEY-----', '').strip()
             name = '%s._domainkey.%s' % (hostname.partition('.')[0], self.name)
-            if Record.objects.filter(domain=self, type='TXT', name=name, content__startswith='v=DKIM1;').update(content=content) == 0:
+            if Record.objects.filter(domain=self, type='TXT', name=name, content__startswith='v=DKIM1;')\
+                    .update(content=content) == 0:
                 Record(domain=self, type='TXT', name=name, content=content).save()
             content = 't=n;o=-;r=postmaster@%s' % self.name
             name = '_domainkey.%s' % self.name
@@ -95,7 +99,8 @@ class Domain(models.Model):
             matcher_protocol = re.match(r'^([\-\w]+)/(\w+)$', srv_field)
             matcher_service = re.match(r'^([\-\w]+)$', srv_field)
             if matcher_full:
-                self.ensure_srv_record(matcher_full.group(1), matcher_full.group(2), port, int(matcher_full.group(3)), int(matcher_full.group(4)), fqdn)
+                self.ensure_srv_record(matcher_full.group(1), matcher_full.group(2), port, int(matcher_full.group(3)),
+                                       int(matcher_full.group(4)), fqdn)
             elif matcher_protocol:
                 self.ensure_srv_record(matcher_protocol.group(1), matcher_protocol.group(2), port, 0, 100, fqdn)
             elif matcher_service:
@@ -123,7 +128,8 @@ class Domain(models.Model):
             return False
         hostname, email, serial, refresh, retry, expire, default_ttl = values
         serial = self.get_soa_serial()
-        Record.objects.filter(pk=record.pk).update(content=' '.join((hostname, email, serial, refresh, retry, expire, default_ttl)))
+        Record.objects.filter(pk=record.pk)\
+            .update(content=' '.join((hostname, email, serial, refresh, retry, expire, default_ttl)))
         return True
 
     def ensure_srv_record(self, protocol, service, port, prio, weight, fqdn):
@@ -142,6 +148,7 @@ class Domain(models.Model):
 
     def ensure_record(self, source, target, unique=False, override_reverse=True):
         """
+        :param override_reverse:
         :param source: orignal name (fqdn of the machine, or IP address)
         :param target: DNS alias to create
         :param unique: if True, remove any previous
@@ -169,7 +176,8 @@ class Domain(models.Model):
                 reverse_target = add.reverse_dns[:-1]
                 reverse_domain = self.ensure_subdomain(reverse_domain_name)
                 query = Record.objects.filter(domain=reverse_domain, name=reverse_target, type='PTR')
-                if (override_reverse and query.update(content=target) == 0) or (not override_reverse and query.count() == 0):
+                if (override_reverse and query.update(content=target) == 0) or \
+                        (not override_reverse and query.count() == 0):
                     Record(domain=reverse_domain, name=reverse_target, type='PTR', content=target, ttl=3600).save()
                     assert isinstance(reverse_domain, Domain)
                     reverse_domain.update_soa()
@@ -204,8 +212,6 @@ class Record(models.Model):
     auth = models.NullBooleanField(default=True)
 
     def __repr__(self):
-        if self.type in ('NS', 'SOA', 'MX'):
-            return 'Record("%s [%s] -> %s")' % (self.name, self.type, self.content)
         return 'Record("%s [%s] -> %s")' % (self.name, self.type, self.content)
 
     def save(self, force_insert=False, force_update=False, using=None,
@@ -217,7 +223,8 @@ class Record(models.Model):
             comp = self.name[:-(1 + len(domain_name))].split(text_type('.'))
             comp.reverse()
             self.ordername = ' '.join(comp)
-        super(Record, self).save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
+        super(Record, self).save(force_insert=force_insert, force_update=force_update, using=using,
+                                 update_fields=update_fields)
 
     class Meta(object):
         managed = False
@@ -226,6 +233,7 @@ class Record(models.Model):
     @staticmethod
     def local_resolve(name, searched_types=None):
         """ Try to locally resolve a name to A or AAAA record
+        :param searched_types:
         :param name:
         :type name:
         :rtype: basestring
@@ -241,7 +249,8 @@ class Record(models.Model):
         excluded = set()
         while to_check:
             new_to_check = []
-            for record_data in Record.objects.filter(name__in=to_check, type__in=searched_types).values_list('type', 'content'):
+            for record_data in Record.objects.filter(name__in=to_check, type__in=searched_types)\
+                    .values_list('type', 'content'):
                 if record_data[0] == 'A' or record_data[0] == 'AAAA':
                     return record_data[1]
                 elif record_data[1] not in excluded:
