@@ -13,7 +13,7 @@ from penatesserver.pki.views import get_host_certificate, get_ca_certificate, ge
     get_encipherment_certificate
 from penatesserver.views import GroupDetail, GroupList, UserDetail, UserList, get_host_keytab, get_info, set_dhcp, \
     get_dhcpd_conf, get_dns_conf, set_mount_point, set_ssh_pub, set_service, set_extra_service, get_service_keytab, \
-    change_own_password, get_user_mobileconfig, index
+    change_own_password, get_user_mobileconfig, index, get_services
 
 __author__ = 'flanker'
 
@@ -32,7 +32,8 @@ urls = [
     url(r'^auth/set_mount_point/$', set_mount_point, name='set_mount_point'),
     url(r'^auth/set_ssh_pub/$', set_ssh_pub, name='set_ssh_pub'),
     url(r'^auth/set_service/%s$' % service_pattern, set_service, name='set_service'),
-    url(r'^auth/set_extra_service/(?P<hostname>[a-zA-Z0-9\.\-_]+)$', set_extra_service, name='set_extra_service'),
+    url(r'^auth/set_service/%s$' % service_pattern, set_service, name='set_service'),
+    url(r'^auth/get_services/$', get_services, name='get_services'),
     url(r'^auth/get_service_keytab/%s$' % service_pattern, get_service_keytab, name='get_service_keytab'),
     url(r'^auth/user/$', UserList.as_view(), name='user_list'),
     url(r'^auth/user/(?P<name>%s)$' % name_pattern, UserDetail.as_view(), name='user_detail'),

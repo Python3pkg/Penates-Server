@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 import base64
 import hashlib
+import json
 import os
 import re
 import tempfile
@@ -328,6 +329,17 @@ def get_dns_conf(request):
         domains[record.domain_id][1].append(record)
     template_values = {'domains': domains, }
     return render_to_response('dns/dns.conf', template_values, status=200, content_type='text/plain')
+
+
+@login_required
+def get_services(request):
+    fqdn = hostname_from_principal(request.user.username)
+    result = [{'scheme': service.scheme, 'hostname': service.hostname, 'port': service.port,
+               'protocol': service.protocol, 'encryption': service.encryption,
+               'kerberos_service': service.kerberos_service, 'dns_srv': service.dns_srv, }
+              for service in Service.objects.filter(fqdn=fqdn, protocol__in=['tcp', 'udp'])]
+    content = json.dumps(result)
+    return HttpResponse(content, content_type='application/json')
 
 
 @method_decorator(csrf_protect, name='post')
