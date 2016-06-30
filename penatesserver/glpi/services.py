@@ -55,6 +55,10 @@ def get_shinken_services():
                        'check_command': 'check_nrpe!check_load', 'icon_set': 'server',
                        'notifications_enabled': '0', })
         result.append({'use': 'local-service', 'host_name': host.fqdn, 'icon_set': 'server',
+                       'service_description': _('Check open ports on %(fqdn)s') % {'fqdn': host.fqdn, },
+                       'check_command': 'check_nrpe!check_open_ports',
+                       'notifications_enabled': '0', 'check_interval': text_type(60), })
+        result.append({'use': 'local-service', 'host_name': host.fqdn, 'icon_set': 'server',
                        'service_description': _('Check DNS %(fqdn)s') % {'fqdn': host.fqdn, },
                        'check_command': 'penates_dig_2!%s!%s' % (host.fqdn, host.main_ip_address),
                        'notifications_enabled': '0', 'check_interval': text_type(4 * 60), })
