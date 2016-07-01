@@ -129,7 +129,11 @@ def get_host_keytab(request, hostname):
 
 @login_required
 def set_dhcp(request, mac_address):
-    hostname = hostname_from_principal(request.user.username)
+    try:
+        hostname = hostname_from_principal(request.user.username)
+    except ValueError:
+        return HttpResponse(status=401, content='Unable to register IP and MAC addresses')
+
     mac_address = mac_address.replace('-', ':').upper()
     remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
     admin_mac_address = request.GET.get('mac_address')
@@ -149,7 +153,10 @@ def set_dhcp(request, mac_address):
 
 @login_required
 def set_mount_point(request):
-    hostname = hostname_from_principal(request.user.username)
+    try:
+        hostname = hostname_from_principal(request.user.username)
+    except ValueError:
+        return HttpResponse(status=401, content='Unable to register mount point')
     hosts = list(Host.objects.filter(fqdn=hostname)[0:1])
     if not hosts:
         return HttpResponse(status=404)
@@ -175,7 +182,10 @@ def set_mount_point(request):
 
 @login_required
 def set_ssh_pub(request):
-    fqdn = hostname_from_principal(request.user.username)
+    try:
+        fqdn = hostname_from_principal(request.user.username)
+    except ValueError:
+        return HttpResponse(status=401, content='Unable to register public SSH key')
     if Host.objects.filter(fqdn=fqdn).count() == 0:
         return HttpResponse(status=404)
     fqdn = '%s.%s%s' % (fqdn.partition('.')[0], settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
@@ -220,6 +230,11 @@ def set_extra_service(request, hostname):
 
 @login_required
 def set_service(request, scheme, hostname, port):
+    try:
+        fqdn = hostname_from_principal(request.user.username)
+    except ValueError:
+        return HttpResponse(status=401, content='Unable to create %s://%s:%s/' % (scheme, hostname, port))
+
     encryption = request.GET.get('encryption', 'none')
     srv_field = request.GET.get('srv', None)
     kerberos_service = request.GET.get('keytab', None)
@@ -234,7 +249,7 @@ def set_service(request, scheme, hostname, port):
     if protocol not in ('tcp', 'udp', 'socket'):
         return HttpResponse('Invalid protocol: %s' % protocol, status=403, content_type='text/plain')
     description = request.body
-    fqdn = hostname_from_principal(request.user.username)
+
     # a few checks
     if Service.objects.filter(hostname=hostname).exclude(fqdn=fqdn).count() > 0:
         return HttpResponse(status=401, content='%s is already registered' % hostname)
@@ -280,7 +295,10 @@ def set_service(request, scheme, hostname, port):
 
 @login_required
 def get_service_keytab(request, scheme, hostname, port):
-    fqdn = hostname_from_principal(request.user.username)
+    try:
+        fqdn = hostname_from_principal(request.user.username)
+    except ValueError:
+        fqdn = None
     protocol = request.GET.get('protocol', 'tcp')
     hosts = list(Host.objects.filter(fqdn=fqdn)[0:1])
     if not hosts:
@@ -298,9 +316,18 @@ def get_service_keytab(request, scheme, hostname, port):
     return KeytabResponse(service.principal_name)
 
 
+@login_required
 def get_dhcpd_conf(request):
     # noinspection PyUnusedLocal
     request = request
+    try:
+        fqdn = hostname_from_principal(request.user.username)
+    except ValueError:
+        fqdn = None
+    if Service.objects.filter(fqdn=fqdn, scheme='dchp')[0:1].count() == 0:
+        hosts = []
+    else:
+        hosts = Host.objects.all()
 
     def get_ip_or_none(scheme):
         values = list(Service.objects.filter(scheme=scheme)[0:1])
@@ -308,8 +335,8 @@ def get_dhcpd_conf(request):
             return None
         return Record.local_resolve(values[0].fqdn) or values[0].hostname
 
-    def get_ip_list(scheme):
-        values = list(Service.objects.filter(scheme=scheme))
+    def get_ip_list(scheme, protocol='udp'):
+        values = list(Service.objects.filter(scheme=scheme, protocol=protocol))
         return [Record.local_resolve(x.fqdn) or x.hostname for x in values]
 
     template_values = {
@@ -317,7 +344,7 @@ def get_dhcpd_conf(request):
         'penates_domain': settings.PENATES_DOMAIN,
         'admin_prefix': settings.PDNS_ADMIN_PREFIX,
         'infra_prefix': settings.PDNS_INFRA_PREFIX,
-        'hosts': Host.objects.all(),
+        'hosts': hosts,
         'tftp': get_ip_or_none('tftp'),
         'dns_list': get_ip_list('dns'),
         'ntp': get_ip_or_none('ntp'),
@@ -325,22 +352,33 @@ def get_dhcpd_conf(request):
     return render_to_response('dhcpd/dhcpd.conf', template_values, status=200, content_type='text/plain')
 
 
+@login_required
 def get_dns_conf(request):
     # noinspection PyUnusedLocal
     request = request
-    db_name = settings.DATABASES['powerdns']['NAME']
-    db_user = settings.DATABASES['powerdns']['USER']
-    db_password = settings.DATABASES['powerdns']['PASSWORD']
-    db_host = settings.DATABASES['powerdns']['HOST']
-    db_port = settings.DATABASES['powerdns']['PORT']
-    db_content = subprocess.check_output(['pg_dump', '--username=%s' % db_user, '--host=%s' % db_host,
-                                          '--port=%s' % db_port, db_name], env={'PGPASSWORD': db_password})
+    try:
+        fqdn = hostname_from_principal(request.user.username)
+    except ValueError:
+        fqdn = None
+    if Service.objects.filter(fqdn=fqdn, scheme='dns')[0:1].count() > 0:
+        db_name = settings.DATABASES['powerdns']['NAME']
+        db_user = settings.DATABASES['powerdns']['USER']
+        db_password = settings.DATABASES['powerdns']['PASSWORD']
+        db_host = settings.DATABASES['powerdns']['HOST']
+        db_port = settings.DATABASES['powerdns']['PORT']
+        db_content = subprocess.check_output(['pg_dump', '--username=%s' % db_user, '--host=%s' % db_host,
+                                              '--port=%s' % db_port, db_name], env={'PGPASSWORD': db_password})
+    else:
+        db_content = ''
     return HttpResponse(db_content, content_type='application/sql')
 
 
 @login_required
 def get_services(request):
-    fqdn = hostname_from_principal(request.user.username)
+    try:
+        fqdn = hostname_from_principal(request.user.username)
+    except ValueError:
+        fqdn = None
     result = [{'scheme': service.scheme, 'hostname': service.hostname, 'port': service.port,
                'protocol': service.protocol, 'encryption': service.encryption,
                'kerberos_service': service.kerberos_service, 'dns_srv': service.dns_srv, }
