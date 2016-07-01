@@ -33,11 +33,13 @@ class Subnet(object):
     @property
     def start(self):
         size = 32 if self.network.version == 4 else 128
+        # noinspection PyTypeChecker
         return str(self.network.network + 2 ** max(size - self.network.prefixlen - 3, 0))
 
     @property
     def end(self):
         size = 32 if self.network.version == 4 else 128
+        # noinspection PyTypeChecker
         return str(self.network.network - 2 + 2 ** (size - self.network.prefixlen))
 
 
