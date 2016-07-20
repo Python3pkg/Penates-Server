@@ -76,9 +76,10 @@ __host_pattern = 'computer/'
 
 def hostname_from_principal(principal):
     """
-    >>> hostname_from_principal('%smachine.test.example.org' % __host_pattern) == 'machine.test.example.org'
+    >>> result = 'machine.test.example.org'
+    >>> hostname_from_principal('%smachine.test.example.org' % __host_pattern) == result
     True
-    >>> hostname_from_principal('%smachine.test.example.org@TEST.EXAMPLE.ORG' % __host_pattern) == 'machine.test.example.org'
+    >>> hostname_from_principal('%smachine.test.example.org@TEST.EXAMPLE.ORG' % __host_pattern) == result
     True
     """
     if not principal.startswith(__host_pattern):
@@ -88,7 +89,8 @@ def hostname_from_principal(principal):
 
 def principal_from_hostname(hostname, realm):
     """
-    >>> principal_from_hostname('machine.test.example.org', 'TEST.EXAMPLE.ORG') == '%smachine.test.example.org@TEST.EXAMPLE.ORG' % __host_pattern
+    >>> result = '%smachine.test.example.org@TEST.EXAMPLE.ORG' % __host_pattern
+    >>> principal_from_hostname('machine.test.example.org', 'TEST.EXAMPLE.ORG') == result
     True
     """
     return '%s%s@%s' % (__host_pattern, hostname, realm)

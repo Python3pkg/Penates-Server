@@ -42,13 +42,20 @@ class CertificateEntryResponse(HttpResponse):
 
 @login_required
 def get_host_certificate(request):
-    entry = entry_from_hostname(hostname_from_principal(request.user.username))
+    try:
+        hostname = hostname_from_principal(request.user.username)
+    except ValueError:
+        return HttpResponse(status=401, content='Unable to get host certificate: invalid username')
+    entry = entry_from_hostname(hostname)
     return CertificateEntryResponse(entry)
 
 
 @login_required
 def get_admin_certificate(request):
-    hostname = hostname_from_principal(request.user.username)
+    try:
+        hostname = hostname_from_principal(request.user.username)
+    except ValueError:
+        return HttpResponse(status=401, content='Unable to get admin certificate: invalid username')
     hostname = '%s.%s%s' % (hostname.partition('.')[0], settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
     entry = admin_entry_from_hostname(hostname)
     return CertificateEntryResponse(entry)
@@ -56,7 +63,10 @@ def get_admin_certificate(request):
 
 @login_required
 def get_service_certificate(request, scheme, hostname, port):
-    fqdn = hostname_from_principal(request.user.username)
+    try:
+        fqdn = hostname_from_principal(request.user.username)
+    except ValueError:
+        return HttpResponse(status=401, content='Unable to get service certificate: invalid username')
     role = request.GET.get('role', SERVICE)
     protocol = request.GET.get('protocol', 'tcp')
     port = int(port)

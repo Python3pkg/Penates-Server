@@ -61,6 +61,8 @@ PKI_PATH = DirectoryPath('{LOCAL_PATH}/pki')
 SSH_KEYGEN_PATH = 'ssh-keygen'
 LDAP_BASE_DN = 'dc=test,dc=example,dc=org'
 
+PENATES_ADMIN_TOKEN = 'toto'
+PENATES_ADMIN_TOKEN_PARAMETER = 'admin_token'
 PENATES_COUNTRY = 'FR'
 PENATES_ORGANIZATION = 'example.org'
 PENATES_DOMAIN = 'test.example.org'

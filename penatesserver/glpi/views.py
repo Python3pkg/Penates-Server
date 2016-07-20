@@ -11,6 +11,7 @@ from django.http import HttpResponse
 from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
 
+from penatesserver.decorators import admin_required
 from penatesserver.glpi.forms import ShinkenServiceForm
 from penatesserver.glpi.models import ShinkenService
 from penatesserver.glpi.services import get_shinken_services, year_0, session_duration_in_seconds, signer, check_session
@@ -47,9 +48,13 @@ def xmlrpc(request):
     return XML_RPC_SITE.dispatch(request)
 
 
+@admin_required
 @login_required
 def register_service(request, check_command):
-    fqdn = hostname_from_principal(request.user.username)
+    try:
+        fqdn = hostname_from_principal(request.user.username)
+    except ValueError:
+        return HttpResponse(status=401, content='Invalid username')
     status = 204
     if request.method == 'POST':
         if request.body:

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 import base64
 import hashlib
 import json
@@ -8,6 +9,7 @@ import re
 import subprocess
 import tempfile
 
+import netaddr
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
@@ -15,12 +17,10 @@ from django.http import HttpResponse
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
-from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext as _
-import netaddr
-from django.views.decorators.csrf import csrf_protect
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
+from penatesserver.decorators import admin_required
 from penatesserver.forms import PasswordForm
 from penatesserver.kerb import add_principal_to_keytab, add_principal, principal_exists
 from penatesserver.models import Service, Host, User, Group, MountPoint
@@ -78,6 +78,7 @@ def get_info(request):
     return HttpResponse(content, status=200, content_type='text/plain')
 
 
+@admin_required
 def get_host_keytab(request, hostname):
     """Register a computer:
 
@@ -127,12 +128,13 @@ def get_host_keytab(request, hostname):
     return HttpResponse('', content_type='text/plain', status=201)
 
 
+@admin_required
 @login_required
 def set_dhcp(request, mac_address):
     try:
         hostname = hostname_from_principal(request.user.username)
     except ValueError:
-        return HttpResponse(status=401, content='Unable to register IP and MAC addresses')
+        return HttpResponse(status=401, content='Unable to register IP and MAC addresses: invalid username')
 
     mac_address = mac_address.replace('-', ':').upper()
     remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
@@ -151,12 +153,13 @@ def set_dhcp(request, mac_address):
     return HttpResponse(status=201)
 
 
+@admin_required
 @login_required
 def set_mount_point(request):
     try:
         hostname = hostname_from_principal(request.user.username)
     except ValueError:
-        return HttpResponse(status=401, content='Unable to register mount point')
+        return HttpResponse(status=401, content='Unable to register mount point: invalid username')
     hosts = list(Host.objects.filter(fqdn=hostname)[0:1])
     if not hosts:
         return HttpResponse(status=404)
@@ -180,12 +183,13 @@ def set_mount_point(request):
     return HttpResponse('', status=201)
 
 
+@admin_required
 @login_required
 def set_ssh_pub(request):
     try:
         fqdn = hostname_from_principal(request.user.username)
     except ValueError:
-        return HttpResponse(status=401, content='Unable to register public SSH key')
+        return HttpResponse(status=401, content='Unable to register public SSH key: invalid username')
     if Host.objects.filter(fqdn=fqdn).count() == 0:
         return HttpResponse(status=404)
     fqdn = '%s.%s%s' % (fqdn.partition('.')[0], settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
@@ -212,6 +216,7 @@ def set_ssh_pub(request):
     return HttpResponse(status=201)
 
 
+@admin_required
 @login_required
 def set_extra_service(request, hostname):
     ip_address = request.GET.get('ip', '')
@@ -228,12 +233,14 @@ def set_extra_service(request, hostname):
     return HttpResponse(status=201)
 
 
+@admin_required
 @login_required
 def set_service(request, scheme, hostname, port):
     try:
         fqdn = hostname_from_principal(request.user.username)
     except ValueError:
-        return HttpResponse(status=401, content='Unable to create %s://%s:%s/' % (scheme, hostname, port))
+        return HttpResponse(status=401, content='Unable to create %s://%s:%s/: invalid username' %
+                                                (scheme, hostname, port))
 
     encryption = request.GET.get('encryption', 'none')
     srv_field = request.GET.get('srv', None)
@@ -293,12 +300,14 @@ def set_service(request, scheme, hostname, port):
     return HttpResponse(status=201, content='%s://%s:%s/ created' % (scheme, hostname, port))
 
 
+@admin_required
 @login_required
 def get_service_keytab(request, scheme, hostname, port):
     try:
         fqdn = hostname_from_principal(request.user.username)
     except ValueError:
-        fqdn = None
+        return HttpResponse(status=401, content='Unable to get keytab %s://%s:%s/: invalid username' %
+                                                (scheme, hostname, port))
     protocol = request.GET.get('protocol', 'tcp')
     hosts = list(Host.objects.filter(fqdn=fqdn)[0:1])
     if not hosts:
@@ -323,7 +332,7 @@ def get_dhcpd_conf(request):
     try:
         fqdn = hostname_from_principal(request.user.username)
     except ValueError:
-        fqdn = None
+        return HttpResponse(status=401, content='Unable to get configuration: invalid username')
     if Service.objects.filter(fqdn=fqdn, scheme='dchp')[0:1].count() == 0:
         hosts = []
     else:
@@ -359,7 +368,7 @@ def get_dns_conf(request):
     try:
         fqdn = hostname_from_principal(request.user.username)
     except ValueError:
-        fqdn = None
+        return HttpResponse(status=401, content='Unable to get configuration: invalid username')
     if Service.objects.filter(fqdn=fqdn, scheme='dns')[0:1].count() > 0:
         db_name = settings.DATABASES['powerdns']['NAME']
         db_user = settings.DATABASES['powerdns']['USER']
@@ -378,7 +387,7 @@ def get_services(request):
     try:
         fqdn = hostname_from_principal(request.user.username)
     except ValueError:
-        fqdn = None
+        return HttpResponse(status=401, content='Unable to get configuration: invalid username')
     result = [{'scheme': service.scheme, 'hostname': service.hostname, 'port': service.port,
                'protocol': service.protocol, 'encryption': service.encryption,
                'kerberos_service': service.kerberos_service, 'dns_srv': service.dns_srv, }
@@ -387,7 +396,6 @@ def get_services(request):
     return HttpResponse(content, content_type='application/json')
 
 
-@method_decorator(csrf_protect, name='post')
 class UserList(ListCreateAPIView):
     """
     List all users, or create a new user.
@@ -397,9 +405,6 @@ class UserList(ListCreateAPIView):
     lookup_field = 'name'
 
 
-@method_decorator(csrf_protect, name='put')
-@method_decorator(csrf_protect, name='patch')
-@method_decorator(csrf_protect, name='delete')
 class UserDetail(RetrieveUpdateDestroyAPIView):
     """
     Retrieve, update or delete a user instance.
@@ -409,7 +414,6 @@ class UserDetail(RetrieveUpdateDestroyAPIView):
     lookup_field = 'name'
 
 
-@method_decorator(csrf_protect, name='post')
 class GroupList(ListCreateAPIView):
     """
     List all groups, or create a new group.
@@ -419,9 +423,6 @@ class GroupList(ListCreateAPIView):
     lookup_field = 'name'
 
 
-@method_decorator(csrf_protect, name='put')
-@method_decorator(csrf_protect, name='patch')
-@method_decorator(csrf_protect, name='delete')
 class GroupDetail(RetrieveUpdateDestroyAPIView):
     """
     Retrieve, update or delete a group instance.

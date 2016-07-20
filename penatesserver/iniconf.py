@@ -35,6 +35,7 @@ INI_MAPPING = [
     OptionParser('PENATES_SUBNETS', 'penates.subnets'),
 
     OptionParser('SERVER_NAME', 'global.server_name'),
+    OptionParser('PENATES_ADMIN_TOKEN', 'global.admin_token'),
     OptionParser('PENATES_KEYTAB', 'global.keytab'),
     OptionParser('KERBEROS_SERVICES', 'global.kerberos_services', converter=strip_split),
     OptionParser('PROTOCOL', 'global.protocol'),
