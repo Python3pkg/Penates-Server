@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Setup file for the PenatesServer project.
 """
-from __future__ import unicode_literals
-
 import codecs
 import os.path
 import re
