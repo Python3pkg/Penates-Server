@@ -12,3 +12,11 @@ __author__ = 'mgallet'
 def remove_unicode_literals(package_name, package_version, deb_src_dir):
     if os.path.isfile('setup.py'):
         file_replace('setup.py', 'from __future__ import unicode_literals', '')
+
+
+# noinspection PyUnusedLocal
+def remove_ldap_dep(package_name, package_version, deb_src_dir):
+    if os.path.isfile('setup.py'):
+        file_replace('setup.py', 'from __future__ import unicode_literals', '')
+        file_replace('setup.py', "'pyldap>=2.4.25',", '')
+
