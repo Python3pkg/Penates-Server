@@ -76,7 +76,7 @@ def get_samba_sid():
 
 
 class Group(BaseLdapModel):
-    base_dn = 'ou=Groups,' + settings.LDAP_BASE_DN
+    base_dn = force_bytestring('ou=Groups,' + settings.LDAP_BASE_DN)
     object_classes = force_bytestrings(['posixGroup', 'sambaGroupMapping'])
     # posixGroup attributes
     name = CharField(db_column=force_bytestring('cn'), max_length=200, primary_key=True,
