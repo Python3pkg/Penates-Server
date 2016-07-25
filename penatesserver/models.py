@@ -366,6 +366,39 @@ class Netgroup(BaseLdapModel):
     member = ListField(db_column=force_bytestring('memberNisNetgroup'))
 
 
+class ServiceAccount(BaseLdapModel):
+    # description used as description for primary groups of users
+    base_dn = 'ou=Services,' + settings.LDAP_BASE_DN
+    object_classes = force_bytestrings(['posixAccount', 'shadowAccount', 'inetOrgPerson', 'person'])
+    fqdn = CharField(db_column=force_bytestring('uid'), max_length=200, primary_key=True,
+                     validators=list(name_validators))
+    uid_number = IntegerField(db_column=force_bytestring('uidNumber'), default=None, unique=True)
+    gid_number = IntegerField(db_column=force_bytestring('gidNumber'), default=None)
+    # forced values
+    display_name = CharField(db_column=force_bytestring('displayName'), max_length=200)
+    mail = CharField(db_column=force_bytestring('mail'), default=None)
+    gecos = CharField(db_column=force_bytestring('gecos'), max_length=200, default=None)
+    cn = CharField(db_column=force_bytestring('cn'), max_length=200, default=None, validators=list(name_validators))
+    sn = CharField(db_column=force_bytestring('sn'), max_length=200, default=None, validators=list(name_validators))
+    # password values
+    user_password = CharField(db_column=force_bytestring('userPassword'), default=None)
+    # samba_nt_password = CharField(db_column=force_bytestring('sambaNTPassword'), default=None)
+
+    def save(self, using=None):
+        self.cn = self.fqdn
+        self.sn = self.fqdn
+        self.display_name = self.fqdn
+        self.gecos = self.fqdn
+        self.mail = '%s@%s' % (self.fqdn, settings.PENATES_DOMAIN)
+        self.set_next_free_value('uid_number')
+        self.gid_number = self.uid_number
+        super(ServiceAccount, self).save(using=using)
+
+    def set_password(self, password):
+        self.user_password = password_hash(password)
+        self.save()
+
+
 class DjangoUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(_('username'), max_length=250, unique=True,
                                 help_text=_('Required. Letters, digits and "/"/@/./+/-/_ only.'),
