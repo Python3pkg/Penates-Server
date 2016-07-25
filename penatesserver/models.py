@@ -9,7 +9,7 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.core import validators
 from django.core.mail import send_mail
 from django.core.validators import RegexValidator
-from django.db.models import Q
+from django.db.models import Q, force_text
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.utils import timezone
@@ -64,9 +64,9 @@ class BaseLdapModel(ldapdb.models.Model):
 class SambaDomain(BaseLdapModel):
     base_dn = settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['sambaDomain'])
-    rid_base = IntegerField(db_column=force_bytestring('sambaAlgorithmicRidBase'), default=2000)
-    sid = CharField(db_column=force_bytestring('sambaSID'))
-    name = CharField(db_column=force_bytestring('sambaDomainName'), primary_key=True)
+    rid_base = IntegerField(db_column=force_text('sambaAlgorithmicRidBase'), default=2000)
+    sid = CharField(db_column=force_text('sambaSID'))
+    name = CharField(db_column=force_text('sambaDomainName'), primary_key=True)
 
 
 # noinspection PyCallingNonCallable
@@ -76,16 +76,16 @@ def get_samba_sid():
 
 
 class Group(BaseLdapModel):
-    base_dn = force_bytestring('ou=Groups,' + settings.LDAP_BASE_DN)
+    base_dn = force_text('ou=Groups,' + settings.LDAP_BASE_DN)
     object_classes = force_bytestrings(['posixGroup', 'sambaGroupMapping'])
     # posixGroup attributes
-    name = CharField(db_column=force_bytestring('cn'), max_length=200, primary_key=True,
+    name = CharField(db_column=force_text('cn'), max_length=200, primary_key=True,
                      validators=list(name_validators))
-    gid = IntegerField(db_column=force_bytestring('gidNumber'), unique=True)
-    members = ListField(db_column=force_bytestring('memberUid'))
-    description = CharField(db_column=force_bytestring('description'), max_length=500, blank=True, default='')
-    group_type = IntegerField(db_column=force_bytestring('sambaGroupType'), default=None)
-    samba_sid = CharField(db_column=force_bytestring('sambaSID'), unique=True, default='')
+    gid = IntegerField(db_column=force_text('gidNumber'), unique=True)
+    members = ListField(db_column=force_text('memberUid'))
+    description = CharField(db_column=force_text('description'), max_length=500, blank=True, default='')
+    group_type = IntegerField(db_column=force_text('sambaGroupType'), default=None)
+    samba_sid = CharField(db_column=force_text('sambaSID'), unique=True, default='')
 
     def save(self, using=None):
         self.group_type = 2
@@ -109,9 +109,9 @@ class GroupOfNames(BaseLdapModel):
     # required by nslcd!
     base_dn = 'ou=CoreGroups,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['groupOfNames'])
-    name = CharField(db_column=force_bytestring('cn'), max_length=200, primary_key=True,
+    name = CharField(db_column=force_text('cn'), max_length=200, primary_key=True,
                      validators=list(name_validators))
-    members = ListField(db_column=force_bytestring('member'))
+    members = ListField(db_column=force_text('member'))
 
 
 class User(BaseLdapModel):
@@ -120,40 +120,40 @@ class User(BaseLdapModel):
     base_dn = 'ou=Users,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['posixAccount', 'shadowAccount', 'inetOrgPerson', 'sambaSamAccount', 'person',
                                         'AsteriskSIPUser'])
-    name = CharField(db_column=force_bytestring('uid'), max_length=200, primary_key=True,
+    name = CharField(db_column=force_text('uid'), max_length=200, primary_key=True,
                      validators=list(name_validators))
-    display_name = CharField(db_column=force_bytestring('displayName'), max_length=200)
-    uid_number = IntegerField(db_column=force_bytestring('uidNumber'), default=None, unique=True)
-    gid_number = IntegerField(db_column=force_bytestring('gidNumber'), default=None)
-    login_shell = CharField(db_column=force_bytestring('loginShell'), default='/bin/bash')
-    description = CharField(db_column=force_bytestring('description'), default='Description')
-    jpeg_photo = ImageField(db_column=force_bytestring('jpegPhoto'), max_length=10000000)
-    phone = CharField(db_column=force_bytestring('telephoneNumber'), default=None)
-    samba_acct_flags = CharField(db_column=force_bytestring('sambaAcctFlags'), default='[UX         ]')
-    user_smime_certificate = CharField(db_column=force_bytestring('userSMIMECertificate'), default=None)
-    user_certificate = CharField(db_column=force_bytestring('userCertificate'), default=None)
+    display_name = CharField(db_column=force_text('displayName'), max_length=200)
+    uid_number = IntegerField(db_column=force_text('uidNumber'), default=None, unique=True)
+    gid_number = IntegerField(db_column=force_text('gidNumber'), default=None)
+    login_shell = CharField(db_column=force_text('loginShell'), default='/bin/bash')
+    description = CharField(db_column=force_text('description'), default='Description')
+    jpeg_photo = ImageField(db_column=force_text('jpegPhoto'), max_length=10000000)
+    phone = CharField(db_column=force_text('telephoneNumber'), default=None)
+    samba_acct_flags = CharField(db_column=force_text('sambaAcctFlags'), default='[UX         ]')
+    user_smime_certificate = CharField(db_column=force_text('userSMIMECertificate'), default=None)
+    user_certificate = CharField(db_column=force_text('userCertificate'), default=None)
     # forced values
-    samba_sid = CharField(db_column=force_bytestring('sambaSID'), default=None)
-    primary_group_samba_sid = CharField(db_column=force_bytestring('sambaPrimaryGroupSID'), default=None)
-    home_directory = CharField(db_column=force_bytestring('homeDirectory'), default=None)
-    mail = CharField(db_column=force_bytestring('mail'), default=None)
-    samba_domain_name = CharField(db_column=force_bytestring('sambaDomainName'), default=None)
-    gecos = CharField(db_column=force_bytestring('gecos'), max_length=200, default=None)
-    cn = CharField(db_column=force_bytestring('cn'), max_length=200, default=None, validators=list(name_validators))
-    sn = CharField(db_column=force_bytestring('sn'), max_length=200, default=None, validators=list(name_validators))
+    samba_sid = CharField(db_column=force_text('sambaSID'), default=None)
+    primary_group_samba_sid = CharField(db_column=force_text('sambaPrimaryGroupSID'), default=None)
+    home_directory = CharField(db_column=force_text('homeDirectory'), default=None)
+    mail = CharField(db_column=force_text('mail'), default=None)
+    samba_domain_name = CharField(db_column=force_text('sambaDomainName'), default=None)
+    gecos = CharField(db_column=force_text('gecos'), max_length=200, default=None)
+    cn = CharField(db_column=force_text('cn'), max_length=200, default=None, validators=list(name_validators))
+    sn = CharField(db_column=force_text('sn'), max_length=200, default=None, validators=list(name_validators))
     # password values
-    user_password = CharField(db_column=force_bytestring('userPassword'), default=None)
-    # samba_nt_password = CharField(db_column=force_bytestring('sambaNTPassword'), default=None)
-    ast_account_caller_id = CharField(db_column=force_bytestring('AstAccountCallerID'), default=None)
-    ast_account_context = CharField(db_column=force_bytestring('AstAccountContext'), default='LocalSets')
-    ast_account_DTMF_mode = CharField(db_column=force_bytestring('AstAccountDTMFMode'), default='rfc2833')
-    ast_account_mailbox = CharField(db_column=force_bytestring('AstAccountMailbox'), default=None)
-    ast_account_NAT = CharField(db_column=force_bytestring('AstAccountNAT'), default='yes')
-    ast_account_qualify = CharField(db_column=force_bytestring('AstAccountQualify'), default='yes')
-    ast_account_type = CharField(db_column=force_bytestring('AstAccountType'), default='friend')
-    ast_account_disallowed_codec = CharField(db_column=force_bytestring('AstAccountDisallowedCodec'), default='all')
-    ast_account_allowed_codec = CharField(db_column=force_bytestring('AstAccountAllowedCodec'), default='ulaw')
-    ast_account_music_on_hold = CharField(db_column=force_bytestring('AstAccountMusicOnHold'), default='default')
+    user_password = CharField(db_column=force_text('userPassword'), default=None)
+    # samba_nt_password = CharField(db_column=force_text('sambaNTPassword'), default=None)
+    ast_account_caller_id = CharField(db_column=force_text('AstAccountCallerID'), default=None)
+    ast_account_context = CharField(db_column=force_text('AstAccountContext'), default='LocalSets')
+    ast_account_DTMF_mode = CharField(db_column=force_text('AstAccountDTMFMode'), default='rfc2833')
+    ast_account_mailbox = CharField(db_column=force_text('AstAccountMailbox'), default=None)
+    ast_account_NAT = CharField(db_column=force_text('AstAccountNAT'), default='yes')
+    ast_account_qualify = CharField(db_column=force_text('AstAccountQualify'), default='yes')
+    ast_account_type = CharField(db_column=force_text('AstAccountType'), default='friend')
+    ast_account_disallowed_codec = CharField(db_column=force_text('AstAccountDisallowedCodec'), default='all')
+    ast_account_allowed_codec = CharField(db_column=force_text('AstAccountAllowedCodec'), default='ulaw')
+    ast_account_music_on_hold = CharField(db_column=force_text('AstAccountMusicOnHold'), default='default')
 
     def save(self, using=None):
         group = self.set_gid_number()
@@ -248,8 +248,8 @@ class User(BaseLdapModel):
 class Principal(BaseLdapModel):
     base_dn = 'cn=krbContainer,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['krbPrincipal', 'krbPrincipalAux', 'krbTicketPolicyAux'])
-    name = CharField(db_column=force_bytestring('krbPrincipalName'), primary_key=True)
-    flags = IntegerField(db_column=force_bytestring('krbTicketFlags'), default=None)
+    name = CharField(db_column=force_text('krbPrincipalName'), primary_key=True)
+    flags = IntegerField(db_column=force_text('krbTicketFlags'), default=None)
 
     def save(self, using=None):
         self.flags = 128
@@ -361,28 +361,28 @@ class MountPoint(models.Model):
 class Netgroup(BaseLdapModel):
     base_dn = 'ou=netgroups,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['nisNetgroup', ])
-    name = CharField(db_column=force_bytestring('cn'), primary_key=True)
-    triple = ListField(db_column=force_bytestring('nisNetgroupTriple'))
-    member = ListField(db_column=force_bytestring('memberNisNetgroup'))
+    name = CharField(db_column=force_text('cn'), primary_key=True)
+    triple = ListField(db_column=force_text('nisNetgroupTriple'))
+    member = ListField(db_column=force_text('memberNisNetgroup'))
 
 
 class ServiceAccount(BaseLdapModel):
     # description used as description for primary groups of users
     base_dn = 'ou=Services,' + settings.LDAP_BASE_DN
     object_classes = force_bytestrings(['posixAccount', 'shadowAccount', 'inetOrgPerson', 'person'])
-    fqdn = CharField(db_column=force_bytestring('uid'), max_length=200, primary_key=True,
+    fqdn = CharField(db_column=force_text('uid'), max_length=200, primary_key=True,
                      validators=list(name_validators))
-    uid_number = IntegerField(db_column=force_bytestring('uidNumber'), default=None, unique=True)
-    gid_number = IntegerField(db_column=force_bytestring('gidNumber'), default=None)
+    uid_number = IntegerField(db_column=force_text('uidNumber'), default=None, unique=True)
+    gid_number = IntegerField(db_column=force_text('gidNumber'), default=None)
     # forced values
-    display_name = CharField(db_column=force_bytestring('displayName'), max_length=200)
-    mail = CharField(db_column=force_bytestring('mail'), default=None)
-    gecos = CharField(db_column=force_bytestring('gecos'), max_length=200, default=None)
-    cn = CharField(db_column=force_bytestring('cn'), max_length=200, default=None, validators=list(name_validators))
-    sn = CharField(db_column=force_bytestring('sn'), max_length=200, default=None, validators=list(name_validators))
+    display_name = CharField(db_column=force_text('displayName'), max_length=200)
+    mail = CharField(db_column=force_text('mail'), default=None)
+    gecos = CharField(db_column=force_text('gecos'), max_length=200, default=None)
+    cn = CharField(db_column=force_text('cn'), max_length=200, default=None, validators=list(name_validators))
+    sn = CharField(db_column=force_text('sn'), max_length=200, default=None, validators=list(name_validators))
     # password values
-    user_password = CharField(db_column=force_bytestring('userPassword'), default=None)
-    # samba_nt_password = CharField(db_column=force_bytestring('sambaNTPassword'), default=None)
+    user_password = CharField(db_column=force_text('userPassword'), default=None)
+    # samba_nt_password = CharField(db_column=force_text('sambaNTPassword'), default=None)
 
     def save(self, using=None):
         self.cn = self.fqdn

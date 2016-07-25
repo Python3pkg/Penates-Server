@@ -2,6 +2,8 @@
 from __future__ import unicode_literals
 from argparse import ArgumentParser
 from django.core.management import BaseCommand
+from django.utils.encoding import force_text
+
 from penatesserver.models import User, Group
 
 __author__ = 'Matthieu Gallet'
@@ -21,7 +23,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        username = options['username']
+        username = force_text(options['username'])
         users = list(User.objects.filter(name=username)[0:1])
         if not users:
             user = User(name=username, uid_number=options['uid'], gid_number=options['gid'])
