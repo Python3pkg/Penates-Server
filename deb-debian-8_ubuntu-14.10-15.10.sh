@@ -39,6 +39,7 @@ mv deb_dist/*deb deb
 
 
 
+sudo dpkg -i deb/python-pyldap_*.deb
 sudo dpkg -i deb/python-django_*.deb
 sudo apt-get install --yes django-filter python-django-filter
 
