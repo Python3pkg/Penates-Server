@@ -54,7 +54,7 @@ class BaseLdapModel(ldapdb.models.Model):
     def set_next_free_value(self, attr_name, default=2000):
         if getattr(self, attr_name) is not None:
             return
-        values = list(self.__class__.objects.all().order_by(b'-' + attr_name.encode('utf-8'))[0:1])
+        values = list(self.__class__.objects.all().order_by('-' + attr_name)[0:1])
         if not values:
             setattr(self, attr_name, default)
         else:
