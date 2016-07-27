@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
+from django.utils.encoding import force_text
+
 from djangofloor.iniconf import OptionParser, bool_setting, strip_split
 
 __author__ = 'Matthieu Gallet'
@@ -20,10 +23,10 @@ INI_MAPPING = [
     OptionParser('PDNS_HOST', 'powerdns.host'),
     OptionParser('PDNS_PORT', 'powerdns.port'),
 
-    OptionParser('LDAP_BASE_DN', 'ldap.base_dn', converter=unicode),
-    OptionParser('LDAP_NAME', 'ldap.name', converter=unicode),
-    OptionParser('LDAP_USER', 'ldap.user', converter=unicode),
-    OptionParser('LDAP_PASSWORD', 'ldap.password', converter=unicode),
+    OptionParser('LDAP_BASE_DN', 'ldap.base_dn', converter=force_text),
+    OptionParser('LDAP_NAME', 'ldap.name', converter=force_text),
+    OptionParser('LDAP_USER', 'ldap.user', converter=force_text),
+    OptionParser('LDAP_PASSWORD', 'ldap.password', converter=force_text),
 
     OptionParser('PENATES_DOMAIN', 'penates.domain'),
     OptionParser('PENATES_COUNTRY', 'penates.country'),
