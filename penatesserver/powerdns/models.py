@@ -5,11 +5,16 @@ import datetime
 import re
 import time
 from django.conf import settings
+from django.utils.encoding import force_text
 from django.utils.six import text_type
 import netaddr
 from penatesserver.pki.service import CertificateEntry
 from django.db import models
 from penatesserver.subnets import get_subnets
+from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField as ImageField_
+import ldapdb.models
+
+from penatesserver.utils import force_bytestrings
 
 __author__ = 'Matthieu Gallet'
 
@@ -281,3 +286,15 @@ class TSIGKey(models.Model):
         managed = False
         db_table = 'tsigkeys'
         unique_together = (('name', 'algorithm'), )
+
+
+class LdapDomain(ldapdb.models.Model):
+    base_dn = force_text('ou=dns,' + settings.LDAP_BASE_DN)
+    object_classes = force_bytestrings(['dnsdomain', 'domainrelatedobject'])
+    name = CharField(db_column=force_text('dc'), primary_key=True)
+
+
+class LdapRecord(ldapdb.models.Model):
+    base_dn = force_text('ou=dns,' + settings.LDAP_BASE_DN)
+    object_classes = force_bytestrings(['dnsdomain', 'domainrelatedobject'])
+    name = CharField(db_column=force_text('dc'), primary_key=True)
