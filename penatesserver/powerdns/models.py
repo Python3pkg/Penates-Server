@@ -287,14 +287,14 @@ class TSIGKey(models.Model):
         db_table = 'tsigkeys'
         unique_together = (('name', 'algorithm'), )
 
-
-class LdapDomain(ldapdb.models.Model):
-    base_dn = force_text('ou=dns,' + settings.LDAP_BASE_DN)
-    object_classes = force_bytestrings(['dnsdomain', 'domainrelatedobject'])
-    name = CharField(db_column=force_text('dc'), primary_key=True)
-
-
-class LdapRecord(ldapdb.models.Model):
-    base_dn = force_text('ou=dns,' + settings.LDAP_BASE_DN)
-    object_classes = force_bytestrings(['dnsdomain', 'domainrelatedobject'])
-    name = CharField(db_column=force_text('dc'), primary_key=True)
+#
+# class LdapDomain(ldapdb.models.Model):
+#     base_dn = force_text('ou=dns,' + settings.LDAP_BASE_DN)
+#     object_classes = force_bytestrings(['dnsdomain', 'domainrelatedobject'])
+#     name = CharField(db_column=force_text('dc'), primary_key=True)
+#
+#
+# class LdapRecord(ldapdb.models.Model):
+#     base_dn = force_text('ou=dns,' + settings.LDAP_BASE_DN)
+#     object_classes = force_bytestrings(['dnsdomain', 'domainrelatedobject'])
+#     name = CharField(db_column=force_text('dc'), primary_key=True)
