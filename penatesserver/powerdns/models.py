@@ -11,7 +11,7 @@ import netaddr
 from penatesserver.pki.service import CertificateEntry
 from django.db import models
 from penatesserver.subnets import get_subnets
-from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField as ImageField_
+from ldapdb.models.fields import CharField
 import ldapdb.models
 
 from penatesserver.utils import force_bytestrings

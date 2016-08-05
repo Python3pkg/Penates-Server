@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 import codecs
 import os
 
+import ldapdb.models
 from django.conf import settings
-from django.contrib.auth.models import PermissionsMixin, UserManager, Permission
 from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import PermissionsMixin, UserManager, Permission
 from django.core import validators
 from django.core.mail import send_mail
 from django.core.validators import RegexValidator
+from django.db import models
 from django.db.models import Q
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
@@ -16,18 +19,15 @@ from django.utils import timezone
 from django.utils.encoding import force_text
 from django.utils.lru_cache import lru_cache
 from django.utils.translation import ugettext as _
-from django.db import models
 from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField as ImageField_
-import ldapdb.models
-from penatesserver.glpi.models import ShinkenService
 
+from penatesserver.glpi.models import ShinkenService
 from penatesserver.kerb import change_password, delete_principal, add_principal
 from penatesserver.pki.constants import USER, EMAIL, SIGNATURE, ENCIPHERMENT
 from penatesserver.pki.service import CertificateEntry
 from penatesserver.powerdns.models import Record
-from penatesserver.utils import force_bytestrings, force_bytestring, password_hash, ensure_location, \
+from penatesserver.utils import force_bytestrings, password_hash, ensure_location, \
     principal_from_hostname
-
 
 __author__ = 'flanker'
 name_pattern = r'[a-zA-Z][\w_\-]{0,199}'
