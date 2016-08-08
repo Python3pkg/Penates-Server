@@ -9,7 +9,7 @@ sudo apt-get install --yes python-all-dev virtualenvwrapper \
     python-tz python-setuptools \
     python-oauthlib python-sqlparse \
     apache2 libapr1 libaprutil1 libaprutil1-dbd-sqlite3 libaprutil1-ldap gunicorn python-celery \
-    python-medusa python-meld3 ssl-cert python-msgpack python-gunicorn
+    python-medusa python-meld3 ssl-cert python-msgpack python-gunicorn python-django-debug-toolbar
 sudo apt-get install --yes libldap2-dev libsasl2-dev python-markdown\
  python-pygments python-netaddr python-jinja2 python-futures
 source /etc/bash_completion.d/virtualenvwrapper
