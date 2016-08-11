@@ -40,6 +40,7 @@ class Command(BaseCommand):
         else:
             user.save()
         for group_name in options['group']:
+            group_name = force_text(group_name)
             groups = list(Group.objects.filter(name=group_name)[0:1])
             if groups:
                 group = groups[0]

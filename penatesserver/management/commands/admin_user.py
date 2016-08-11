@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from argparse import ArgumentParser
-from django.contrib.auth.models import Permission
 
+from argparse import ArgumentParser
+
+from django.contrib.auth.models import Permission
 from django.core.management import BaseCommand
 from django.utils.encoding import force_text
 
-from penatesserver.models import Group, AdminUser
+from penatesserver.models import AdminUser
 
 __author__ = 'Matthieu Gallet'
 
@@ -29,5 +30,5 @@ class Command(BaseCommand):
         if options['password']:
             user.set_password(force_text(options['password']))
         user.save()
-        permissions = list(Permission.objects.filter(codename__in=force_text(options['permission'])))
+        permissions = list(Permission.objects.filter(codename__in=[force_text(x) for x in options['permission']]))
         user.user_permissions.add(*permissions)
