@@ -111,12 +111,14 @@ def get_shinken_services():
                            'check_command': check % (service.hostname, service.port),
                            'notifications_enabled': '0', })
         elif service.scheme == 'krb':
-            result.append({'use': 'local-service',
-                           'host_name': service.fqdn,
-                           'service_description': _('Kerberos on %(fqdn)s:%(port)s') %
-                           {'fqdn': service.hostname, 'port': service.port, },
-                           'check_command': 'check_tcp!%s' % service.port,
-                           'notifications_enabled': '0', })
+            # Do nothing. otherwise each TCP check is an error from the KDC point of view
+            pass
+            # result.append({'use': 'local-service',
+            #                'host_name': service.fqdn,
+            #                'service_description': _('Kerberos on %(fqdn)s:%(port)s') %
+            #                {'fqdn': service.hostname, 'port': service.port, },
+            #                'check_command': 'check_tcp!%s' % service.port,
+            #                'notifications_enabled': '0', })
         elif service.scheme == 'dns':
             result.append({'use': 'local-service',
                            'host_name': service.fqdn,
