@@ -18,6 +18,7 @@ class ManagedModelTestRunner(DiscoverRunner):
             from django.apps import apps
             get_models = apps.get_models
         except ImportError:
+            # noinspection PyUnresolvedReferences
             from django.db.models.loading import get_models
         # noinspection PyAttributeOutsideInit,PyProtectedMember
         self.unmanaged_models = [m for m in get_models() if not m._meta.managed]

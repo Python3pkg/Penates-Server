@@ -1,8 +1,11 @@
 # -*- coding=utf-8 -*-
 from __future__ import unicode_literals
+
 import argparse
+
 from django.core.management.base import BaseCommand
-from penatesserver.models import Host, Service
+
+from penatesserver.models import Service
 
 __author__ = 'mgallet'
 

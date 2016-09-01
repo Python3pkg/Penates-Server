@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 import codecs
 import datetime
 import re
 import time
-from django.conf import settings
-from django.utils.encoding import force_text
-from django.utils.six import text_type
-import netaddr
-from penatesserver.pki.service import CertificateEntry
-from django.db import models
-from penatesserver.subnets import get_subnets
-from ldapdb.models.fields import CharField
-import ldapdb.models
 
-from penatesserver.utils import force_bytestrings
+import netaddr
+from django.conf import settings
+from django.db import models
+from django.utils.six import text_type
+
+from penatesserver.pki.service import CertificateEntry
+from penatesserver.subnets import get_subnets
 
 __author__ = 'Matthieu Gallet'
 
@@ -224,6 +222,8 @@ class Record(models.Model):
         domain_name = self.domain.name
         # noinspection PyTypeChecker
         self.auth = self.name.endswith(domain_name)
+        if self.type in ('A', 'AAAA', 'CNAME', 'NS', 'SOA', 'MX', 'SRV'):
+            self.content = self.content.lower()
         if self.auth:
             comp = self.name[:-(1 + len(domain_name))].split(text_type('.'))
             comp.reverse()

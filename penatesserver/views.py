@@ -24,12 +24,12 @@ from penatesserver.decorators import admin_required
 from penatesserver.forms import PasswordForm
 from penatesserver.kerb import add_principal_to_keytab, add_principal, principal_exists
 from penatesserver.models import Service, Host, User, Group, MountPoint
-from penatesserver.pki.constants import COMPUTER, SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER, SERVICE_1024
+from penatesserver.pki.constants import SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER, SERVICE_1024
 from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain, Record
 from penatesserver.serializers import UserSerializer, GroupSerializer
 from penatesserver.subnets import get_subnets
-from penatesserver.utils import hostname_from_principal, principal_from_hostname
+from penatesserver.utils import hostname_from_principal, principal_from_hostname, register_host, register_mac_address
 
 __author__ = 'flanker'
 
@@ -44,20 +44,6 @@ class KeytabResponse(HttpResponse):
             keytab_content = bytes(fd.read())
         os.remove(keytab_filename)
         super(KeytabResponse, self).__init__(content=keytab_content, content_type='application/keytab', **kwargs)
-
-
-def entry_from_hostname(hostname):
-    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
-                            organizationalUnitName=_('Computers'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
-                            localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
-                            stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
-
-
-def admin_entry_from_hostname(hostname):
-    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
-                            organizationalUnitName=_('Computers'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
-                            localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
-                            stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
 
 
 @login_required
@@ -99,30 +85,17 @@ def get_host_keytab(request, hostname):
     :rtype:
     """
     admin_ip_address = request.GET.get('ip_address')
-    ip_address = request.META.get('HTTP_X_FORWARDED_FOR')
+    hostname = hostname.lower()
+    main_ip_address = request.META.get('HTTP_X_FORWARDED_FOR')
     short_hostname = hostname.partition('.')[0]
-    domain_name = settings.PENATES_DOMAIN
-    fqdn = '%s.%s%s' % (short_hostname, settings.PDNS_INFRA_PREFIX, domain_name)
+    fqdn = '%s.%s%s' % (short_hostname, settings.PDNS_INFRA_PREFIX, settings.PENATES_DOMAIN)
     # valid FQDN
     # create Kerberos principal
     principal = principal_from_hostname(fqdn, settings.PENATES_REALM)
     if principal_exists(principal):
         return HttpResponse('', status=403)
-    else:
-        add_principal(principal)
-    Host.objects.get_or_create(fqdn=fqdn)
-    # create private key, public key, public certificate, public SSH key
-    entry = entry_from_hostname(fqdn)
-    pki = PKI()
-    pki.ensure_certificate(entry)
-    # create DNS records
-    if ip_address:
-        Domain.ensure_auto_record(ip_address, fqdn, unique=True, override_reverse=True)
-        Host.objects.filter(fqdn=fqdn).update(main_ip_address=ip_address)
-    if admin_ip_address:
-        admin_fqdn = '%s.%s%s' % (short_hostname, settings.PDNS_ADMIN_PREFIX, domain_name)
-        Domain.ensure_auto_record(admin_ip_address, admin_fqdn, unique=True, override_reverse=False)
-        Host.objects.filter(fqdn=fqdn).update(admin_ip_address=admin_ip_address)
+
+    principal = register_host(short_hostname, main_ip_address, admin_ip_address)
     if settings.OFFER_HOST_KEYTABS:
         return KeytabResponse(principal)
     return HttpResponse('', content_type='text/plain', status=201)
@@ -136,20 +109,10 @@ def set_dhcp(request, mac_address):
     except ValueError:
         return HttpResponse(status=401, content='Unable to register IP and MAC addresses: invalid username')
 
-    mac_address = mac_address.replace('-', ':').upper()
     remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
     admin_mac_address = request.GET.get('mac_address')
     admin_ip_address = request.GET.get('ip_address')
-    admin_mac_address = admin_mac_address.replace('-', ':').upper()
-    if remote_addr:
-        Host.objects.filter(fqdn=hostname).update(main_ip_address=remote_addr, main_mac_address=mac_address)
-        Record.objects.filter(name=hostname).update(content=remote_addr)
-    if admin_ip_address and admin_mac_address:
-        domain_name = '%s%s' % (settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
-        long_admin_hostname = '%s.%s' % (hostname.partition('.')[0], domain_name)
-        Host.objects.filter(fqdn=hostname) \
-            .update(admin_ip_address=admin_ip_address, admin_mac_address=admin_mac_address)
-        Domain.ensure_auto_record(admin_ip_address, long_admin_hostname, unique=True, override_reverse=False)
+    register_mac_address(hostname, remote_addr, mac_address, admin_ip_address, admin_mac_address)
     return HttpResponse(status=201)
 
 

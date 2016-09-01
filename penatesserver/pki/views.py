@@ -12,8 +12,7 @@ from penatesserver.models import User, Service
 from penatesserver.pki.constants import SERVICE_1024, PRINTER, KERBEROS_DC, SERVICE, TIME_SERVER
 from penatesserver.pki.service import PKI, CertificateEntry
 from penatesserver.powerdns.models import Domain
-from penatesserver.utils import hostname_from_principal
-from penatesserver.views import entry_from_hostname, admin_entry_from_hostname
+from penatesserver.utils import hostname_from_principal, entry_from_hostname, admin_entry_from_hostname
 
 __author__ = 'Matthieu Gallet'
 

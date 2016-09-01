@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 import argparse
-import os
+
 from django.conf import settings
 from django.core.management import BaseCommand
+
 from penatesserver.pki.constants import ROLES, ALT_TYPES
 from penatesserver.pki.service import CertificateEntry, PKI
 

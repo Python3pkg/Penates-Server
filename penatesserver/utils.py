@@ -8,12 +8,38 @@ import os
 import random
 import re
 import string
+
+from django.conf import settings
 from django.utils.encoding import force_text
 
 from django.utils.timezone import utc
 import unicodedata
 
+from django.utils.translation import ugettext as _
+
+from penatesserver.kerb import add_principal
+from penatesserver.models import Host
+from penatesserver.pki.constants import COMPUTER
+from penatesserver.pki.service import PKI, CertificateEntry
+from penatesserver.powerdns.models import Domain, Record
+
 T61_RE = re.compile(r'^([A-Z][a-z]{2}) {1,2}(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2}) (\d{4}).*$')
+
+
+def entry_from_hostname(hostname):
+    hostname = hostname.lower()
+    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
+                            organizationalUnitName=_('Computers'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
+                            localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                            stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
+
+
+def admin_entry_from_hostname(hostname):
+    hostname = hostname.lower()
+    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
+                            organizationalUnitName=_('Computers'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
+                            localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                            stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
 
 
 def is_admin(username):
@@ -84,7 +110,7 @@ def hostname_from_principal(principal):
     """
     if not principal.startswith(__host_pattern):
         raise ValueError
-    return principal[len(__host_pattern):].partition('@')[0]
+    return principal[len(__host_pattern):].partition('@')[0].lower()
 
 
 def principal_from_hostname(hostname, realm):
@@ -93,7 +119,8 @@ def principal_from_hostname(hostname, realm):
     >>> principal_from_hostname('machine.test.example.org', 'TEST.EXAMPLE.ORG') == result
     True
     """
-    return '%s%s@%s' % (__host_pattern, hostname, realm)
+    # noinspection PyUnresolvedReferences
+    return '%s%s@%s' % (__host_pattern, hostname, realm).lower()
 
 
 def ensure_list(value):
@@ -117,7 +144,8 @@ def ensure_list(value):
 
 def dhcp_list_to_dict(value_list):
     """Convert a list of DHCP values to a dict
-    >>> dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23']) == OrderedDict([('key1', ['value11', 'value12']), ('key2', ['value21', 'value22', 'value23'])])
+    >>> x = OrderedDict([('key1', ['value11', 'value12']), ('key2', ['value21', 'value22', 'value23'])])
+    >>> dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23']) == x
     True
 
     :rtype: :class:`collections.OrderedDict`
@@ -133,10 +161,12 @@ def dhcp_list_to_dict(value_list):
 def dhcp_dict_to_list(value_dict):
     """ Convert a dict to a list of DHCP values
 
-    >>> dhcp_dict_to_list(dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23'])) == ['key1 value11 value12', 'key2 value21 value22 value23']
+    >>> x = ['key1 value11 value12', 'key2 value21 value22 value23']
+    >>> dhcp_dict_to_list(dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23'])) == x
     True
 
-    >>> dhcp_dict_to_list(dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23'])) == ['key1 value11 value12', 'key2 value21 value22 value23']
+    >>> x = ['key1 value11 value12', 'key2 value21 value22 value23']
+    >>> dhcp_dict_to_list(dhcp_list_to_dict(['key1 value11 value12', 'key2 value21 value22 value23'])) == x
     True
 
     :rtype: :class:`list`
@@ -188,6 +218,40 @@ def clean_string(value, allow_unicode=False):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub(allowed_pattern, '-', value).strip()
     return value
+
+
+def register_host(short_hostname, main_ip_address=None, admin_ip_address=None):
+    fqdn = '%s.%s%s' % (short_hostname, settings.PDNS_INFRA_PREFIX, settings.PENATES_DOMAIN)
+    principal = principal_from_hostname(fqdn, settings.PENATES_REALM)
+    add_principal(principal)
+    Host.objects.get_or_create(fqdn=fqdn)
+    # create private key, public key, public certificate, public SSH key
+    entry = entry_from_hostname(fqdn)
+    pki = PKI()
+    pki.ensure_certificate(entry)
+    # create DNS records
+    if main_ip_address:
+        Domain.ensure_auto_record(main_ip_address, fqdn, unique=True, override_reverse=True)
+        Host.objects.filter(fqdn=fqdn).update(main_ip_address=main_ip_address)
+    if admin_ip_address:
+        admin_fqdn = '%s.%s%s' % (short_hostname, settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
+        Domain.ensure_auto_record(admin_ip_address, admin_fqdn, unique=True, override_reverse=False)
+        Host.objects.filter(fqdn=fqdn).update(admin_ip_address=admin_ip_address)
+    return principal
+
+
+def register_mac_address(fqdn, main_ip_address, main_mac_address, admin_ip_address, admin_mac_address):
+    main_mac_address = main_mac_address.replace('-', ':').upper()
+    admin_mac_address = admin_mac_address.replace('-', ':').upper()
+    if main_ip_address:
+        Host.objects.filter(fqdn=fqdn).update(main_ip_address=main_ip_address, main_mac_address=main_mac_address)
+        Record.objects.filter(name=fqdn).update(content=main_ip_address)
+    if admin_ip_address and admin_mac_address:
+        domain_name = '%s%s' % (settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
+        long_admin_hostname = '%s.%s' % (fqdn.partition('.')[0], domain_name)
+        Host.objects.filter(fqdn=fqdn) \
+            .update(admin_ip_address=admin_ip_address, admin_mac_address=admin_mac_address)
+        Domain.ensure_auto_record(admin_ip_address, long_admin_hostname, unique=True, override_reverse=False)
 
 
 if __name__ == '__main__':
