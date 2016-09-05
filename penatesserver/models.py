@@ -24,10 +24,10 @@ from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField 
 from penatesserver.glpi.models import ShinkenService
 from penatesserver.kerb import change_password, delete_principal, add_principal
 from penatesserver.pki.constants import USER, EMAIL, SIGNATURE, ENCIPHERMENT
-from penatesserver.pki.service import CertificateEntry
-from penatesserver.powerdns.models import Record
+from penatesserver.pki.service import CertificateEntry, PKI
+from penatesserver.powerdns.models import Record, Domain
 from penatesserver.utils import force_bytestrings, password_hash, ensure_location, \
-    principal_from_hostname
+    principal_from_hostname, entry_from_hostname
 
 __author__ = 'flanker'
 name_pattern = r'[a-zA-Z][\w_\-]{0,199}'
@@ -315,6 +315,40 @@ class Host(models.Model):
     @property
     def principal(self):
         return principal_from_hostname(self.fqdn, settings.PENATES_REALM)
+
+    @staticmethod
+    def register_host(short_hostname, main_ip_address=None, admin_ip_address=None):
+        fqdn = '%s.%s%s' % (short_hostname, settings.PDNS_INFRA_PREFIX, settings.PENATES_DOMAIN)
+        principal = principal_from_hostname(fqdn, settings.PENATES_REALM)
+        add_principal(principal)
+        Host.objects.get_or_create(fqdn=fqdn)
+        # create private key, public key, public certificate, public SSH key
+        entry = entry_from_hostname(fqdn)
+        pki = PKI()
+        pki.ensure_certificate(entry)
+        # create DNS records
+        if main_ip_address:
+            Domain.ensure_auto_record(main_ip_address, fqdn, unique=True, override_reverse=True)
+            Host.objects.filter(fqdn=fqdn).update(main_ip_address=main_ip_address)
+        if admin_ip_address:
+            admin_fqdn = '%s.%s%s' % (short_hostname, settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
+            Domain.ensure_auto_record(admin_ip_address, admin_fqdn, unique=True, override_reverse=False)
+            Host.objects.filter(fqdn=fqdn).update(admin_ip_address=admin_ip_address)
+        return principal
+
+    @staticmethod
+    def register_mac_address(fqdn, main_ip_address, main_mac_address, admin_ip_address, admin_mac_address):
+        main_mac_address = main_mac_address.replace('-', ':').upper()
+        admin_mac_address = admin_mac_address.replace('-', ':').upper()
+        if main_ip_address:
+            Host.objects.filter(fqdn=fqdn).update(main_ip_address=main_ip_address, main_mac_address=main_mac_address)
+            Record.objects.filter(name=fqdn).update(content=main_ip_address)
+        if admin_ip_address and admin_mac_address:
+            domain_name = '%s%s' % (settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
+            long_admin_hostname = '%s.%s' % (fqdn.partition('.')[0], domain_name)
+            Host.objects.filter(fqdn=fqdn) \
+                .update(admin_ip_address=admin_ip_address, admin_mac_address=admin_mac_address)
+            Domain.ensure_auto_record(admin_ip_address, long_admin_hostname, unique=True, override_reverse=False)
 
 
 @receiver(post_delete, sender=Host)

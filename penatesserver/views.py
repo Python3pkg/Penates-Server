@@ -29,7 +29,7 @@ from penatesserver.pki.service import CertificateEntry, PKI
 from penatesserver.powerdns.models import Domain, Record
 from penatesserver.serializers import UserSerializer, GroupSerializer
 from penatesserver.subnets import get_subnets
-from penatesserver.utils import hostname_from_principal, principal_from_hostname, register_host, register_mac_address
+from penatesserver.utils import hostname_from_principal, principal_from_hostname
 
 __author__ = 'flanker'
 
@@ -95,7 +95,7 @@ def get_host_keytab(request, hostname):
     if principal_exists(principal):
         return HttpResponse('', status=403)
 
-    principal = register_host(short_hostname, main_ip_address, admin_ip_address)
+    principal = Host.register_host(short_hostname, main_ip_address, admin_ip_address)
     if settings.OFFER_HOST_KEYTABS:
         return KeytabResponse(principal)
     return HttpResponse('', content_type='text/plain', status=201)
@@ -112,7 +112,7 @@ def set_dhcp(request, mac_address):
     remote_addr = request.META.get('HTTP_X_FORWARDED_FOR', '')
     admin_mac_address = request.GET.get('mac_address')
     admin_ip_address = request.GET.get('ip_address')
-    register_mac_address(hostname, remote_addr, mac_address, admin_ip_address, admin_mac_address)
+    Host.register_mac_address(hostname, remote_addr, mac_address, admin_ip_address, admin_mac_address)
     return HttpResponse(status=201)
 
 

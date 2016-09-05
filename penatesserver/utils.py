@@ -18,7 +18,6 @@ import unicodedata
 from django.utils.translation import ugettext as _
 
 from penatesserver.kerb import add_principal
-from penatesserver.models import Host
 from penatesserver.pki.constants import COMPUTER
 from penatesserver.pki.service import PKI, CertificateEntry
 from penatesserver.powerdns.models import Domain, Record
@@ -218,40 +217,6 @@ def clean_string(value, allow_unicode=False):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub(allowed_pattern, '-', value).strip()
     return value
-
-
-def register_host(short_hostname, main_ip_address=None, admin_ip_address=None):
-    fqdn = '%s.%s%s' % (short_hostname, settings.PDNS_INFRA_PREFIX, settings.PENATES_DOMAIN)
-    principal = principal_from_hostname(fqdn, settings.PENATES_REALM)
-    add_principal(principal)
-    Host.objects.get_or_create(fqdn=fqdn)
-    # create private key, public key, public certificate, public SSH key
-    entry = entry_from_hostname(fqdn)
-    pki = PKI()
-    pki.ensure_certificate(entry)
-    # create DNS records
-    if main_ip_address:
-        Domain.ensure_auto_record(main_ip_address, fqdn, unique=True, override_reverse=True)
-        Host.objects.filter(fqdn=fqdn).update(main_ip_address=main_ip_address)
-    if admin_ip_address:
-        admin_fqdn = '%s.%s%s' % (short_hostname, settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
-        Domain.ensure_auto_record(admin_ip_address, admin_fqdn, unique=True, override_reverse=False)
-        Host.objects.filter(fqdn=fqdn).update(admin_ip_address=admin_ip_address)
-    return principal
-
-
-def register_mac_address(fqdn, main_ip_address, main_mac_address, admin_ip_address, admin_mac_address):
-    main_mac_address = main_mac_address.replace('-', ':').upper()
-    admin_mac_address = admin_mac_address.replace('-', ':').upper()
-    if main_ip_address:
-        Host.objects.filter(fqdn=fqdn).update(main_ip_address=main_ip_address, main_mac_address=main_mac_address)
-        Record.objects.filter(name=fqdn).update(content=main_ip_address)
-    if admin_ip_address and admin_mac_address:
-        domain_name = '%s%s' % (settings.PDNS_ADMIN_PREFIX, settings.PENATES_DOMAIN)
-        long_admin_hostname = '%s.%s' % (fqdn.partition('.')[0], domain_name)
-        Host.objects.filter(fqdn=fqdn) \
-            .update(admin_ip_address=admin_ip_address, admin_mac_address=admin_mac_address)
-        Domain.ensure_auto_record(admin_ip_address, long_admin_hostname, unique=True, override_reverse=False)
 
 
 if __name__ == '__main__':
