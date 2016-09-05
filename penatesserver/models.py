@@ -24,16 +24,16 @@ from ldapdb.models.fields import CharField, IntegerField, ListField, ImageField 
 from penatesserver.glpi.models import ShinkenService
 from penatesserver.kerb import change_password, delete_principal, add_principal
 from penatesserver.pki.constants import USER, EMAIL, SIGNATURE, ENCIPHERMENT
-from penatesserver.pki.service import CertificateEntry, PKI
+from penatesserver.pki.service import CertificateEntry, PKI, entry_from_hostname
 from penatesserver.powerdns.models import Record, Domain
-from penatesserver.utils import force_bytestrings, password_hash, ensure_location, \
-    principal_from_hostname, entry_from_hostname
+from penatesserver.utils import force_bytestrings, password_hash, ensure_location, principal_from_hostname
 
 __author__ = 'flanker'
 name_pattern = r'[a-zA-Z][\w_\-]{0,199}'
 name_validators = [RegexValidator('^%s$' % name_pattern)]
 
 
+# noinspection PyClassHasNoInit
 class ImageField(ImageField_):
     def get_internal_type(self):
         return 'CharField'
@@ -91,6 +91,7 @@ class Group(BaseLdapModel):
     def save(self, using=None):
         self.group_type = 2
         self.set_next_free_value('gid', default=10000)
+        # noinspection PyStringFormat
         self.samba_sid = '%s-%d' % (get_samba_sid(), self.gid)
         super(Group, self).save(using=using)
         group_of_names = list(GroupOfNames.objects.filter(name=self.name)[0:1])
@@ -530,6 +531,7 @@ class Service(models.Model):
 
     @property
     def smart_port(self):
+        # noinspection PyTypeChecker
         if self.encryption == 'tls' and self.port == self.default_tls_ports.get(self.scheme):
             return ''
         elif self.encryption != 'tls' and self.port == self.default_ports.get(self.scheme):

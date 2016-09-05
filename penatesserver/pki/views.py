@@ -10,9 +10,9 @@ from django.utils.translation import ugettext as _
 
 from penatesserver.models import User, Service
 from penatesserver.pki.constants import SERVICE_1024, PRINTER, KERBEROS_DC, SERVICE, TIME_SERVER
-from penatesserver.pki.service import PKI, CertificateEntry
+from penatesserver.pki.service import PKI, CertificateEntry, entry_from_hostname, admin_entry_from_hostname
 from penatesserver.powerdns.models import Domain
-from penatesserver.utils import hostname_from_principal, entry_from_hostname, admin_entry_from_hostname
+from penatesserver.utils import hostname_from_principal
 
 __author__ = 'Matthieu Gallet'
 
@@ -69,7 +69,8 @@ def get_service_certificate(request, scheme, hostname, port):
     role = request.GET.get('role', SERVICE)
     protocol = request.GET.get('protocol', 'tcp')
     port = int(port)
-    services = list(Service.objects.filter(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)[0:1])
+    query = Service.objects.filter(fqdn=fqdn, scheme=scheme, hostname=hostname, port=port, protocol=protocol)
+    services = list(query[0:1])
     if not services:
         return HttpResponse(status=404, content='%s://%s:%s/ unknown' % (scheme, hostname, port))
     if role not in (SERVICE, KERBEROS_DC, PRINTER, TIME_SERVER, SERVICE_1024):
@@ -86,6 +87,7 @@ def get_service_certificate(request, scheme, hostname, port):
     return CertificateEntryResponse(entry)
 
 
+# noinspection PyUnusedLocal
 def get_crl(request):
     pki = PKI()
     pki.ensure_crl()
@@ -95,6 +97,7 @@ def get_crl(request):
     return HttpResponse(content, content_type='text/plain')
 
 
+# noinspection PyUnusedLocal
 def get_ca_certificate(request, kind='ca'):
     pki = PKI()
     if kind == 'ca':

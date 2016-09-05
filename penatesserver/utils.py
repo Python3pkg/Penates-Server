@@ -1,44 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from base64 import b64encode, b64decode
-from collections import OrderedDict
+
 import datetime
 import hashlib
 import os
 import random
 import re
 import string
-
-from django.conf import settings
-from django.utils.encoding import force_text
-
-from django.utils.timezone import utc
 import unicodedata
+from base64 import b64encode, b64decode
+from collections import OrderedDict
 
-from django.utils.translation import ugettext as _
-
-from penatesserver.kerb import add_principal
-from penatesserver.pki.constants import COMPUTER
-from penatesserver.pki.service import PKI, CertificateEntry
-from penatesserver.powerdns.models import Domain, Record
+from django.utils.encoding import force_text
+from django.utils.timezone import utc
 
 T61_RE = re.compile(r'^([A-Z][a-z]{2}) {1,2}(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2}) (\d{4}).*$')
-
-
-def entry_from_hostname(hostname):
-    hostname = hostname.lower()
-    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
-                            organizationalUnitName=_('Computers'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
-                            localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
-                            stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
-
-
-def admin_entry_from_hostname(hostname):
-    hostname = hostname.lower()
-    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
-                            organizationalUnitName=_('Computers'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
-                            localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
-                            stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
 
 
 def is_admin(username):

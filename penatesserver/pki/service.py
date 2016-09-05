@@ -21,6 +21,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.utils.text import slugify
+from django.utils.translation import ugettext as _
 from django.utils.timezone import utc
 from penatesserver.filelocks import Lock
 
@@ -615,3 +616,19 @@ class PKI(object):
                                   'file:%s' % fd.name, '-aes256', '-in', entry.crt_filename, '-inkey',
                                   entry.key_filename, '-certfile', self.cacrt_path, '-name', entry.filename, ])
             p.communicate()
+
+
+def entry_from_hostname(hostname):
+    hostname = hostname.lower()
+    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
+                            organizationalUnitName=_('Computers'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
+                            localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                            stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
+
+
+def admin_entry_from_hostname(hostname):
+    hostname = hostname.lower()
+    return CertificateEntry(hostname, organizationName=settings.PENATES_ORGANIZATION,
+                            organizationalUnitName=_('Computers'), emailAddress=settings.PENATES_EMAIL_ADDRESS,
+                            localityName=settings.PENATES_LOCALITY, countryName=settings.PENATES_COUNTRY,
+                            stateOrProvinceName=settings.PENATES_STATE, altNames=[], role=COMPUTER)
