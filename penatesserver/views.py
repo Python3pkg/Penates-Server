@@ -93,7 +93,7 @@ def get_host_keytab(request, hostname):
     # create Kerberos principal
     principal = principal_from_hostname(fqdn, settings.PENATES_REALM)
     if principal_exists(principal):
-        return HttpResponse('', status=403)
+        return HttpResponse('Hostname %s is already registered.' % hostname, status=403)
 
     principal = Host.register_host(short_hostname, main_ip_address, admin_ip_address)
     if settings.OFFER_HOST_KEYTABS:
