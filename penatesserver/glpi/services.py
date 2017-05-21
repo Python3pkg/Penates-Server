@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 import datetime
 from django.core.signing import Signer
 from django.utils.six import text_type

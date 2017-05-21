@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import datetime
 import hashlib
@@ -146,7 +146,7 @@ def dhcp_dict_to_list(value_dict):
 
     :rtype: :class:`list`
     """
-    return ['%s %s' % (key, ' '.join(ensure_list(value))) for (key, value) in value_dict.items()]
+    return ['%s %s' % (key, ' '.join(ensure_list(value))) for (key, value) in list(value_dict.items())]
 
 
 def get_salt(chars=string.ascii_letters + string.digits, length=16):

@@ -4,7 +4,7 @@ my_ca = PKI(dirname="/tmp/test")
 my_ca.initialize()
 my_ca.gen_ca(CertificateEntry("ca.19pouces.net", role=CA))
 """
-from __future__ import unicode_literals, with_statement, print_function
+
 import base64
 import codecs
 import hashlib

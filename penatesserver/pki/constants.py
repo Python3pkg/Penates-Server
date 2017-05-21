@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, with_statement, print_function
+
 from django.utils.translation import ugettext as _
 __author__ = 'Matthieu gallet'
 

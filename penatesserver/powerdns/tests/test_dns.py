@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import subprocess
 
@@ -171,7 +171,7 @@ class TestDns(TestCase):
         self.assertEqual(1, Record.objects.filter(name='%s._domainkey.%s' % (self.service_4_fqdn.partition('.')[0], settings.PENATES_DOMAIN), type='TXT').count())
 
         for record in Record.objects.all():
-            print(repr(record))
+            print((repr(record)))
 
     def check_certificate(self, content, fqdn, role):
         p = subprocess.Popen(['openssl', 'x509', '-subject', '-noout'], stdout=subprocess.PIPE, stdin=subprocess.PIPE)

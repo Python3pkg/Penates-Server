@@ -1,5 +1,5 @@
 # coding=utf-8
-from xmlrpclib import loads, dumps, Fault
+from xmlrpc.client import loads, dumps, Fault
 from django.http.response import HttpResponse
 
 

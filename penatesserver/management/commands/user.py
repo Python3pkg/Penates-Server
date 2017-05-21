@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 from argparse import ArgumentParser
 from django.core.management import BaseCommand
 from django.utils.encoding import force_text

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 from django.template import Context, loader
 from django.utils import six
 from rest_framework import serializers
